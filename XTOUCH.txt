@@ -1,0 +1,332 @@
+# xtouch mini pseudocode
+
+# full explanation:
+# this file builds out the arpeggiator / drum roll for each channel
+# because tempo will be determined by ableton link midi clock, the first knob will determine which clock messages are heeded and which are ignored
+# link runs clock at 24 ppqn, or 24 pulses per quarter note / pulses
+# there are multiple arp types, determined by knob 1 on the xtouch:
+#
+# 0. full range - this is as many tempos as we can fit
+# 8/1 - 48
+# 6/1 - 36
+# 4/1 - 24
+# 3/1 - 18
+# 2/1 - 12
+# 3/2 - 9
+# 1/1 - 6
+# 2/3 - 4
+# 1/2 - 3
+# 1/3 - 2
+# 1/6 - 1
+#
+# 1. beatmaker - based on the default tempos of the drum roll in beatmaker pro - slightly fewer options than full range
+# 4/1 - 24
+# 2/1 - 12
+# 3/2 - 9
+# 1/1 - 6
+# 2/3 - 4
+# 1/2 - 3
+# 
+# 2. factor of two - any tempo that is a factor of 2 of a 4/4 beat
+# 16/1 - 96
+# 8/1 - 48
+# 4/1 - 24
+# 2/1 - 12
+# 1/1 - 6
+# 1/2 - 3
+#
+# 3. factor of three - any tempo that is a factor of 3 of a 4/4 beat
+# 12/1 - 72
+# 6/1 - 36
+# 3/1 - 18
+# 3/2 - 9
+# 2/3 - 4
+# 1/3 - 2
+# 1/6 - 1
+#
+# For the first, we have 11 modes, which translates to around 11.5 per
+# 12 11 11 12 12 12 12 12 11 11 12
+# For the second, we have 6 modes, which translates to around 21 per
+# 22 21 21 21 21 22
+# button 1 will decrease arp type
+# button 9 will increase arp type
+# button 2 will turn arp off / on 
+
+IF LOAD
+  # set channel to channel (or -1)
+  # each channel will have to be a different array
+  # each array will need to be long enough to account for all buttons
+  # set temp array first, then set channel array at end
+  # set tempo variable to default 63
+  # set value variable 
+  # set arp tempo mode to 0
+  # set arp value mode to 0
+  # set arp to off
+END
+
+# if it is a button push
+IF
+	# if it is a knob 1 button push, increase arp tempo mode
+	# if variable is too high, reset
+	IF
+		# set value mode to variable modulo 3
+	END
+	# if it is a button 1 push, decrease variable
+	# if variable is too low, reset
+	IF
+		# set value mode to variable modulo 8
+	END
+
+	# if it is a button 9 push, increase variable
+	# if variable is too low, reset
+	IF
+		# set value mode to variable modulo 8
+	END
+
+	# if it is a button 2 push toggle arp / phrase
+	IF
+		# set arp toggle to variable modulo 2
+	END
+
+	# if it is a button 10 push toggle button 2 selection on / off
+	IF
+		# set phrase toggle to variable modulo 2
+	END
+
+	# if it is channel 1-6
+	IF
+		# if is is button 5
+		IF
+
+		END
+		# if is is button 6
+		IF
+
+		END
+		# if is is button 7
+		IF
+
+		END
+		# if is is button 8
+		IF
+
+		END
+		# if is is button 13
+		IF
+
+		END
+		# if is is button 14
+		IF
+
+		END
+		# if is is button 15
+		IF
+
+		END
+		# if is is button 16
+		IF
+
+		END
+	END
+ELSE
+	# if it is a knob turn
+	IF
+		# if knob is < 3
+		IF
+			# each if will need to assign all four variables, so that if the tempo modes are switched they properly align
+			# if arp is on
+			IF
+				# if arp tempo mode is 0
+				IF
+					# if knob value is 0-11
+					IF
+
+					END
+					# if knob value is 12-22
+					IF
+
+					END
+					# if knob value is 13-33
+					IF
+
+					END
+					# if knob value is 34-45
+					IF
+
+					END
+					# if knob value is 46-57
+					IF
+
+					END
+					# if knob value is 58-69
+					IF
+
+					END
+					# if knob value is 70-81
+					IF
+
+					END
+					# if knob value is 82-93
+					IF
+
+					END
+					# if knob value is 94-104
+					IF
+
+					END
+					# if knob value is 105-115
+					IF
+
+					END
+					# if knob value is 116-127
+					IF
+
+					END
+				END
+				# if arp tempo mode is 1
+				IF
+					# if knob value is 0-21
+					IF
+
+					END
+					# if knob value is 22-42
+					IF
+
+					END
+					# if knob value is 43-63
+					IF
+
+					END
+					# if knob value is 64-84
+					IF
+
+					END
+					# if knob value is 85-105
+					IF
+
+					END
+					# if knob value is 106-127
+					IF
+
+					END
+				END
+				# if arp tempo mode is 2
+				IF
+					# if knob value is 0-21
+					IF
+
+					END
+					# if knob value is 22-42
+					IF
+
+					END
+					# if knob value is 43-63
+					IF
+
+					END
+					# if knob value is 64-84
+					IF
+
+					END
+					# if knob value is 85-105
+					IF
+
+					END
+					# if knob value is 106-127
+					IF
+
+					END
+				END
+				# if arp tempo mode is 3
+				IF
+					# if knob value is 0-21
+					IF
+
+					END
+					# if knob value is 22-42
+					IF
+
+					END
+					# if knob value is 43-63
+					IF
+
+					END
+					# if knob value is 64-84
+					IF
+
+					END
+					# if knob value is 85-105
+					IF
+
+					END
+					# if knob value is 106-127
+					IF
+
+					END
+				END
+			END
+		END
+	END
+END
+
+# set temp array to channel array here
+
+# if it is a clock input
+IF
+	# if arp / phrase is on 
+	IF
+		# if variable modulo the number set from above is zero, allow clock
+		IF
+			# if isArp
+			IF
+				# if value mode is 0 (asc 1)
+				IF
+
+				END
+				# if value mode is 1 (asc 2)
+				IF
+
+				END
+				# if value mode is 2 (asc 3)
+				IF
+
+				END
+				# if value mode is 3 (desc 1)
+				IF
+
+				END
+				# if value mode is 4 (desc 2)
+				IF
+
+				END
+				# if value mode is 5 (desc 3)
+				IF
+
+				END
+				# if value mode is 6 (rand 1)
+				IF
+
+				END
+				# if value mode is 7 (rand 2)
+				IF
+
+				END
+				# if value mode is 8 (rand 3)
+				IF
+
+				END
+			# else isPhrase
+			ELSE
+			
+			END
+		# else block clock
+		ELSE
+
+		END
+
+	ELSE
+	END
+
+	# set variable to variable plus one
+	MATH
+END

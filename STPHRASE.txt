@@ -1,0 +1,30 @@
+# sequence transposer
+
+IF LOAD
+  ASS J0 = 0
+  ALIAS J0 isStartNote
+  ASS J1 = 0
+  ALIAS J1 startNote
+END
+
+IF M0 == F0
+  XX = XX +B
+  IF M4 == 7C
+    ASS isStartNote = 0
+  END
+END
+
+IF isStartNote == 0
+  ASS startNote = M1
+  ASS isStartNote = 1
+END
+
+IF MT == 90
+  IF G0 == 0
+    ASS I0 = 0
+    MAT I0 = G1 - startNote
+    ASS G0 = 01
+  END
+END
+MAT I1 = M1 + I0
+ASS M1 = I1

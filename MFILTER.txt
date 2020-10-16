@@ -1,0 +1,24 @@
+# modstep filter
+
+IF LOAD
+  ALIAS I0 CNT
+  ASS CNT = 1
+  ALIAS I1 TGL
+  ASS TGL = 1
+  
+  SET LB0 SFILTER
+  SET LB1 TGL
+END
+
+# if a control message and scene change positive, change scene upward
+IF MT == B0
+  IF M1 == 6B 7F
+    MAT CNT = CNT + 1
+    MAT TGL = CNT % 2
+    SET LB1 TGL
+  END
+END
+
+IF TGL == 1
+  XX = XX +B
+END
