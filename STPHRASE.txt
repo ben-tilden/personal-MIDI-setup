@@ -1,3 +1,5 @@
+# UPDATE: See update in TCPHRASE
+
 # sequence transposer
 
 IF LOAD

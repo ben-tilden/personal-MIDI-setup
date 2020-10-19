@@ -74,9 +74,12 @@ IF LOAD
   # drumParams
   # tempoPulse
   # clockNum
+  # clockNumMod
+  # randMod
 END
 
-# TODO - change M0 before any of this so channel is taken into consideration
+# TODO change M0 before any of this so channel is taken into consideration
+# TODO make arpPhraseOnOffToggleMod determine
 # TODO implement 'Gate' knob
 
 # if it is a button push

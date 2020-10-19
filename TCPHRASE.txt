@@ -1,3 +1,9 @@
+# UPDATE: this will likely need to be overhauled, since Dynamic Clock has proved not to be as powerful as initially thought
+# revamp will likely implement similar functionality to MicroBrute
+# one step at a time, but will likely be an array of values / rests
+# tempo is 100% a factor now
+# gate a factor as well
+
 # tempo controller
 # TODO:
 # edit scene so that clock sends only from link 2 midi and only FA and FC come from this file
