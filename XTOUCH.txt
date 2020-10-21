@@ -104,133 +104,133 @@ IF LOAD
   # currentChannelArray
 
   # channelOne
-  ALIAS W0 channelOne
-  # channelTwo
-  ALIAS W$100 channelTwo
-  # channelThree
-  ALIAS W$200 channelThree
-  # channelFour
-  ALIAS W$300 channelFour
-  # channelFive
-  ALIAS W$400 channelFive
-  # channelSix
-  ALIAS W$500 channelSix
-  # channelSeven
-  ALIAS W$600 channelSeven
-  # channelEight
-  ALIAS W$700 channelEight
-  # channelNine
-  ALIAS W$800 channelNine
-  # channelTen
-  ALIAS W$900 channelTen
-  # channelEleven
-  ALIAS W$1000 channelEleven
-  # channelTwelve
-  ALIAS W$1100 channelTwelve
+#  ALIAS W0 channelOne
+#  # channelTwo
+#  ALIAS W$100 channelTwo
+#  # channelThree
+#  ALIAS W$200 channelThree
+#  # channelFour
+#  ALIAS W$300 channelFour
+#  # channelFive
+#  ALIAS W$400 channelFive
+#  # channelSix
+#  ALIAS W$500 channelSix
+#  # channelSeven
+#  ALIAS W$600 channelSeven
+#  # channelEight
+#  ALIAS W$700 channelEight
+#  # channelNine
+#  ALIAS W$800 channelNine
+#  # channelTen
+#  ALIAS W$900 channelTen
+#  # channelEleven
+#  ALIAS W$1000 channelEleven
+#  # channelTwelve
+#  ALIAS W$1100 channelTwelve
 
 END
 
 # if it is a channel notification (internal sysex)
 IF MT == F0
-	# if channel sent in sysex does not align with global channel, change global channel
-	IF M1 == 1
-		IF G0 != 1
-			ASS G0 = 1
-		END
-	END
-	IF M1 == 2
-		IF G0 != 2
-			ASS G0 = 2
-		END
-	END
-	IF M1 == 3
-		IF G0 != 3
-			ASS G0 = 3
-		END
-	END
-	IF M1 == 4
-		IF G0 != 4
-			ASS G0 = 4
-		END
-	END
-	IF M1 == 5
-		IF G0 != 5
-			ASS G0 = 5
-		END
-	END
-	IF M1 == 6
-		IF G0 != 6
-			ASS G0 = 6
-		END
-	END
-	IF M1 == 7
-		IF G0 != 7
-			ASS G0 = 7
-		END
-	END
-	IF M1 == 8
-		IF G0 != 8
-			ASS G0 = 8
-		END
-	END
-	IF M1 == 9
-		IF G0 != 9
-			ASS G0 = 9
-		END
-	END
-	IF M1 == A
-		IF G0 != A
-			ASS G0 = A
-		END
-	END
-	IF M1 == B
-		IF G0 != B
-			ASS G0 = B
-		END
-	END
-	IF M1 == C
-		IF G0 != C
-			ASS G0 = C
-		END
-	END
-	# choose local array based on what G0 is
-	# each local array will have sequences of 100
-	IF G0 == 1
-		ASS currentChannelArray = channelOne
-	END
-	IF G0 == 2
-		ASS currentChannelArray = channelTwo
-	END
-	IF G0 == 3
-		ASS currentChannelArray = channelThree
-	END
-	IF G0 == 4
-		ASS currentChannelArray = channelFour
-	END
-	IF G0 == 5
-		ASS currentChannelArray = channelFive
-	END
-	IF G0 == 6
-		ASS currentChannelArray = channelSix
-	END
-	IF G0 == 7
-		ASS currentChannelArray = channelSeven
-	END
-	IF G0 == 8
-		ASS currentChannelArray = channelEight
-	END
-	IF G0 == 9
-		ASS currentChannelArray = channelNine
-	END
-	IF G0 == A
-		ASS currentChannelArray = channelTen
-	END
-	IF G0 == B
-		ASS currentChannelArray = channelEleven
-	END
-	IF G0 == C
-		ASS currentChannelArray = channelTwelve
-	END
+#	# if channel sent in sysex does not align with global channel, change global channel
+#	IF M1 == 1
+#		IF G0 != 1
+#			ASS G0 = 1
+#		END
+#	END
+#	IF M1 == 2
+#		IF G0 != 2
+#			ASS G0 = 2
+#		END
+#	END
+#	IF M1 == 3
+#		IF G0 != 3
+#			ASS G0 = 3
+#		END
+#	END
+#	IF M1 == 4
+#		IF G0 != 4
+#			ASS G0 = 4
+#		END
+#	END
+#	IF M1 == 5
+#		IF G0 != 5
+#			ASS G0 = 5
+#		END
+#	END
+#	IF M1 == 6
+#		IF G0 != 6
+#			ASS G0 = 6
+#		END
+#	END
+#	IF M1 == 7
+#		IF G0 != 7
+#			ASS G0 = 7
+#		END
+#	END
+#	IF M1 == 8
+#		IF G0 != 8
+#			ASS G0 = 8
+#		END
+#	END
+#	IF M1 == 9
+#		IF G0 != 9
+#			ASS G0 = 9
+#		END
+#	END
+#	IF M1 == A
+#		IF G0 != A
+#			ASS G0 = A
+#		END
+#	END
+#	IF M1 == B
+#		IF G0 != B
+#			ASS G0 = B
+#		END
+#	END
+#	IF M1 == C
+#		IF G0 != C
+#			ASS G0 = C
+#		END
+#	END
+#	# choose local array based on what G0 is
+#	# each local array will have sequences of 100
+#	IF G0 == 1
+#		ASS currentChannelArray = channelOne
+#	END
+#	IF G0 == 2
+#		ASS currentChannelArray = channelTwo
+#	END
+#	IF G0 == 3
+#		ASS currentChannelArray = channelThree
+#	END
+#	IF G0 == 4
+#		ASS currentChannelArray = channelFour
+#	END
+#	IF G0 == 5
+#		ASS currentChannelArray = channelFive
+#	END
+#	IF G0 == 6
+#		ASS currentChannelArray = channelSix
+#	END
+#	IF G0 == 7
+#		ASS currentChannelArray = channelSeven
+#	END
+#	IF G0 == 8
+#		ASS currentChannelArray = channelEight
+#	END
+#	IF G0 == 9
+#		ASS currentChannelArray = channelNine
+#	END
+#	IF G0 == A
+#		ASS currentChannelArray = channelTen
+#	END
+#	IF G0 == B
+#		ASS currentChannelArray = channelEleven
+#	END
+#	IF G0 == C
+#		ASS currentChannelArray = channelTwelve
+#	END
 END
 
 # if it is a button push
@@ -239,7 +239,7 @@ IF MT == 90
 	# if variable is too high, reset
 	IF M1 == 00 7F
 		MATH tempoMode = tempoMode + 1
-		IF tempoMode == # standinMAXVAL
+		IF tempoMode == # TODO find stand in MAXVAL
 			ASS tempoMode = 0
 		END
 		# set tempo mode to variable modulo 3
@@ -268,7 +268,7 @@ IF MT == 90
 		# if variable is too high, reset
 		IF arpPhraseToggle == 0
 			MATH arpValueMode = arpValueMode + 1
-			IF arpValueMode == # standinMAXVAL
+			IF arpValueMode == # TODO find stand in MAXVAL
 				ASS arpValueMode = 0
 			END
 			# set value mode to variable modulo 8
@@ -291,7 +291,7 @@ IF MT == 90
 		# if variable is too low, reset
 		IF arpPhraseToggle == 0
 			MATH arpValueMode = arpValueMode - 1
-			IF arpValueMode == # standinMINVAL
+			IF arpValueMode == # TODO find stand in MINVAL
 				ASS arpValueMode = 0
 			END
 			# set value mode to variable modulo 8
@@ -556,7 +556,6 @@ ELSE
 END
 
 # set temp array to channel array here
-ASS 
 
 # this is code that this file will not have to deal with, since it deals directly with clock / note in
 # clockNum
@@ -568,7 +567,7 @@ ASS
 #	IF arpPhraseOnOffToggle == 1
 #		# if arp / phrase is on
 #		# note that this MAXVAL will be relative to tempoPulse - we can set constant(s?) based on a factor of all tempoPulse options
-#		IF clockNum == # standinMAXVAL
+#		IF clockNum == # TODO find stand in MAXVAL
 #			ASS clockNum = 0
 #		END
 #		MATH clockNumMod = clockNum % tempoPulse
