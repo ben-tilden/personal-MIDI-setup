@@ -1,10 +1,17 @@
-# xtouch mini pseudocode
+# xtouch mini
+
+# UPDATE: Reviewing further, the plan will be for this to run as an 'xtouch service', completely separate and distinct from channel
+# this means, instead of attempting to store all channel data on here, there will be separate streambyter instances which will communicate with each other
+# when the channel is manually changed from launchpad - data will be sent here (via the global array) from an individual 'channel service', with its own storage
+# once this receives that data in the form of the global array, it can directly modify the global array
+# the channel service will only allow data to pass if the 'channel' of the global array is equal to that channel
+# the channel service will save its data in a local array once the channel is manually changed from launchpad
 
 # full explanation:
 # this file builds out the arpeggiator / drum roll for each channel
 # because tempo will be determined by ableton link midi clock, the first knob will determine which clock messages are heeded and which are ignored
-# link runs clock at 24 ppqn, or 24 pulses per quarter note / pulses
-# there are multiple arp types, determined by knob 1 on the xtouch:
+# link runs clock at 24 ppqn, or 24 pulses per quarter note / beat
+# there are multiple tempos, determined by knob 1 on the xtouch:
 #
 # 0. full range - this is as many tempos as we can fit
 # 8/1 - 48
@@ -52,118 +59,279 @@
 # button 2 will turn arp off / on 
 
 IF LOAD
-  # set channel to channel (or -1)
-  # each channel will have to be a different array
-  # each array will need to be long enough to account for all buttons
   # set temp array first, then set channel array at end
-  # set tempo variable to default 63
-  # set value variable 
-  # set arp tempo mode to 0
-  # set arp value mode to 0
-  # set arp to off
 
-  # arpTempoMode
-  # arpTempoModeMod
-  # arpValueMode
-  # arpValueModeMod
-  # arpPhraseToggle
-  # arpPhraseToggleMod
-  # arpPhraseOnOffToggle
-  # arpPhraseOnOffToggleMod
-  # waveguideToggle
-  # drumParams
-  # tempoPulse
-  # clockNum
-  # clockNumMod
-  # randMod
+
+  # TODO need to include arp array, as well as other preexisting global variables
+  # global array will be set in the following way
+  # G0 - channel (set elsewhere)
+  # G1 - arpPhraseToggle
+  # G2 - arpPhraseOnOffToggle
+  # G3 - tempoMode
+  # G4 - tempoModeMod
+  # G5 - tempoPulse
+  # G6 - gate
+  # G7 - arpValueMode
+  # G8 - arpValueModeMod
+  # G9 - setPhrase
+  # GA - waveguideToggle
+  # GB - drumParams (Part 1)
+  # GC - drumParams (Part 2)
+  # GD - drumParams (Part 1+2)
+  # GE(GX)(whatever is the last param) - phrase sequence
+
+  # default local array will be the following
+  # did not make this perfectly align with G because the array itself won't perfectly align with its 100 offset
+  # add current length as Y0, and offset the rest +1
+  # Y0 - arpPhraseToggle
+  # Y1 - arpPhraseOnOffToggle
+  # Y2 - tempoMode
+  # Y3 - tempoModeMod
+  # Y4 - tempoPulse
+  # Y5 - gate
+  # Y6 - arpValueMode
+  # Y7 - arpValueModeMod
+  # Y8 - setPhrase
+  # Y9 - waveguideToggle
+  # YA - drumParams (Part 1)
+  # YB - drumParams (Part 2)
+  # YC - drumParams (Part 1+2)
+  # YD - phrase sequence
+
+  # we will use W, since it's the wide array, with 2048 slots over 256
+  # note - unsure if only using one array will have any noticeable 'access' slowness - should be constant, so don't think it'll be an issue
+
+  # currentChannelArray
+
+  # channelOne
+  ALIAS W0 channelOne
+  # channelTwo
+  ALIAS W$100 channelTwo
+  # channelThree
+  ALIAS W$200 channelThree
+  # channelFour
+  ALIAS W$300 channelFour
+  # channelFive
+  ALIAS W$400 channelFive
+  # channelSix
+  ALIAS W$500 channelSix
+  # channelSeven
+  ALIAS W$600 channelSeven
+  # channelEight
+  ALIAS W$700 channelEight
+  # channelNine
+  ALIAS W$800 channelNine
+  # channelTen
+  ALIAS W$900 channelTen
+  # channelEleven
+  ALIAS W$1000 channelEleven
+  # channelTwelve
+  ALIAS W$1100 channelTwelve
+
 END
 
-# TODO change M0 before any of this so channel is taken into consideration
-# TODO make arpPhraseOnOffToggleMod determine
-# TODO implement 'Gate' knob
+# if it is a channel notification (internal sysex)
+IF MT == F0
+	# if channel sent in sysex does not align with global channel, change global channel
+	IF M1 == 1
+		IF G0 != 1
+			ASS G0 = 1
+		END
+	END
+	IF M1 == 2
+		IF G0 != 2
+			ASS G0 = 2
+		END
+	END
+	IF M1 == 3
+		IF G0 != 3
+			ASS G0 = 3
+		END
+	END
+	IF M1 == 4
+		IF G0 != 4
+			ASS G0 = 4
+		END
+	END
+	IF M1 == 5
+		IF G0 != 5
+			ASS G0 = 5
+		END
+	END
+	IF M1 == 6
+		IF G0 != 6
+			ASS G0 = 6
+		END
+	END
+	IF M1 == 7
+		IF G0 != 7
+			ASS G0 = 7
+		END
+	END
+	IF M1 == 8
+		IF G0 != 8
+			ASS G0 = 8
+		END
+	END
+	IF M1 == 9
+		IF G0 != 9
+			ASS G0 = 9
+		END
+	END
+	IF M1 == A
+		IF G0 != A
+			ASS G0 = A
+		END
+	END
+	IF M1 == B
+		IF G0 != B
+			ASS G0 = B
+		END
+	END
+	IF M1 == C
+		IF G0 != C
+			ASS G0 = C
+		END
+	END
+	# choose local array based on what G0 is
+	# each local array will have sequences of 100
+	IF G0 == 1
+		ASS currentChannelArray = channelOne
+	END
+	IF G0 == 2
+		ASS currentChannelArray = channelTwo
+	END
+	IF G0 == 3
+		ASS currentChannelArray = channelThree
+	END
+	IF G0 == 4
+		ASS currentChannelArray = channelFour
+	END
+	IF G0 == 5
+		ASS currentChannelArray = channelFive
+	END
+	IF G0 == 6
+		ASS currentChannelArray = channelSix
+	END
+	IF G0 == 7
+		ASS currentChannelArray = channelSeven
+	END
+	IF G0 == 8
+		ASS currentChannelArray = channelEight
+	END
+	IF G0 == 9
+		ASS currentChannelArray = channelNine
+	END
+	IF G0 == A
+		ASS currentChannelArray = channelTen
+	END
+	IF G0 == B
+		ASS currentChannelArray = channelEleven
+	END
+	IF G0 == C
+		ASS currentChannelArray = channelTwelve
+	END
+END
 
 # if it is a button push
 IF MT == 90
-	# if it is a knob 1 button push, increase arp tempo mode
+	# if it is a knob 1 button push, increase tempo mode
 	# if variable is too high, reset
 	IF M1 == 00 7F
-		MATH arpTempoMode = arpTempoMode + 1
-		IF arpTempoMode == # standinMAXVAL
-			ASS arpTempoMode = 0
+		MATH tempoMode = tempoMode + 1
+		IF tempoMode == # standinMAXVAL
+			ASS tempoMode = 0
 		END
 		# set tempo mode to variable modulo 3
-		MATH arpTempoModeMod = arpTempoMode % 3
-		# set tempoPulse depending on what the mode is
-		# send corresponding lights as well
-		# TODO figure out channel routing, since channel 11 will be taken - will likely have to go higher than 16
-		IF arpTempoModeMod == 0
+		MATH tempoModeMod = tempoMode % 3
+		IF tempoModeMod == 0
 			ASS tempoPulse = 24
 			SEND BA 01 28
 		END
-		IF arpTempoModeMod == 1
+		IF tempoModeMod == 1
 			ASS tempoPulse = 24
 			SEND BA 01 0
 		END
-		IF arpTempoModeMod == 2
+		IF tempoModeMod == 2
 			ASS tempoPulse = 24
 			SEND BA 01 53
 		END
-		IF arpTempoModeMod == 3
+		IF tempoModeMod == 3
 			ASS tempoPulse = 18
 			SEND BA 01 53
 		END
 	END
-	# if it is a button 1 push, increase variable
-	# if variable is too low, reset
+
+	# if it is a button 1 push
 	IF M1 == 08 7F
-		MATH arpValueMode = arpValueMode + 1
-		IF arpValueMode == # standinMAXVAL
-			ASS arpValueMode = 0
+		# if arp then increase variable
+		# if variable is too high, reset
+		IF arpPhraseToggle == 0
+			MATH arpValueMode = arpValueMode + 1
+			IF arpValueMode == # standinMAXVAL
+				ASS arpValueMode = 0
+			END
+			# set value mode to variable modulo 8
+			MATH arpValueModeMod = arpValueMode % 8
+		# if phrase then toggle setPhrase
+		ELSE
+			IF setPhrase == 0
+				ASS setPhrase = 1
+				SEND 9A 07 01
+			ELSE
+				ASS setPhrase = 0
+				SEND 9A 07 00
+			END
 		END
-		# set value mode to variable modulo 8
-		MATH arpValueModeMod = arpValueMode % 8
 	END
 
-	# if it is a button 9 push, decrease variable
-	# if variable is too low, reset
+	# if it is a button 9 push
 	IF M1 == 10 7F
-		MATH arpValueMode = arpValueMode - 1
-		IF arpValueMode == # standinMINVAL
-			ASS arpValueMode = 0
+		# if arp then decrease variable
+		# if variable is too low, reset
+		IF arpPhraseToggle == 0
+			MATH arpValueMode = arpValueMode - 1
+			IF arpValueMode == # standinMINVAL
+				ASS arpValueMode = 0
+			END
+			# set value mode to variable modulo 8
+			MATH arpValueModeMod = arpValueMode % 8
+		# if phrase then add rest to phrase sequence
+		ELSE
+			# TODO develop phrase array format
 		END
-		# set value mode to variable modulo 8
-		MATH arpValueModeMod = arpValueMode % 8
 	END
 
 	# if it is a button 2 push toggle arp / phrase
 	IF M1 == 09 7F
-		MATH arpPhraseToggle = arpPhraseToggle + 1
-		IF arpPhraseToggle == # standinMAXVAL
+		IF arpPhraseToggle == 0
+			ASS arpPhraseToggle = 1
+			SEND 9A 01 01
+		ELSE
 			ASS arpPhraseToggle = 0
+			SEND 9A 01 00
 		END
-		# set arp toggle to variable modulo 2
-		MATH arpPhraseToggleMod = arpPhraseToggle % 2
 	END
 
 	# if it is a button 10 push toggle button 2 selection on / off
 	IF M1 == 11 7F
-		MATH arpPhraseOnOffToggle = arpPhraseOnOffToggle + 1
-		IF arpPhraseOnOffToggle == # standinMAXVAL
+		IF arpPhraseToggleOnOff == 0
+			ASS arpPhraseOnOffToggle = 1
+			SEND 9A 09 01
+		ELSE
 			ASS arpPhraseOnOffToggle = 0
+			SEND 9A 0A 01
 		END
-		# set arp toggle to variable modulo 2
-		MATH arpPhraseOnOffToggleMod = arpPhraseOnOffToggle % 2
 	END
 
 	# if it is channel 1-6
-	IF M0 <= 6
+	IF channel <= 6
 		IF M1 == 07 7F
-			MATH waveguideToggle = waveguideToggle + 1
-			IF waveguideToggle == # standinMAXVAL
+			IF waveguideToggle == 0
+				ASS waveguideToggle = 1
+			ELSE
 				ASS waveguideToggle = 0
 			END
-			# set arp toggle to variable modulo 2
-			MATH waveguideToggleMod = waveguideToggle % 2
 		END
 		# for all except the last, order is part 1, part 2, part 1 and 2
 		# if it is button 5 - knobs control 'select'
@@ -203,254 +371,261 @@ IF MT == 90
 ELSE
 	# if it is a knob turn
 	IF MT == B0
-		# if knob is < 3
-		IF M1 < 3
-			# each 'if' will need to assign all four variables, so that if the tempo modes are switched they properly align
-			# if arp is on
-			IF arpPhraseToggleMod == 0
-				IF arpPhraseToggleOnOffMod == 1
-					# if arp tempo mode is 0
-					IF arpTempoModeMod == 0
-						# if knob value is 0-11
-						IF M2 < 12
-							ASS tempoPulse = $48
-						END
-						# if knob value is 12-22
-						IF M2 >= 12
-							IF M2 < 23
-								ASS tempoPulse = $36
-							END
-						END
-						# if knob value is 23-33
-						IF M2 >= 23
-							IF M2 < 34
-								ASS tempoPulse = $24
-							END
-						END
-						# if knob value is 34-45
-						IF M2 >= 34
-							IF M2 < 46
-								ASS tempoPulse = $18
-							END
-						END
-						# if knob value is 46-57
-						IF M2 >= 46
-							IF M2 < 58
-								ASS tempoPulse = $12
-							END
-						END
-						# if knob value is 58-69
-						IF M2 >= 58
-							IF M2 < 70
-								ASS tempoPulse = $9
-							END
-						END
-						# if knob value is 70-81
-						IF M2 >= 70
-							IF M2 < 82
-								ASS tempoPulse = $6
-							END
-						END
-						# if knob value is 82-93
-						IF M2 >= 82
-							IF M2 < 94
-								ASS tempoPulse = $4
-							END
-						END
-						# if knob value is 94-104
-						IF M2 >= 94
-							IF M2 < 105
-								ASS tempoPulse = $3
-							END
-						END
-						# if knob value is 105-115
-						IF M2 >= 105
-							IF M2 < 116
-								ASS tempoPulse = $2
-							END
-						END
-						# if knob value is 116-127
-						IF M2 >= 116
-							ASS tempoPulse = $1
+		# if knob is 1 (tempo)
+		IF M1 == 1
+			IF arpPhraseToggleOnOffMod == 1
+				# if arp tempo mode is 0
+				IF tempoModeMod == 0
+					# if knob value is 0-11
+					IF M2 < 12
+						ASS tempoPulse = $48
+					END
+					# if knob value is 12-22
+					IF M2 >= 12
+						IF M2 < 23
+							ASS tempoPulse = $36
 						END
 					END
-					# if arp tempo mode is 1
-					IF arpTempoModeMod == 1
-						# if knob value is 0-21
-						IF M2 < 22
+					# if knob value is 23-33
+					IF M2 >= 23
+						IF M2 < 34
 							ASS tempoPulse = $24
 						END
-						# if knob value is 22-42
-						IF M2 >= 22
-							IF M2 < 43
-								ASS tempoPulse = $12
-							END
+					END
+					# if knob value is 34-45
+					IF M2 >= 34
+						IF M2 < 46
+							ASS tempoPulse = $18
 						END
-						# if knob value is 43-63
-						IF M2 >= 43
-							IF M2 < 64
-								ASS tempoPulse = $9
-							END
+					END
+					# if knob value is 46-57
+					IF M2 >= 46
+						IF M2 < 58
+							ASS tempoPulse = $12
 						END
-						# if knob value is 64-84
-						IF M2 >= 64
-							IF M2 < 85
-								ASS tempoPulse = $6
-							END
+					END
+					# if knob value is 58-69
+					IF M2 >= 58
+						IF M2 < 70
+							ASS tempoPulse = $9
 						END
-						# if knob value is 85-105
-						IF M2 >= 85
-							IF M2 < 106
-								ASS tempoPulse = $4
-							END
+					END
+					# if knob value is 70-81
+					IF M2 >= 70
+						IF M2 < 82
+							ASS tempoPulse = $6
 						END
-						# if knob value is 106-127
-						IF M2 >= 106
+					END
+					# if knob value is 82-93
+					IF M2 >= 82
+						IF M2 < 94
+							ASS tempoPulse = $4
+						END
+					END
+					# if knob value is 94-104
+					IF M2 >= 94
+						IF M2 < 105
 							ASS tempoPulse = $3
 						END
 					END
-					# if arp tempo mode is 2
-					IF arpTempoModeMod == 2
-						# if knob value is 0-21
-						IF M2 < 22
-							ASS tempoPulse = $96
-						END
-						# if knob value is 22-42
-						IF M2 >= 22
-							IF M2 < 43
-								ASS tempoPulse = $48
-							END
-						END
-						# if knob value is 43-63
-						IF M2 >= 43
-							IF M2 < 64
-								ASS tempoPulse = $24
-							END
-						END
-						# if knob value is 64-84
-						IF M2 >= 64
-							IF M2 < 85
-								ASS tempoPulse = $12
-							END
-						END
-						# if knob value is 85-105
-						IF M2 >= 85
-							IF M2 < 106
-								ASS tempoPulse = $6
-							END
-						END
-						# if knob value is 106-127
-						IF M2 >= 106
-							ASS tempoPulse = $3
-						END
-					END
-					# if arp tempo mode is 3
-					IF arpTempoModeMod == 3
-						# if knob value is 0-21
-						IF M2 < 22
-							ASS tempoPulse = $72
-						END
-						# if knob value is 22-42
-						IF M2 >= 22
-							IF M2 < 43
-								ASS tempoPulse = $36
-							END
-						END
-						# if knob value is 43-63
-						IF M2 >= 43
-							IF M2 < 64
-								ASS tempoPulse = $18
-							END
-						END
-						# if knob value is 64-84
-						IF M2 >= 64
-							IF M2 < 85
-								ASS tempoPulse = $9
-							END
-						END
-						# if knob value is 85-105
-						IF M2 >= 85
-							IF M2 < 106
-								ASS tempoPulse = $4
-							END
-						END
-						# if knob value is 106-127
-						IF M2 >= 106
+					# if knob value is 105-115
+					IF M2 >= 105
+						IF M2 < 116
 							ASS tempoPulse = $2
 						END
 					END
+					# if knob value is 116-127
+					IF M2 >= 116
+						ASS tempoPulse = $1
+					END
+				END
+				# if arp tempo mode is 1
+				IF tempoModeMod == 1
+					# if knob value is 0-21
+					IF M2 < 22
+						ASS tempoPulse = $24
+					END
+					# if knob value is 22-42
+					IF M2 >= 22
+						IF M2 < 43
+							ASS tempoPulse = $12
+						END
+					END
+					# if knob value is 43-63
+					IF M2 >= 43
+						IF M2 < 64
+							ASS tempoPulse = $9
+						END
+					END
+					# if knob value is 64-84
+					IF M2 >= 64
+						IF M2 < 85
+							ASS tempoPulse = $6
+						END
+					END
+					# if knob value is 85-105
+					IF M2 >= 85
+						IF M2 < 106
+							ASS tempoPulse = $4
+						END
+					END
+					# if knob value is 106-127
+					IF M2 >= 106
+						ASS tempoPulse = $3
+					END
+				END
+				# if arp tempo mode is 2
+				IF tempoModeMod == 2
+					# if knob value is 0-21
+					IF M2 < 22
+						ASS tempoPulse = $96
+					END
+					# if knob value is 22-42
+					IF M2 >= 22
+						IF M2 < 43
+							ASS tempoPulse = $48
+						END
+					END
+					# if knob value is 43-63
+					IF M2 >= 43
+						IF M2 < 64
+							ASS tempoPulse = $24
+						END
+					END
+					# if knob value is 64-84
+					IF M2 >= 64
+						IF M2 < 85
+							ASS tempoPulse = $12
+						END
+					END
+					# if knob value is 85-105
+					IF M2 >= 85
+						IF M2 < 106
+							ASS tempoPulse = $6
+						END
+					END
+					# if knob value is 106-127
+					IF M2 >= 106
+						ASS tempoPulse = $3
+					END
+				END
+				# if arp tempo mode is 3
+				IF tempoModeMod == 3
+					# if knob value is 0-21
+					IF M2 < 22
+						ASS tempoPulse = $72
+					END
+					# if knob value is 22-42
+					IF M2 >= 22
+						IF M2 < 43
+							ASS tempoPulse = $36
+						END
+					END
+					# if knob value is 43-63
+					IF M2 >= 43
+						IF M2 < 64
+							ASS tempoPulse = $18
+						END
+					END
+					# if knob value is 64-84
+					IF M2 >= 64
+						IF M2 < 85
+							ASS tempoPulse = $9
+						END
+					END
+					# if knob value is 85-105
+					IF M2 >= 85
+						IF M2 < 106
+							ASS tempoPulse = $4
+						END
+					END
+					# if knob value is 106-127
+					IF M2 >= 106
+						ASS tempoPulse = $2
+					END
 				END
 			END
+		END
+		# if knob is 2 (gate)
+		# starting points: max will be ~5 seconds (5000), min will be .1 seconds (100)
+		IF M1 == 2
+			MATH gate = M3 * 39
+			MATH gate = gate + 100
 		END
 	END
 END
 
 # set temp array to channel array here
+ASS 
 
+# this is code that this file will not have to deal with, since it deals directly with clock / note in
+# clockNum
+# clockNumMod
+# randMod
 
 # if it is a clock input
-IF M0 == F8
-	IF arpPhraseOnOffToggleMod == 1
-		# if arp / phrase is on
-		# note that this MAXVAL will be relative to tempoPulse - we can set constant(s?) based on a factor of all tempoPulse options
-		IF clockNum == # standinMAXVAL
-			ASS clockNum = 0
-		END
-		MATH clockNumMod = clockNum % tempoPulse
-		# if clockNum modulo the number set from above is zero, allow clock
-		IF clockNumMod == 0
-			# if isArp
-			IF arpPhraseToggleMod == 0
-				# if value mode is 0 (asc 1)
-				IF arpValueModeMod == 0
-
-				END
-				# if value mode is 1 (asc 2)
-				IF arpValueModeMod == 1
-
-				END
-				# if value mode is 2 (asc 3)
-				IF arpValueModeMod == 2
-
-				END
-				# if value mode is 3 (desc 1)
-				IF arpValueModeMod == 3
-
-				END
-				# if value mode is 4 (desc 2)
-				IF arpValueModeMod == 4
-
-				END
-				# if value mode is 5 (desc 3)
-				IF arpValueModeMod == 5
-
-				END
-				# if value mode is 6 (rand 1)
-				IF arpValueModeMod == 6
-					# MATH randMod = RFF % numNotes 
-				END
-				# if value mode is 7 (rand 2)
-				IF arpValueModeMod == 7
-
-				END
-				# if value mode is 8 (rand 3)
-				IF arpValueModeMod == 8
-
-				END
-			# else isPhrase
-			ELSE
-			
-			END
-		# else block clock
-		ELSE
-
-		END
-
-	ELSE
-	END
-
-	F8 = XX +B
-
-	# add one to clockNum
-	MATH clockNum = clockNum + 1
-END
+#IF M0 == F8
+#	IF arpPhraseOnOffToggle == 1
+#		# if arp / phrase is on
+#		# note that this MAXVAL will be relative to tempoPulse - we can set constant(s?) based on a factor of all tempoPulse options
+#		IF clockNum == # standinMAXVAL
+#			ASS clockNum = 0
+#		END
+#		MATH clockNumMod = clockNum % tempoPulse
+#		# if clockNum modulo the number set from above is zero, allow clock
+#		IF clockNumMod == 0
+#			# if isArp
+#			IF arpPhraseToggle == 0
+#				# if value mode is 0 (asc 1)
+#				IF arpValueModeMod == 0
+#
+#				END
+#				# if value mode is 1 (asc 2)
+#				IF arpValueModeMod == 1
+#
+#				END
+#				# if value mode is 2 (asc 3)
+#				IF arpValueModeMod == 2
+#
+#				END
+#				# if value mode is 3 (desc 1)
+#				IF arpValueModeMod == 3
+#
+#				END
+#				# if value mode is 4 (desc 2)
+#				IF arpValueModeMod == 4
+#
+#				END
+#				# if value mode is 5 (desc 3)
+#				IF arpValueModeMod == 5
+#
+#				END
+#				# if value mode is 6 (rand 1)
+#				IF arpValueModeMod == 6
+#					# MATH randMod = RFF % numNotes 
+#				END
+#				# if value mode is 7 (rand 2)
+#				IF arpValueModeMod == 7
+#
+#				END
+#				# if value mode is 8 (rand 3)
+#				IF arpValueModeMod == 8
+#
+#				END
+#			# else isPhrase
+#			ELSE
+#			
+#			END
+#		# else block clock
+#		ELSE
+#
+#		END
+#
+#	ELSE
+#	END
+#
+#	F8 = XX +B
+#
+#	# add one to clockNum
+#	MATH clockNum = clockNum + 1
+#END
