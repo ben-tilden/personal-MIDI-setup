@@ -1,10 +1,159 @@
 # channel one
 
+# this instance will constantly be receiving clock, the question will be whether it responds to it or not
+# there will be another service receiving note in - if arpPhraseOnOffToggle is on, notes will be processed, otherwise, they will not
 
+# clockNum
+# clockNumMod
+# randMod
+# arpPhraseOnOffToggle
+# arpPhraseToggle
+# arpValueModeMod
 
+# if channel is this channel (one)
+IF G0 == 1
+  # if message is clock
+  IF M0 == F8
+    # if arpPhraseOnOffToggle is on
+    IF arpPhraseOnOffToggle == 1
+      # process midi clock
+      # note that this MAXVAL will be relative to tempoPulse - we can set constant(s?) based on a factor of all tempoPulse options
+      IF clockNum == # TODO find stand in MAXVAL
+        ASS clockNum = 0
+      END
+      MATH clockNumMod = clockNum % tempoPulse
+      # if clockNum modulo the number set from above is zero, allow clock
+      IF clockNumMod == 0
+        # if isArp
+        IF arpPhraseToggle == 0
+          # if value mode is 0 (asc 1)
+          IF arpValueModeMod == 0
+
+          END
+          # if value mode is 1 (asc 2)
+          IF arpValueModeMod == 1
+
+          END
+          # if value mode is 2 (asc 3)
+          IF arpValueModeMod == 2
+
+          END
+          # if value mode is 3 (desc 1)
+          IF arpValueModeMod == 3
+
+          END
+          # if value mode is 4 (desc 2)
+          IF arpValueModeMod == 4
+
+          END
+          # if value mode is 5 (desc 3)
+          IF arpValueModeMod == 5
+
+          END
+          # if value mode is 6 (rand 1)
+          IF arpValueModeMod == 6
+           # MATH randMod = RFF % numNotes 
+          END
+          # if value mode is 7 (rand 2)
+          IF arpValueModeMod == 7
+
+          END
+          # if value mode is 8 (rand 3)
+          IF arpValueModeMod == 8
+
+          END
+        # else isPhrase
+        ELSE
+
+        END
+      ELSE
+        XX = XX +B
+      END
+    ELSE
+      XX = XX +B
+    END
+  ELSE
+    XX = XX +B
+  END
+ELSE
+  XX = XX +B
+END
 
 
 # including original ARP.txt file here for reference
+# also including what was build out in XTOUCH.txt
+
+# this is code that this file will not have to deal with, since it deals directly with clock / note in
+# clockNum
+# clockNumMod
+# randMod
+
+# if it is a clock input
+IF M0 == F8
+ IF arpPhraseOnOffToggle == 1
+   # if arp / phrase is on
+   # note that this MAXVAL will be relative to tempoPulse - we can set constant(s?) based on a factor of all tempoPulse options
+   IF clockNum == # TODO find stand in MAXVAL
+     ASS clockNum = 0
+   END
+   MATH clockNumMod = clockNum % tempoPulse
+   # if clockNum modulo the number set from above is zero, allow clock
+   IF clockNumMod == 0
+     # if isArp
+     IF arpPhraseToggle == 0
+       # if value mode is 0 (asc 1)
+       IF arpValueModeMod == 0
+
+       END
+       # if value mode is 1 (asc 2)
+       IF arpValueModeMod == 1
+
+       END
+       # if value mode is 2 (asc 3)
+       IF arpValueModeMod == 2
+
+       END
+       # if value mode is 3 (desc 1)
+       IF arpValueModeMod == 3
+
+       END
+       # if value mode is 4 (desc 2)
+       IF arpValueModeMod == 4
+
+       END
+       # if value mode is 5 (desc 3)
+       IF arpValueModeMod == 5
+
+       END
+       # if value mode is 6 (rand 1)
+       IF arpValueModeMod == 6
+         # MATH randMod = RFF % numNotes 
+       END
+       # if value mode is 7 (rand 2)
+       IF arpValueModeMod == 7
+
+       END
+       # if value mode is 8 (rand 3)
+       IF arpValueModeMod == 8
+
+       END
+     # else isPhrase
+     ELSE
+     
+     END
+   # else block clock
+   ELSE
+
+   END
+
+ ELSE
+ END
+
+ F8 = XX +B
+
+ # add one to clockNum
+ MATH clockNum = clockNum + 1
+END
 
 # FULL NO CLOCK
 # TODO:
@@ -213,7 +362,7 @@ IF M0 == F8
     ELSE
       MATH clock = clock + 1
     END
-    MATH clockModulo = clock % 24
+    MATH clockModulo = clock % $24
     IF clockModulo == 0
       MATH numPressedMinusOne = numPressed - 1
       # IF descending

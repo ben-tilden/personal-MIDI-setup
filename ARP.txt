@@ -205,7 +205,7 @@ IF M0 == F8
     ELSE
       MATH clock = clock + 1
     END
-    MATH clockModulo = clock % 24
+    MATH clockModulo = clock % $24
     IF clockModulo == 0
       MATH numPressedMinusOne = numPressed - 1
       # IF descending
