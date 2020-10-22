@@ -3,12 +3,18 @@
 # this instance will constantly be receiving clock, the question will be whether it responds to it or not
 # there will be another service receiving note in - if arpPhraseOnOffToggle is on, notes will be processed, otherwise, they will not
 
+# note that the assumption here is that the global array information will be used, not the local array
+# the local array will just be used for storage
+
 # clockNum
 # clockNumMod
 # randMod
 # arpPhraseOnOffToggle
 # arpPhraseToggle
 # arpValueModeMod
+# phraseIndex
+# phraseIndexInit
+# phraseLength
 
 # if channel is this channel (one)
 IF G0 == 1
@@ -64,7 +70,13 @@ IF G0 == 1
           END
         # else isPhrase
         ELSE
-
+          # SEND 90 G(phraseIndex) 64
+          # SEND 80 G(phraseIndex) 64 +D(gate)
+          IF phraseIndex != phraseLength
+            MATH phraseIndex = phraseIndex + 1
+          ELSE
+            MATH phraseIndex = phraseIndexInit
+          END
         END
       ELSE
         XX = XX +B
