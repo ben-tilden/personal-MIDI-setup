@@ -62,7 +62,7 @@ IF LOAD
   # set temp array first, then set channel array at end
 
 
-  # TODO need to include arp array, as well as other preexisting global variables
+  # TODO need to include other preexisting global variables
   # global array will be set in the following way
   # G0 - channel (set elsewhere)
   # G1 - arpPhraseToggle
@@ -78,7 +78,9 @@ IF LOAD
   # GB - drumParams (Part 1)
   # GC - drumParams (Part 2)
   # GD - drumParams (Part 1+2)
-  # GE(GX)(whatever is the last param) - phrase sequence
+  # (GX)(whatever is the last param) - arp values
+  # (GY)(whatever is the last param) - arp order pressed
+  # (GZ)(whatever is the last param) - phrase sequence
 
   # default local array will be the following
   # did not make this perfectly align with G because the array itself won't perfectly align with its 100 offset
@@ -271,8 +273,8 @@ IF MT == 90
 			IF arpValueMode == # TODO find stand in MAXVAL
 				ASS arpValueMode = 0
 			END
-			# set value mode to variable modulo 8
-			MATH arpValueModeMod = arpValueMode % 8
+			# set value mode to variable modulo 11
+			MATH arpValueModeMod = arpValueMode % B
 		# if phrase then toggle setPhrase
 		ELSE
 			IF setPhrase == 0
@@ -294,8 +296,8 @@ IF MT == 90
 			IF arpValueMode == # TODO find stand in MINVAL
 				ASS arpValueMode = 0
 			END
-			# set value mode to variable modulo 8
-			MATH arpValueModeMod = arpValueMode % 8
+			# set value mode to variable modulo 11
+			MATH arpValueModeMod = arpValueMode % B
 		# if phrase then add rest to phrase sequence
 		ELSE
 			# TODO develop phrase array format
