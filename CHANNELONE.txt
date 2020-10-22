@@ -144,18 +144,51 @@ IF G0 == 1
             END
             # NOTE could use if else here, have chosen not to because I think this is more readable
             # NOTE also might be able to multiply isOctaveMod by 12, add, and always send arpOctaveValue
+            # NOTE could make this a subroutine
           END
           # if value mode is 6 (rand 1)
           IF arpValueModeMod == 6
-           # MATH randMod = RFF % numNotes 
+            MATH arpIndex = RFF % numPressed
+            # SEND 90 G(arpIndex) (velocity)
+            # SEND 80 G(arpIndex) (velocity) +D(gate)
           END
           # if value mode is 7 (rand 2)
           IF arpValueModeMod == 7
-
+            # NOTE this is completely random - thus ignoring the note played before it - the octave will not necessarily match up with previous note
+            MATH arpIndex = RFF % numPressed
+            MATH isOctaveMod = RFF % 2
+            # if not isOctaveMod, business as usual
+            IF isOctaveMod == 0
+              # SEND 90 G(arpIndex) (velocity)
+              # SEND 80 G(arpIndex) (velocity) +D(gate)
+            # if isOctaveMod, add 12 semitones and send that instead
+            ELSE
+              MATH arpOctaveValue = G(arpIndex) + $12
+              # SEND 90 arpOctaveValue (velocity)
+              # SEND 80 arpOctaveValue (velocity) +D(gate)
+            END
           END
           # if value mode is 8 (rand 3)
           IF arpValueModeMod == 8
-
+            MATH arpIndex = RFF % numPressed
+            MATH isOctaveMod = RFF % 3
+            # if isOctaveMod is 0, business as usual
+            IF isOctave == 0
+              # SEND 90 G(arpIndex) (velocity)
+              # SEND 80 G(arpIndex) (velocity) +D(gate)
+            END
+            # if isOctaveMod is 1, add 12 semitones and send that instead
+            IF isOctave == 1
+              MATH arpOctaveValue = G(arpIndex) + $12
+              # SEND 90 arpOctaveValue (velocity)
+              # SEND 80 arpOctaveValue (velocity) +D(gate)
+            END
+            # if isOctaveMod is 2, add 24 semitones and send that instead
+            IF isOctave == 2
+              MATH arpOctaveValue = G(arpIndex) + $24
+              # SEND 90 arpOctaveValue (velocity)
+              # SEND 80 arpOctaveValue (velocity) +D(gate)
+            END
           END
           # if value mode is 9 (order 1)
           IF arpValueModeMod == 9
