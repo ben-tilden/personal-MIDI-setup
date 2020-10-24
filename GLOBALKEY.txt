@@ -1,0 +1,87 @@
+# global array key
+
+# global array will be set in the following way
+# G0 - channel
+# G1 - arpPhraseToggle
+# G2 - arpPhraseOnOffToggle
+# G3 - tempoMode
+# G4 - tempoModeMod
+# G5 - tempoPulse
+# G6 - gate
+# G7 - arpValueMode
+# G8 - arpValueModeMod
+# G9 - setPhrase
+# GA - waveguideToggle
+# GB - drumParams (Part 1)
+# GC - drumParams (Part 2)
+# GD - drumParams (Part 1+2)
+# (GX)(whatever is the last param) - arp values
+# (GY)(whatever is the last param) - arp order pressed
+# (GZ)(whatever is the last param) - phrase sequence
+
+# variables in use:
+
+# xtouch
+
+G0
+currentChannelArray
+tempoMode
+tempoModeMod
+tempoPulse
+arpValueMode
+arpValueModeMod
+setPhrase
+arpPhraseToggle
+arpPhraseOnOffToggle
+waveguideToggle
+drumParams
+gate
+
+# channel one
+
+clockNum
+clockNumMod
+arpIndex
+isOctave
+arpOctaveValue
+isOctaveMod
+phraseIndex
+
+# pipehead
+
+i
+keyVal
+keyBool
+j
+jPlusOne
+isSetSort
+JI2
+KI2
+isSet
+I6
+arpIndex
+clock
+gate
+J00
+K00
+K0
+J0
+numHaveBeenPressed
+iter
+JI7
+KI7
+numPressed
+numPressedTotal
+G0
+G1
+JL0
+KL0
+max
+secondMax
+secondMaxIndex
+G(# phraseVal)
+keyPressed
+G(phraseIndex)
+phraseIndex
+tempPhraseVal
+setPhrase
