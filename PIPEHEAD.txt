@@ -14,6 +14,8 @@
 # Add tempo halving / multiplying
 # sort each time clock is sent via some process similar to selection sort? this could prevent the timing issue above
 
+# phrase length likely global
+
 # check to see if subroutine's can be drawn globally
 SUBROUTINE INSERTION_SORT_J length
   ALIAS I0 i
