@@ -54,185 +54,54 @@
 # 12 11 11 12 12 12 12 12 11 11 12
 # For the second, we have 6 modes, which translates to around 21 per
 # 22 21 21 21 21 22
-# button 1 will decrease arp type
-# button 9 will increase arp type
-# button 2 will turn arp off / on 
+# button 1 will decrease arp type / turn on set phrase mode
+# button 9 will increase arp type / add rest as part of phrase
+# button 2 will toggle arp / phrase
+# button 10 will turn arp / phrase on or off
+
+# global array will be set in the following way
+# G0 - channel
+# G1 - numPressed
+# G2 - arpPhraseToggle
+# G3 - arpPhraseOnOffToggle
+# G4 - tempoModeMod
+# G5 - tempoPulse
+# G6 - gate
+# G7 - arpValueModeMod
+# G8 - setPhrase
+# G9 - waveguideToggle
+# GA - drumParams (Part 1)
+# GB - drumParams (Part 2)
+# GC - drumParams (Part 1+2)
+# GD - velocity
+# GE - break (null)
+# GF - break (null)
+# G10 - G19 - arp values        (G10 G11 G12 G13 G14 G15 G16 G17 G18 G19)
+# G1A - G23 - arp order pressed (G1A G1B G1C G1D G1E G1F G20 G21 G22 G23)
+# G24 - G43 - phrase sequence      (G24 G25 G26 G27 G28 G29 G2A G2B G2C G2D G2E G2F G30 G31 G32 G33 ETC.)
 
 IF LOAD
-  # set temp array first, then set channel array at end
+  # local
+  ALIAS I0 tempoMode
+  ALIAS I1 arpValueMode
 
+  # global
+  ALIAS G0 channel
+  ALIAS G2 arpPhraseToggle
+  ALIAS G3 arpPhraseOnOffToggle
+  ALIAS G4 tempoModeMod
+  ALIAS G5 tempoPulse
+  ALIAS G6 gate
+  ALIAS G7 arpValueModeMod
+  ALIAS G8 setPhrase
+  ALIAS G9 waveguideToggle
+  ALIAS GA drumParams
 
-  # TODO need to include other preexisting global variables
-  # global array will be set in the following way
-  # G0 - channel (set elsewhere)
-  # G1 - arpPhraseToggle
-  # G2 - arpPhraseOnOffToggle
-  # G3 - tempoMode
-  # G4 - tempoModeMod
-  # G5 - tempoPulse
-  # G6 - gate
-  # G7 - arpValueMode
-  # G8 - arpValueModeMod
-  # G9 - setPhrase
-  # GA - waveguideToggle
-  # GB - drumParams (Part 1)
-  # GC - drumParams (Part 2)
-  # GD - drumParams (Part 1+2)
-  # (GX)(whatever is the last param) - arp values
-  # (GY)(whatever is the last param) - arp order pressed
-  # (GZ)(whatever is the last param) - phrase sequence
-
-  # default local array will be the following
-  # did not make this perfectly align with G because the array itself won't perfectly align with its 100 offset
-  # add current length as Y0, and offset the rest +1
-  # Y0 - arpPhraseToggle
-  # Y1 - arpPhraseOnOffToggle
-  # Y2 - tempoMode
-  # Y3 - tempoModeMod
-  # Y4 - tempoPulse
-  # Y5 - gate
-  # Y6 - arpValueMode
-  # Y7 - arpValueModeMod
-  # Y8 - setPhrase
-  # Y9 - waveguideToggle
-  # YA - drumParams (Part 1)
-  # YB - drumParams (Part 2)
-  # YC - drumParams (Part 1+2)
-  # YD - phrase sequence
-
-  # we will use W, since it's the wide array, with 2048 slots over 256
-  # note - unsure if only using one array will have any noticeable 'access' slowness - should be constant, so don't think it'll be an issue
-
-  # currentChannelArray
-
-#  # channelOne
-#  ALIAS W0 channelOne
-#  # channelTwo
-#  ALIAS W$100 channelTwo
-#  # channelThree
-#  ALIAS W$200 channelThree
-#  # channelFour
-#  ALIAS W$300 channelFour
-#  # channelFive
-#  ALIAS W$400 channelFive
-#  # channelSix
-#  ALIAS W$500 channelSix
-#  # channelSeven
-#  ALIAS W$600 channelSeven
-#  # channelEight
-#  ALIAS W$700 channelEight
-#  # channelNine
-#  ALIAS W$800 channelNine
-#  # channelTen
-#  ALIAS W$900 channelTen
-#  # channelEleven
-#  ALIAS W$1000 channelEleven
-#  # channelTwelve
-#  ALIAS W$1100 channelTwelve
-
-END
-
-# if it is a channel notification (internal sysex)
-IF MT == F0
-#	# if channel sent in sysex does not align with global channel, change global channel
-#	IF M1 == 1
-#		IF G0 != 1
-#			ASS G0 = 1
-#		END
-#	END
-#	IF M1 == 2
-#		IF G0 != 2
-#			ASS G0 = 2
-#		END
-#	END
-#	IF M1 == 3
-#		IF G0 != 3
-#			ASS G0 = 3
-#		END
-#	END
-#	IF M1 == 4
-#		IF G0 != 4
-#			ASS G0 = 4
-#		END
-#	END
-#	IF M1 == 5
-#		IF G0 != 5
-#			ASS G0 = 5
-#		END
-#	END
-#	IF M1 == 6
-#		IF G0 != 6
-#			ASS G0 = 6
-#		END
-#	END
-#	IF M1 == 7
-#		IF G0 != 7
-#			ASS G0 = 7
-#		END
-#	END
-#	IF M1 == 8
-#		IF G0 != 8
-#			ASS G0 = 8
-#		END
-#	END
-#	IF M1 == 9
-#		IF G0 != 9
-#			ASS G0 = 9
-#		END
-#	END
-#	IF M1 == A
-#		IF G0 != A
-#			ASS G0 = A
-#		END
-#	END
-#	IF M1 == B
-#		IF G0 != B
-#			ASS G0 = B
-#		END
-#	END
-#	IF M1 == C
-#		IF G0 != C
-#			ASS G0 = C
-#		END
-#	END
-#	# choose local array based on what G0 is
-#	# each local array will have sequences of 100
-#	IF G0 == 1
-#		ASS currentChannelArray = channelOne
-#	END
-#	IF G0 == 2
-#		ASS currentChannelArray = channelTwo
-#	END
-#	IF G0 == 3
-#		ASS currentChannelArray = channelThree
-#	END
-#	IF G0 == 4
-#		ASS currentChannelArray = channelFour
-#	END
-#	IF G0 == 5
-#		ASS currentChannelArray = channelFive
-#	END
-#	IF G0 == 6
-#		ASS currentChannelArray = channelSix
-#	END
-#	IF G0 == 7
-#		ASS currentChannelArray = channelSeven
-#	END
-#	IF G0 == 8
-#		ASS currentChannelArray = channelEight
-#	END
-#	IF G0 == 9
-#		ASS currentChannelArray = channelNine
-#	END
-#	IF G0 == A
-#		ASS currentChannelArray = channelTen
-#	END
-#	IF G0 == B
-#		ASS currentChannelArray = channelEleven
-#	END
-#	IF G0 == C
-#		ASS currentChannelArray = channelTwelve
-#	END
+  # assign local
+  # if this isn't reset on each 'install', then it's technically possible it could increase to the value max
+  ASS tempoMode = 0
+  # if this isn't reset on each 'install', then it's technically possible it could increase to the value max
+  ASS arpValueMode = 0
 END
 
 # if it is a button push
@@ -241,15 +110,14 @@ IF MT == 90
 	# if variable is too high, reset
 	IF M1 == 00 7F
 		MATH tempoMode = tempoMode + 1
-		IF tempoMode == # TODO find stand in MAXVAL
-			ASS tempoMode = 0
-		END
 		# set tempo mode to variable modulo 3
 		MATH tempoModeMod = tempoMode % 3
 		IF tempoModeMod == 0
 			ASS tempoPulse = 24
 			SEND BA 01 28
 		END
+		# set each tempoPulse to default value on switching
+		# also send data to xtouch to reflect this
 		IF tempoModeMod == 1
 			ASS tempoPulse = 24
 			SEND BA 01 0
@@ -267,12 +135,8 @@ IF MT == 90
 	# if it is a button 1 push
 	IF M1 == 08 7F
 		# if arp then increase variable
-		# if variable is too high, reset
 		IF arpPhraseToggle == 0
 			MATH arpValueMode = arpValueMode + 1
-			IF arpValueMode == # TODO find stand in MAXVAL
-				ASS arpValueMode = 0
-			END
 			# set value mode to variable modulo 11
 			MATH arpValueModeMod = arpValueMode % B
 		# if phrase then toggle setPhrase
@@ -293,14 +157,11 @@ IF MT == 90
 		# if variable is too low, reset
 		IF arpPhraseToggle == 0
 			MATH arpValueMode = arpValueMode - 1
-			IF arpValueMode == # TODO find stand in MINVAL
-				ASS arpValueMode = 0
-			END
 			# set value mode to variable modulo 11
 			MATH arpValueModeMod = arpValueMode % B
 		# if phrase then add rest to phrase sequence
 		ELSE
-			# TODO develop phrase array format
+		  # SEND rest
 		END
 	END
 
@@ -557,4 +418,165 @@ ELSE
 	END
 END
 
-# set temp array to channel array here
+
+
+
+
+
+
+
+
+
+# SCRAPS: (some of this will necessarily be used)
+
+# if it is a channel notification (internal sysex)
+IF MT == F0
+#	# if channel sent in sysex does not align with global channel, change global channel
+#	IF M1 == 1
+#		IF G0 != 1
+#			ASS G0 = 1
+#		END
+#	END
+#	IF M1 == 2
+#		IF G0 != 2
+#			ASS G0 = 2
+#		END
+#	END
+#	IF M1 == 3
+#		IF G0 != 3
+#			ASS G0 = 3
+#		END
+#	END
+#	IF M1 == 4
+#		IF G0 != 4
+#			ASS G0 = 4
+#		END
+#	END
+#	IF M1 == 5
+#		IF G0 != 5
+#			ASS G0 = 5
+#		END
+#	END
+#	IF M1 == 6
+#		IF G0 != 6
+#			ASS G0 = 6
+#		END
+#	END
+#	IF M1 == 7
+#		IF G0 != 7
+#			ASS G0 = 7
+#		END
+#	END
+#	IF M1 == 8
+#		IF G0 != 8
+#			ASS G0 = 8
+#		END
+#	END
+#	IF M1 == 9
+#		IF G0 != 9
+#			ASS G0 = 9
+#		END
+#	END
+#	IF M1 == A
+#		IF G0 != A
+#			ASS G0 = A
+#		END
+#	END
+#	IF M1 == B
+#		IF G0 != B
+#			ASS G0 = B
+#		END
+#	END
+#	IF M1 == C
+#		IF G0 != C
+#			ASS G0 = C
+#		END
+#	END
+#	# choose local array based on what G0 is
+#	# each local array will have sequences of 100
+#	IF G0 == 1
+#		ASS currentChannelArray = channelOne
+#	END
+#	IF G0 == 2
+#		ASS currentChannelArray = channelTwo
+#	END
+#	IF G0 == 3
+#		ASS currentChannelArray = channelThree
+#	END
+#	IF G0 == 4
+#		ASS currentChannelArray = channelFour
+#	END
+#	IF G0 == 5
+#		ASS currentChannelArray = channelFive
+#	END
+#	IF G0 == 6
+#		ASS currentChannelArray = channelSix
+#	END
+#	IF G0 == 7
+#		ASS currentChannelArray = channelSeven
+#	END
+#	IF G0 == 8
+#		ASS currentChannelArray = channelEight
+#	END
+#	IF G0 == 9
+#		ASS currentChannelArray = channelNine
+#	END
+#	IF G0 == A
+#		ASS currentChannelArray = channelTen
+#	END
+#	IF G0 == B
+#		ASS currentChannelArray = channelEleven
+#	END
+#	IF G0 == C
+#		ASS currentChannelArray = channelTwelve
+#	END
+END
+
+
+  # default local array will be the following
+  # did not make this perfectly align with G because the array itself won't perfectly align with its 100 offset
+  # add current length as Y0, and offset the rest +1
+  # Y0 - arpPhraseToggle
+  # Y1 - arpPhraseOnOffToggle
+  # Y2 - tempoMode
+  # Y3 - tempoModeMod
+  # Y4 - tempoPulse
+  # Y5 - gate
+  # Y6 - arpValueMode
+  # Y7 - arpValueModeMod
+  # Y8 - setPhrase
+  # Y9 - waveguideToggle
+  # YA - drumParams (Part 1)
+  # YB - drumParams (Part 2)
+  # YC - drumParams (Part 1+2)
+  # YD - phrase sequence
+
+  # we will use W, since it's the wide array, with 2048 slots over 256
+  # note - unsure if only using one array will have any noticeable 'access' slowness - should be constant, so don't think it'll be an issue
+
+  # currentChannelArray
+
+#  # channelOne
+#  ALIAS W0 channelOne
+#  # channelTwo
+#  ALIAS W$100 channelTwo
+#  # channelThree
+#  ALIAS W$200 channelThree
+#  # channelFour
+#  ALIAS W$300 channelFour
+#  # channelFive
+#  ALIAS W$400 channelFive
+#  # channelSix
+#  ALIAS W$500 channelSix
+#  # channelSeven
+#  ALIAS W$600 channelSeven
+#  # channelEight
+#  ALIAS W$700 channelEight
+#  # channelNine
+#  ALIAS W$800 channelNine
+#  # channelTen
+#  ALIAS W$900 channelTen
+#  # channelEleven
+#  ALIAS W$1000 channelEleven
+#  # channelTwelve
+#  ALIAS W$1100 channelTwelve

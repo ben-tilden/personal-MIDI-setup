@@ -1,21 +1,23 @@
 # global array key
 
+# NOTE will need to reset global array using one service - possibly this one
+
 # global array will be set in the following way
 # G0 - channel
 # G1 - numPressed
 # G2 - arpPhraseToggle
 # G3 - arpPhraseOnOffToggle
-# G4 - tempoMode
-# G5 - tempoModeMod
-# G6 - tempoPulse
-# G7 - gate
-# G8 - arpValueMode
-# G9 - arpValueModeMod
-# GA - setPhrase
-# GB - waveguideToggle
-# GC - drumParams (Part 1)
-# GD - drumParams (Part 2)
-# GE - drumParams (Part 1+2)
+# G4 - tempoModeMod
+# G5 - tempoPulse
+# G6 - gate
+# G7 - arpValueModeMod
+# G8 - setPhrase
+# G9 - waveguideToggle
+# GA - drumParams (Part 1)
+# GB - drumParams (Part 2)
+# GC - drumParams (Part 1+2)
+# GD - velocity
+# GE - break (null)
 # GF - break (null)
 # G10 - G19 - arp values        (G10 G11 G12 G13 G14 G15 G16 G17 G18 G19)
 # G1A - G23 - arp order pressed (G1A G1B G1C G1D G1E G1F G20 G21 G22 G23)
@@ -26,16 +28,22 @@
 
 
 
+
+
+
+
+# SCRAPS:
+
 # variables in use:
 
-# xtouch
+# xtouch (confirmed1)
 
 #G0 (channel)
 #currentChannelArray (not used)
-#tempoMode
+#tempoMode (local)
 #tempoModeMod
 #tempoPulse
-#arpValueMode
+#arpValueMode (local)
 #arpValueModeMod
 #setPhrase
 #arpPhraseToggle
