@@ -10,6 +10,9 @@
 
 # need to reassign arpIndex whenever mode is changed
 
+# NOTE will need to assign isOctave as 0 whenever mode is changed - might need to make global
+# NOTE this is the same with arpIndex
+
 # NOTE maxVal for clockNum is based off 227 * 288 = floor(65,535 / 288) (ffff / lcm of all possible tempoPulse)
 
 # arpTypes
@@ -26,14 +29,11 @@
 # 11: order pressed two octave
 # 12: order pressed three octave
 
-# randMod
 # phraseIndex
 # phraseIndexInit
 # phraseLength
-# numPressed
-# isOctave (make sure to reset whenever arpMode is changed - either that or add more variables)
-# velocity
-# arpOctaveValue
+
+# NOTE j (arp values) offset is 10 (16) and k (arp order pressed) is 1A (26)
 
 IF LOAD
   # local
@@ -41,19 +41,28 @@ IF LOAD
   ALIAS I1 clockNum
   ALIAS I2 clockNumMod
   ALIAS I3 arpIndex
+  ALIAS I4 isOctave
+  ALIAS I5 isOctaveMod
+  ALIAS I6 arpOctaveValue
 
   # global
   ALIAS G0 channel
+  ALIAS G1 numPressed
   ALIAS G2 arpPhraseToggle
   ALIAS G3 arpPhraseOnOffToggle
   ALIAS G5 tempoPulse
   ALIAS G6 gate
   ALIAS G7 arpValueModeMod
-  ALIAS GD arpValueModeMod
+  ALIAS GD velocity
 
   # assign local
   ASS maxValClockNum = FF60
-  ASS arpIndex = 10
+  ASS clockNum = 0
+  ASS arpIndex = 0F # TODO this needs to be rethought, since arpIndex will only be 10 when arp is ascending - I believe this will have to be global
+  # NOTE this is for asc and order
+  # NOTE arpIndex = numPressed + 10 ($16) for desc
+  # NOTE arpIndex val doesn't matter for random
+  ASS isOctave = 0
 END
 
 # if channel is this channel (one)
@@ -82,7 +91,7 @@ IF channel == 1
 
             # if value mode is 0 (asc 1)
             IF arpValueModeMod == 0
-              # arpIndex will initially be set to numPressed, but after it's set to 16, it will be automatically decreased each run through
+              # arpIndex will initially be set to numPressed + 16, but after it's set to numPressed + 16 - 1, it will be automatically decreased each run through
               # this decrease stops once we go under 16 - at that point it's reset
               MATH arpIndex = arpIndex - 1
               IF arpIndex == 0F
@@ -97,16 +106,16 @@ IF channel == 1
               IF isOctave == 0
                 MATH arpIndex = arpIndex - 1
                 IF arpIndex == 0F
-                  ASS arpIndex = numPressed
+                  ASS arpIndex = numPressed + 10
                 END
-                # SEND 90 G(arpIndex) (velocity)
-                # SEND 80 G(arpIndex) (velocity) +D(gate)
+                SEND 90 GI3 velocity
+                SEND 80 GI3 velocity +DG6
                 ASS isOctave = 1
               # if isOctave, add 12 semitones and send that instead
               ELSE
-                MATH arpOctaveValue = G(arpIndex) + $12 # TODO see if this should be -12 or +12
-                # SEND 90 arpOctaveValue (velocity)
-                # SEND 80 arpOctaveValue (velocity) +D(gate)
+                MATH arpOctaveValue = GI3 + $12 # TODO see if this should be -12 or +12
+                SEND 90 arpOctaveValue velocity
+                SEND 80 arpOctaveValue velocity +DG6
                 ASS isOctave = 0
               END
             END
@@ -116,38 +125,38 @@ IF channel == 1
               # if isOctaveMod is 0, business as usual
               IF isOctaveMod == 0
                 MATH arpIndex = arpIndex - 1
-                IF arpIndex == FFFF
-                  ASS arpIndex = numPressed
+                IF arpIndex == 0F
+                  ASS arpIndex = numPressed + 10
                 END
-                # SEND 90 G(arpIndex) (velocity)
-                # SEND 80 G(arpIndex) (velocity) +D(gate)
+                SEND 90 GI3 velocity
+                SEND 80 GI3 velocity +DG6
                 MATH isOctave = isOctave + 1
               END
               # if isOctaveMod is 1, add 12 semitones and send that instead
               IF isOctaveMod == 1
-                MATH arpOctaveValue = G(arpIndex) + $12 # TODO see if this should be -12 or +12
-                # SEND 90 arpOctaveValue (velocity)
-                # SEND 80 arpOctaveValue (velocity) +D(gate)
+                MATH arpOctaveValue = GI3 + $12 # TODO see if this should be -12 or +12
+                SEND 90 arpOctaveValue velocity
+                SEND 80 arpOctaveValue velocity +DG6
                 MATH isOctave = isOctave + 1
               END
               # if isOctaveMod is 2, add 24 semitones and send that instead
               IF isOctaveMod == 2
-                MATH arpOctaveValue = G(arpIndex) + $24
-                # SEND 90 arpOctaveValue (velocity)
-                # SEND 80 arpOctaveValue (velocity) +D(gate)
+                MATH arpOctaveValue = GI3 + $24 # TODO see if this should be -12 or +12
+                SEND 90 arpOctaveValue velocity
+                SEND 80 arpOctaveValue velocity +DG6
                 MATH isOctave = isOctave + 1
               END
             END
             # if value mode is 3 (desc 1)
             IF arpValueModeMod == 3
-              # arpIndex will initially be set to -1, but after it's set to zero, it will be automatically increased each run through
-              # this increase stops once we go past numPressed - at that point it's reset
+              # arpIndex will initially be set to 15, but after it's set to 16, it will be automatically increased each run through
+              # this increase stops once we go over numPressed - at that point it's reset
               MATH arpIndex = arpIndex + 1
               IF arpIndex >= numPressed
-                ASS arpIndex = 0
+                ASS arpIndex = 10
               END
-              # SEND 90 G(arpIndex) (velocity)
-              # SEND 80 G(arpIndex) (velocity) +D(gate)
+              SEND 90 GI3 velocity
+              SEND 80 GI3 velocity +DG6
             END
             # if value mode is 4 (desc 2)
             IF arpValueModeMod == 4
@@ -155,16 +164,16 @@ IF channel == 1
               IF isOctave == 0
                 MATH arpIndex = arpIndex + 1
                 IF arpIndex >= numPressed
-                  ASS arpIndex = 0
+                  ASS arpIndex = 10
                 END
-                # SEND 90 G(arpIndex) (velocity)
-                # SEND 80 G(arpIndex) (velocity) +D(gate)
+                SEND 90 GI3 velocity
+                SEND 80 GI3 velocity +DG6
                 ASS isOctave = 1
               # if isOctave, add 12 semitones and send that instead
               ELSE
-                MATH arpOctaveValue = G(arpIndex) + $12 # TODO see if this should be -12 or +12
-                # SEND 90 arpOctaveValue (velocity)
-                # SEND 80 arpOctaveValue (velocity) +D(gate)
+                MATH arpOctaveValue = GI3 + $12 # TODO see if this should be -12 or +12
+                SEND 90 arpOctaveValue velocity
+                SEND 80 arpOctaveValue velocity +DG6
                 ASS isOctave = 0
               END
             END
@@ -175,24 +184,24 @@ IF channel == 1
               IF isOctaveMod == 0
                 MATH arpIndex = arpIndex + 1
                 IF arpIndex >= numPressed
-                  ASS arpIndex = 0
+                  ASS arpIndex = 10
                 END
-                # SEND 90 G(arpIndex) (velocity)
-                # SEND 80 G(arpIndex) (velocity) +D(gate)
-                MATH isOctave = isOctave + 1
+                SEND 90 GI3 velocity
+                SEND 80 GI3 velocity +DG6
+                ASS isOctave = 1
               END
               # if isOctaveMod is 1, add 12 semitones and send that instead
               IF isOctaveMod == 1
-                MATH arpOctaveValue = G(arpIndex) + $12 # TODO see if this should be -12 or +12
-                # SEND 90 arpOctaveValue (velocity)
-                # SEND 80 arpOctaveValue (velocity) +D(gate)
+                MATH arpOctaveValue = GI3 + $12 # TODO see if this should be -12 or +12
+                SEND 90 arpOctaveValue velocity
+                SEND 80 arpOctaveValue velocity +DG6
                 MATH isOctave = isOctave + 1
               END
               # if isOctaveMod is 2, add 24 semitones and send that instead
               IF isOctaveMod == 2
-                MATH arpOctaveValue = G(arpIndex) + $24
-                # SEND 90 arpOctaveValue (velocity)
-                # SEND 80 arpOctaveValue (velocity) +D(gate)
+                MATH arpOctaveValue = GI3 + $24 # TODO see if this should be -12 or +12
+                SEND 90 arpOctaveValue velocity
+                SEND 80 arpOctaveValue velocity +DG6
                 MATH isOctave = isOctave + 1
               END
               # NOTE could use if else here, have chosen not to because I think this is more readable
@@ -202,8 +211,8 @@ IF channel == 1
             # if value mode is 6 (rand 1)
             IF arpValueModeMod == 6
               MATH arpIndex = RFF % numPressed
-              # SEND 90 G(arpIndex) (velocity)
-              # SEND 80 G(arpIndex) (velocity) +D(gate)
+              SEND 90 GI3 velocity
+              SEND 80 GI3 velocity +DG6
             END
             # if value mode is 7 (rand 2)
             IF arpValueModeMod == 7
@@ -212,13 +221,13 @@ IF channel == 1
               MATH isOctaveMod = RFF % 2
               # if not isOctaveMod, business as usual
               IF isOctaveMod == 0
-                # SEND 90 G(arpIndex) (velocity)
-                # SEND 80 G(arpIndex) (velocity) +D(gate)
+                SEND 90 GI3 velocity
+                SEND 80 GI3 velocity +DG6
               # if isOctaveMod, add 12 semitones and send that instead
               ELSE
-                MATH arpOctaveValue = G(arpIndex) + $12
-                # SEND 90 arpOctaveValue (velocity)
-                # SEND 80 arpOctaveValue (velocity) +D(gate)
+                MATH arpOctaveValue = GI3 + $12 # TODO see if this should be -12 or +12
+                SEND 90 arpOctaveValue velocity
+                SEND 80 arpOctaveValue velocity +DG6
               END
             END
             # if value mode is 8 (rand 3)
@@ -227,51 +236,50 @@ IF channel == 1
               MATH isOctaveMod = RFF % 3
               # if isOctaveMod is 0, business as usual
               IF isOctave == 0
-                # SEND 90 G(arpIndex) (velocity)
-                # SEND 80 G(arpIndex) (velocity) +D(gate)
+                SEND 90 GI3 velocity
+                SEND 80 GI3 velocity +DG6
               END
               # if isOctaveMod is 1, add 12 semitones and send that instead
               IF isOctave == 1
-                MATH arpOctaveValue = G(arpIndex) + $12
-                # SEND 90 arpOctaveValue (velocity)
-                # SEND 80 arpOctaveValue (velocity) +D(gate)
+                MATH arpOctaveValue = GI3 + $12 # TODO see if this should be -12 or +12
+                SEND 90 arpOctaveValue velocity
+                SEND 80 arpOctaveValue velocity +DG6
               END
               # if isOctaveMod is 2, add 24 semitones and send that instead
               IF isOctave == 2
-                MATH arpOctaveValue = G(arpIndex) + $24
-                # SEND 90 arpOctaveValue (velocity)
-                # SEND 80 arpOctaveValue (velocity) +D(gate)
+                MATH arpOctaveValue = GI3 + $24 # TODO see if this should be -12 or +12
+                SEND 90 arpOctaveValue velocity
+                SEND 80 arpOctaveValue velocity +DG6
               END
             END
-            # NOTE this currently appears the same as the general asc - the difference here will be adding a constant to arpIndex so that the array G draws from will contain the contents of array K (orderPressed array), not array J (noteValue array)
+            # NOTE this currently appears the same as the general asc - this is because the way they are sorted will be the same
             # if value mode is 9 (order 1)
             IF arpValueModeMod == 9
-              # arpIndex will initially be set to numPressed, but after it's set to zero, it will be automatically increased each run through
-              # this decrease stops once we go past 0 - at that point it's reset
+              # arpIndex will initially be set to numPressed + 16, but after it's set to numPressed + 16 - 1, it will be automatically decreased each run through
+              # this decrease stops once we go under 16 - at that point it's reset
               MATH arpIndex = arpIndex - 1
-              # NOTE ensure FFFF is the correct comparison
-              IF arpIndex == FFFF
-                ASS arpIndex = numPressed
+              IF arpIndex == 0F
+                MATH arpIndex = numPressed + 10
               END
-              # SEND 90 G(arpIndex) (velocity)
-              # SEND 80 G(arpIndex) (velocity) +D(gate)
+              SEND 90 GI3 velocity
+              SEND 80 GI3 velocity +DG6
             END
             # if value mode is 10 (order 2)
             IF arpValueModeMod == A
               # if not isOctave, business as usual
               IF isOctave == 0
                 MATH arpIndex = arpIndex - 1
-                IF arpIndex == FFFF
-                  ASS arpIndex = numPressed
+                IF arpIndex == 0F
+                  ASS arpIndex = numPressed + 10
                 END
-                # SEND 90 G(arpIndex) (velocity)
-                # SEND 80 G(arpIndex) (velocity) +D(gate)
+                SEND 90 GI3 velocity
+                SEND 80 GI3 velocity +DG6
                 ASS isOctave = 1
               # if isOctave, add 12 semitones and send that instead
               ELSE
-                MATH arpOctaveValue = G(arpIndex) + $12 # TODO see if this should be -12 or +12
-                # SEND 90 arpOctaveValue (velocity)
-                # SEND 80 arpOctaveValue (velocity) +D(gate)
+                MATH arpOctaveValue = GI3 + $12 # TODO see if this should be -12 or +12
+                SEND 90 arpOctaveValue velocity
+                SEND 80 arpOctaveValue velocity +DG6
                 ASS isOctave = 0
               END
             END
@@ -281,25 +289,25 @@ IF channel == 1
               # if isOctaveMod is 0, business as usual
               IF isOctaveMod == 0
                 MATH arpIndex = arpIndex - 1
-                IF arpIndex == FFFF
-                  ASS arpIndex = numPressed
+                IF arpIndex == 0F
+                  ASS arpIndex = numPressed + 10
                 END
-                # SEND 90 G(arpIndex) (velocity)
-                # SEND 80 G(arpIndex) (velocity) +D(gate)
+                SEND 90 GI3 velocity
+                SEND 80 GI3 velocity +DG6
                 MATH isOctave = isOctave + 1
               END
               # if isOctaveMod is 1, add 12 semitones and send that instead
               IF isOctaveMod == 1
-                MATH arpOctaveValue = G(arpIndex) + $12 # TODO see if this should be -12 or +12
-                # SEND 90 arpOctaveValue (velocity)
-                # SEND 80 arpOctaveValue (velocity) +D(gate)
+                MATH arpOctaveValue = GI3 + $12 # TODO see if this should be -12 or +12
+                SEND 90 arpOctaveValue velocity
+                SEND 80 arpOctaveValue velocity +DG6
                 MATH isOctave = isOctave + 1
               END
               # if isOctaveMod is 2, add 24 semitones and send that instead
               IF isOctaveMod == 2
-                MATH arpOctaveValue = G(arpIndex) + $24
-                # SEND 90 arpOctaveValue (velocity)
-                # SEND 80 arpOctaveValue (velocity) +D(gate)
+                MATH arpOctaveValue = GI3 + $24 # TODO see if this should be -12 or +12
+                SEND 90 arpOctaveValue velocity
+                SEND 80 arpOctaveValue velocity +DG6
                 MATH isOctave = isOctave + 1
               END
             END
