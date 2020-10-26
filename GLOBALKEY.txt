@@ -2,86 +2,93 @@
 
 # global array will be set in the following way
 # G0 - channel
-# G1 - arpPhraseToggle
-# G2 - arpPhraseOnOffToggle
-# G3 - tempoMode
-# G4 - tempoModeMod
-# G5 - tempoPulse
-# G6 - gate
-# G7 - arpValueMode
-# G8 - arpValueModeMod
-# G9 - setPhrase
-# GA - waveguideToggle
-# GB - drumParams (Part 1)
-# GC - drumParams (Part 2)
-# GD - drumParams (Part 1+2)
-# (GX)(whatever is the last param) - arp values
-# (GY)(whatever is the last param) - arp order pressed
-# (GZ)(whatever is the last param) - phrase sequence
+# G1 - numPressed
+# G2 - arpPhraseToggle
+# G3 - arpPhraseOnOffToggle
+# G4 - tempoMode
+# G5 - tempoModeMod
+# G6 - tempoPulse
+# G7 - gate
+# G8 - arpValueMode
+# G9 - arpValueModeMod
+# GA - setPhrase
+# GB - waveguideToggle
+# GC - drumParams (Part 1)
+# GD - drumParams (Part 2)
+# GE - drumParams (Part 1+2)
+# GF - break (null)
+# G10 - G19 - arp values        (G10 G11 G12 G13 G14 G15 G16 G17 G18 G19)
+# G1A - G23 - arp order pressed (G1A G1B G1C G1D G1E G1F G20 G21 G22 G23)
+# G24 - G43 - phrase sequence      (G24 G25 G26 G27 G28 G29 G2A G2B G2C G2D G2E G2F G30 G31 G32 G33 ETC.)
+
+
+
+
+
 
 # variables in use:
 
 # xtouch
 
-G0
-currentChannelArray
-tempoMode
-tempoModeMod
-tempoPulse
-arpValueMode
-arpValueModeMod
-setPhrase
-arpPhraseToggle
-arpPhraseOnOffToggle
-waveguideToggle
-drumParams
-gate
+#G0 (channel)
+#currentChannelArray (not used)
+#tempoMode
+#tempoModeMod
+#tempoPulse
+#arpValueMode
+#arpValueModeMod
+#setPhrase
+#arpPhraseToggle
+#arpPhraseOnOffToggle
+#waveguideToggle
+#drumParams
+#gate
 
 # channel one
 
-clockNum
-clockNumMod
-arpIndex
-isOctave
-arpOctaveValue
-isOctaveMod
-phraseIndex
+#clockNum (local - will be reset when arp / phrase is reset, but not needed globally)
+#clockNumMod (local)
+#arpIndex (local - will be reset when arp / phrase is reset, but not needed globally)
+#isOctave (local - will be reset when arp / phrase is reset, but not needed globally)
+#arpOctaveValue (local)
+#isOctaveMod (local)
+#phraseIndex[Channel] (local)
 
 # pipehead
 
-i
-keyVal
-keyBool
-j
-jPlusOne
-isSetSort
-JI2
-KI2
-isSet
-I6
-arpIndex
-clock
-gate
-J00
-K00
-K0
-J0
-numHaveBeenPressed
-iter
-JI7
-KI7
-numPressed
-numPressedTotal
-G0
-G1
-JL0
-KL0
-max
-secondMax
-secondMaxIndex
-G(# phraseVal)
-keyPressed
-G(phraseIndex)
-phraseIndex
-tempPhraseVal
-setPhrase
+#i (local)
+#keyVal (local)
+#keyBool (local)
+#j (local)
+#jPlusOne (local)
+#isSetSort (local)
+#JI2 (to be converted into G values)
+#KI2 (to be converted into G values)
+#isSet (local)
+#I6 (local) (numPressedTotal)
+#arpIndex (to be removed from this file and handled exclusively in channel one)
+#clock (to be removed from this file and handled exclusively in channel one)
+#J00
+#K00
+#K0
+#J0
+#numHaveBeenPressed (commented out; to be removed)
+#iter local
+#JI7
+#KI7
+#G0
+#G1
+#JL0
+#KL0
+#G(# phraseVal)
+#setPhrase
+#gate (needs review - signifies gate is on, might be necessary) (don't believe this will be necessary - should be able to use numPressed)
+#numPressed
+#numPressedTotal (local - used for k array to store)
+#max (local)
+#secondMax (local)
+#secondMaxIndex (local)
+#keyPressed
+#G(phraseIndex)
+#phraseIndex[Pipehead]
+#tempPhraseVal

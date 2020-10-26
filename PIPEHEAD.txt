@@ -313,7 +313,7 @@ IF arpPhraseToggleOnOffMod == 1
     # ASS G(# phraseVal) = M1
     END
     IF MT == 80
-      ASS keyPressed = 0
+      ASS keyPressed = 0 # change to numPressed and assess from there
     END
   END
 END
