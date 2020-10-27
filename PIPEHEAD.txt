@@ -10,69 +10,69 @@
 # sort each time clock is sent via some process similar to selection sort? this could prevent the timing issue above
 
 SUBROUTINE INSERTION_SORT isOrder
-  ALIAS I5 i
-  ALIAS I6 j
-  ALIAS I7 jPlusOne
-  ALIAS I8 keyVal
-  ALIAS I9 isSetSort
-  ALIAS IA keyBool
+  ALIAS I10 i
+  ALIAS I11 j
+  ALIAS I12 jPlusOne
+  ALIAS I13 keyVal
+  ALIAS I14 keyBool
+  ALIAS I15 isSetSort
 
   IF isOrder == 1
     ASS i = 10
     WHILE i < length
-      ASS keyVal = JI5
-      ASS keyBool = GI5
+      ASS keyVal = JI10
+      ASS keyBool = GI10
       MATH j = i - 1
       MATH jPlusOne = j + 1
       ASS isSetSort = 0
       IF j >= 0
-        IF JI6 < keyVal
+        IF JI11 < keyVal
           ASS isSetSort = 1
         END
       END
       WHILE isSetSort == 1
-        ASS JI7 = JI6
-        ASS GI7 = GI6
+        ASS JI12 = JI11
+        ASS GI12 = GI11
         MATH j = j - 1
         MATH jPlusOne = j + 1
         ASS isSetSort = 0
         IF j >= 0
-          IF JI6 < keyVal
+          IF JI11 < keyVal
             ASS isSetSort = 1
           END
         END
       END
-      ASS JI7 = keyVal
-      ASS GI7 = keyBool
+      ASS JI12 = keyVal
+      ASS GI12 = keyBool
       MATH i = i + 1
     END
   ELSE
     ASS i = 10
     WHILE i < length
-      ASS keyVal = GI5
-      ASS keyBool = JI5
+      ASS keyVal = GI10
+      ASS keyBool = JI10
       MATH j = i - 1
       MATH jPlusOne = j + 1
       ASS isSetSort = 0
       IF j >= 0
-        IF GI6 < keyVal
+        IF GI11 < keyVal
           ASS isSetSort = 1
         END
       END
       WHILE isSetSort == 1
-        ASS GI7 = GI6
-        ASS JI7 = JI6
+        ASS GI12 = GI11
+        ASS JI12 = JI11
         MATH j = j - 1
         MATH jPlusOne = j + 1
         ASS isSetSort = 0
         IF j >= 0
-          IF GI6 < keyVal
+          IF GI11 < keyVal
             ASS isSetSort = 1
           END
         END
       END
-      ASS GI7 = keyVal
-      ASS JI7 = keyBool
+      ASS GI12 = keyVal
+      ASS JI12 = keyBool
       MATH i = i + 1
     END
   END
