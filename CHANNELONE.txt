@@ -29,7 +29,7 @@
 # 11: order pressed two octave
 # 12: order pressed three octave
 
-# NOTE j (arp values) offset is 10 (16) and k (arp order pressed) is 1A (26)
+# NOTE j (arp values) offset is 20 (32) and k (arp order pressed) is 1A (26)
 
 IF LOAD
   # local
@@ -41,6 +41,7 @@ IF LOAD
   ALIAS I5 isOctaveMod
   ALIAS I6 arpOctaveValue
   ALIAS I7 phraseValSend
+  ALIAS I8 phraseIndex
 
   # global
   ALIAS G0 channel
@@ -51,16 +52,16 @@ IF LOAD
   ALIAS G6 gate
   ALIAS G7 arpValueModeMod
   ALIAS GD velocity
-  # ALIAS GX phraseLengthPlusOffset (likely global)
-  # ALIAS GY phraseIndex
-  # ALIAS GZ phraseVal
+  ALIAS GE gateOpen # TODO
+  ALIAS GF phraseVal
+  ALIAS G10 phraseLengthPlusOffset
 
   # assign local
   ASS maxValClockNum = FF60
   ASS clockNum = 0
-  ASS arpIndex = 0F # TODO this needs to be rethought, since arpIndex will only be 10 when arp is ascending - I believe this will have to be global
+  ASS arpIndex = 0F # TODO this needs to be rethought, since arpIndex will only be 20 when arp is ascending - I believe this will have to be global
   # NOTE this is for asc and order
-  # NOTE arpIndex = numPressed + 10 ($16) for desc
+  # NOTE arpIndex = numPressed + 20 ($32) for desc
   # NOTE arpIndex val doesn't matter for random
   ASS isOctave = 0
 END
@@ -89,11 +90,11 @@ IF channel == 1
 
             # if value mode is 0 (asc 1)
             IF arpValueModeMod == 0
-              # arpIndex will initially be set to numPressed + 16, but after it's set to numPressed + 16 - 1, it will be automatically decreased each run through
-              # this decrease stops once we go under 16 - at that point it's reset
+              # arpIndex will initially be set to numPressed + 32, but after it's set to numPressed + 32 - 1, it will be automatically decreased each run through
+              # this decrease stops once we go under 32 - at that point it's reset
               MATH arpIndex = arpIndex - 1
               IF arpIndex == 0F
-                MATH arpIndex = numPressed + 10
+                MATH arpIndex = numPressed + 20
               END
               SEND 90 GI3 velocity
               SEND 80 GI3 velocity +DG6
@@ -104,7 +105,7 @@ IF channel == 1
               IF isOctave == 0
                 MATH arpIndex = arpIndex - 1
                 IF arpIndex == 0F
-                  ASS arpIndex = numPressed + 10
+                  ASS arpIndex = numPressed + 20
                 END
                 SEND 90 GI3 velocity
                 SEND 80 GI3 velocity +DG6
@@ -124,7 +125,7 @@ IF channel == 1
               IF isOctaveMod == 0
                 MATH arpIndex = arpIndex - 1
                 IF arpIndex == 0F
-                  ASS arpIndex = numPressed + 10
+                  ASS arpIndex = numPressed + 20
                 END
                 SEND 90 GI3 velocity
                 SEND 80 GI3 velocity +DG6
@@ -147,11 +148,11 @@ IF channel == 1
             END
             # if value mode is 3 (desc 1)
             IF arpValueModeMod == 3
-              # arpIndex will initially be set to 15, but after it's set to 16, it will be automatically increased each run through
+              # arpIndex will initially be set to 15, but after it's set to 32, it will be automatically increased each run through
               # this increase stops once we go over numPressed - at that point it's reset
               MATH arpIndex = arpIndex + 1
               IF arpIndex >= numPressed
-                ASS arpIndex = 10
+                ASS arpIndex = 20
               END
               SEND 90 GI3 velocity
               SEND 80 GI3 velocity +DG6
@@ -162,7 +163,7 @@ IF channel == 1
               IF isOctave == 0
                 MATH arpIndex = arpIndex + 1
                 IF arpIndex >= numPressed
-                  ASS arpIndex = 10
+                  ASS arpIndex = 20
                 END
                 SEND 90 GI3 velocity
                 SEND 80 GI3 velocity +DG6
@@ -182,7 +183,7 @@ IF channel == 1
               IF isOctaveMod == 0
                 MATH arpIndex = arpIndex + 1
                 IF arpIndex >= numPressed
-                  ASS arpIndex = 10
+                  ASS arpIndex = 20
                 END
                 SEND 90 GI3 velocity
                 SEND 80 GI3 velocity +DG6
@@ -253,22 +254,22 @@ IF channel == 1
             # NOTE this currently appears the same as the general asc - this is because the way they are sorted will be the same
             # if value mode is 9 (order 1)
             IF arpValueModeMod == 9
-              # arpIndex will initially be set to numPressed + 16, but after it's set to numPressed + 16 - 1, it will be automatically decreased each run through
-              # this decrease stops once we go under 16 - at that point it's reset
+              # arpIndex will initially be set to numPressed + 32, but after it's set to numPressed + 32 - 1, it will be automatically decreased each run through
+              # this decrease stops once we go under 32 - at that point it's reset
               MATH arpIndex = arpIndex - 1
               IF arpIndex == 0F
-                MATH arpIndex = numPressed + 10
+                MATH arpIndex = numPressed + 20
               END
               SEND 90 GI3 velocity
               SEND 80 GI3 velocity +DG6
             END
-            # if value mode is 10 (order 2)
+            # if value mode is 20 (order 2)
             IF arpValueModeMod == A
               # if not isOctave, business as usual
               IF isOctave == 0
                 MATH arpIndex = arpIndex - 1
                 IF arpIndex == 0F
-                  ASS arpIndex = numPressed + 10
+                  ASS arpIndex = numPressed + 20
                 END
                 SEND 90 GI3 velocity
                 SEND 80 GI3 velocity +DG6
@@ -288,7 +289,7 @@ IF channel == 1
               IF isOctaveMod == 0
                 MATH arpIndex = arpIndex - 1
                 IF arpIndex == 0F
-                  ASS arpIndex = numPressed + 10
+                  ASS arpIndex = numPressed + 20
                 END
                 SEND 90 GI3 velocity
                 SEND 80 GI3 velocity +DG6
@@ -314,13 +315,13 @@ IF channel == 1
           # offset will be used in conjunction with note in, also stored in the global array
           # additionally, -1 implies a rest, so nothing will be played
           ELSE
-            MATH phraseValSend = phraseVal + GGX
-            SEND 90 phraseValSend velocity # TODO
-            SEND 80 phraseValSend velocity +DG6 # TODO
+            MATH phraseValSend = phraseVal + GI8
+            SEND 90 phraseValSend velocity
+            SEND 80 phraseValSend velocity +DG6
             IF phraseIndex != phraseLengthPlusOffset
               MATH phraseIndex = phraseIndex + 1
             ELSE
-              MATH phraseIndex = 24 # NOTE may need to be changed if array k is removed
+              MATH phraseIndex = 2A
             END
           END
         ELSE

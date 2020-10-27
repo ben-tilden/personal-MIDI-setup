@@ -10,84 +10,73 @@
 # sort each time clock is sent via some process similar to selection sort? this could prevent the timing issue above
 
 SUBROUTINE INSERTION_SORT isOrder
-  ALIAS J0 i
-  ALIAS J1 j
-  ALIAS J2 jPlusOne
-  ALIAS J3 keyVal
-  ALIAS J4 isSetSort
-  ALIAS J5 keyBool
+  ALIAS I5 i
+  ALIAS I6 j
+  ALIAS I7 jPlusOne
+  ALIAS I8 keyVal
+  ALIAS I9 isSetSort
+  ALIAS IA keyBool
 
   IF isOrder == 1
     ASS i = 10
     WHILE i < length
-      ASS keyVal = KJ0
-      ASS keyBool = GJ0
+      ASS keyVal = JI5
+      ASS keyBool = GI5
       MATH j = i - 1
       MATH jPlusOne = j + 1
       ASS isSetSort = 0
       IF j >= 0
-        IF KJ1 < keyVal
+        IF JI6 < keyVal
           ASS isSetSort = 1
         END
       END
       WHILE isSetSort == 1
-        ASS KJ2 = KJ1
-        ASS GJ2 = JJ1
+        ASS JI7 = JI6
+        ASS GI7 = GI6
         MATH j = j - 1
         MATH jPlusOne = j + 1
         ASS isSetSort = 0
         IF j >= 0
-          IF KJ1 < keyVal
+          IF JI6 < keyVal
             ASS isSetSort = 1
           END
         END
       END
-      ASS KJ2 = keyVal
-      ASS GJ2 = keyBool
+      ASS JI7 = keyVal
+      ASS GI7 = keyBool
       MATH i = i + 1
     END
   ELSE
     ASS i = 10
     WHILE i < length
-      ASS keyVal = GJ0
-      ASS keyBool = KJ0
+      ASS keyVal = GI5
+      ASS keyBool = JI5
       MATH j = i - 1
       MATH jPlusOne = j + 1
       ASS isSetSort = 0
       IF j >= 0
-        IF GJ1 < keyVal
+        IF GI6 < keyVal
           ASS isSetSort = 1
         END
       END
       WHILE isSetSort == 1
-        ASS GJ2 = JJ1
-        ASS KJ2 = KJ1
+        ASS GI7 = GI6
+        ASS JI7 = JI6
         MATH j = j - 1
         MATH jPlusOne = j + 1
         ASS isSetSort = 0
         IF j >= 0
-          IF GJ1 < keyVal
+          IF GI6 < keyVal
             ASS isSetSort = 1
           END
         END
       END
-      ASS GJ2 = keyVal
-      ASS KJ2 = keyBool
+      ASS GI7 = keyVal
+      ASS JI7 = keyBool
       MATH i = i + 1
     END
   END
 END
-
-# phraseLength likely global
-#G(# phraseVal)
-#setPhrase
-#max (local)
-#secondMax (local)
-#secondMaxIndex (local)
-#G(phraseIndex)
-#phraseIndex[Pipehead]
-#tempPhraseVal
-# gateOpen variable
 
 IF LOAD
   # local
@@ -96,6 +85,10 @@ IF LOAD
   ALIAS I2 arpIndex
   ALIAS I3 arpIndexOffset
   ALIAS I4 numPressedTotal
+  ALIAS I5 max
+  ALIAS I6 maxIndex
+  ALIAS I7 secondMax
+  ALIAS I8 secondMaxIndex
 
   # global
   ALIAS G1 numPressed
@@ -103,6 +96,8 @@ IF LOAD
   ALIAS G3 arpPhraseOnOffToggle
   ALIAS G7 arpValueModeMod
   ALIAS GE gateOpened
+  ALIAS GF phraseVal
+  ALIAS G10 phraseLengthPlusOffset
 
   # assign local
   ASS arpIndexOffset = 10
@@ -120,7 +115,7 @@ IF arpPhraseOnOffToggle == 1
       # setting arbitrary limit on number of keys pressed at a time to 10
       IF numPressed == 11
         ASS G10 = 00 00 00 00 00 00 00 00 00 00
-        ASS K0 = 00 00 00 00 00 00 00 00 00 00
+        ASS J0 = 00 00 00 00 00 00 00 00 00 00
         ASS numPressed = 0
         ASS numPressedTotal = 0
         BLOCK
@@ -133,7 +128,7 @@ IF arpPhraseOnOffToggle == 1
       # store note value in first open spot in array
       MATH arpIndex = arpIndexOffset + numPressed
       ASS GI2 = M1
-      ASS KI2 = numPressedTotal
+      ASS JI2 = numPressedTotal
 
       # sort array / hashmap according to ascending, descending, order pressed
       IF arpValueModeMod == 3
@@ -171,7 +166,7 @@ IF arpPhraseOnOffToggle == 1
         # if iter is the note value, remove values
         IF GI0 == M1
           ASS GI0 = 0
-          ASS KI0 = 0
+          ASS JI0 = 0
           ASS isSet = 1
         END
         MATH iter = iter + 1
@@ -200,7 +195,7 @@ IF arpPhraseOnOffToggle == 1
       MATH numPressed = numPressed - 1
       IF numPressed == 0
         ASS G10 = 00 00 00 00 00 00 00 00 00 00
-        ASS K0 = 00 00 00 00 00 00 00 00 00 00
+        ASS J0 = 00 00 00 00 00 00 00 00 00 00
         ASS numPressedTotal = 0
       END
       
@@ -209,114 +204,97 @@ IF arpPhraseOnOffToggle == 1
     END
   # else isPhrase
   ELSE
-
-#  # if key pressed
-#IF MT == 90
-#  
-#  # setting arbitrary limit on number of keys pressed at a time to 5
-#  IF numPressed == 5
-#    SEND FC
-#    ASS K0 = 00 00 00 00 00
-#    ASS numHaveBeenPressed = 0
-#  END
-#  
-#  # trigger new offset
-#  ASS G0 = 00
-#  # set initial note to calculate offset
-#  ASS G1 = M1
-#  LOG G1 G1
-#  
-#  # add to number of keys pressed
-#  MAT numPressed = numPressed + 1
-#  MAT numHaveBeenPressed = numHaveBeenPressed + 1
-#  
-#  IF numPressed == 1
-#    SEND FA
-#  END
-#  
-#  # we need to have a while loop here to account for the user pressing and releasing keys in different orders
-#  # say user presses A, B, C, then lifts up B
-#  # this sets numPressed to 2, but when another key is pressed it will overwrite C if we continue linearly
-#  ASS iter = 1
-#  ASS isSet = 0
-#  WHILE isSet != 1
-#    IF KL0 == 0
-#      # add note value into J - this array's indices will all be >= 1
-#      ASS JL0 = M1
-#      
-#      # add note index in K to show it is pressed - this array's indices will all be >= 1
-#      ASS KL0 = numHaveBeenPressed
-#      ASS isSet = 1
-#    END
-#    MATH iter = iter + 1
-#  END
-#  
-#  LOG ON_LOG
-#  LOG K1 K1
-#  LOG K2 K2
-#  LOG J1 J1
-#  LOG J2 J2
-#  
-#END
-#
-#IF MT == 80
-#  # stop if no keys pressed
-#  MAT numPressed = numPressed - 1
-#  IF numPressed < 1
-#    SEND FC
-#    ASS K0 = 00 00 00 00 00
-#    ASS numHaveBeenPressed = 0
-#  END
-#  
-#  # find the max k value, or the most recent key pressed
-#  # if the j value, or note value of that max is M1, we need to change the phrase offset,
-#  # so reset the g values, setting G1 to the second most recent key pressed
-#  # while we are iterating, we need to set the k value of whichever key is pressed to zero so we can reuse that index
-#  ASS max = 0
-#  ASS secondMax = 0
-#  ASS iter = 1
-#  WHILE iter <= 5
-#    IF KL0 > max
-#      ASS secondMax = max
-#      ASS max = KL0
-#      ASS secondMaxIndex = maxIndex
-#      ASS maxIndex = iter
-#    ELSE
-#      IF KL0 > secondMax
-#        ASS secondMax = KL0
-#        ASS secondMaxIndex = iter
-#      END
-#    END
-#    IF JL0 == M1
-#      ASS KL0 = 0
-#    END
-#    MATH iter = iter + 1
-#  END
-#  IF JL2 == M1
-#    # trigger new offset
-#    ASS G0 = 00
-#    # set value equal to second most recent key pressed
-#    ASS G1 = JL3
-#    LOG G1 G1
-#  END
-#  
-#  LOG OFF_LOG
-#  LOG K1 K1
-#  LOG K2 K2
-#  LOG J1 J1
-#  LOG J2 J2
-#  
-#END
-
+    # if key pressed
     IF MT == 90
-    # assign initial phrase value
-    # ASS G(# phraseVal) = M1
+      
+      # ASS gateOpened = 1 # NOTE uncommenting this would restart phrase whenever key pressed
+
+      # setting arbitrary limit on number of keys pressed at a time to 5
+      IF numPressed == 5
+        ASS L0 = 00 00 00 00 00
+        ASS numPressed = 0
+        ASS numPressedTotal = 0
+        BLOCK
+        EXIT
+      END
+      
+      # set initial note to calculate offset
+      ASS phraseVal = M1
+      
+      # add to number of keys pressed
+      MATH numPressed = numPressed + 1
+      MATH numPressedTotal = numPressedTotal + 1
+      
+      # we need to have a while loop here to account for the user pressing and releasing keys in different orders
+      # say user presses A, B, C, then lifts up B
+      # this sets numPressed to 2, but when another key is pressed it will overwrite C if we continue linearly
+      ASS iter = 1
+      ASS isSet = 0
+      WHILE isSet != 1
+        IF LI0 == 0
+          # add note value into K - this array's indices will all be >= 1
+          ASS KI0 = M1
+          # add note index in L to show it is pressed - this array's indices will all be >= 1
+          ASS LI0 = numPressedTotal
+          ASS isSet = 1
+        END
+        MATH iter = iter + 1
+      END
+
+      IF numPressed == 1
+        ASS gateOpened = 1
+      END
+      
     END
+
     IF MT == 80
-      ASS keyPressed = 0 # change to numPressed and assess from there
+      # stop if no keys pressed
+      MAT numPressed = numPressed - 1
+      IF numPressed < 1
+        ASS L0 = 00 00 00 00 00
+        ASS numPressedTotal = 0
+      END
+      
+      # find the max k value, or the most recent key pressed
+      # if the j value, or note value of that max is M1, we need to change the phrase offset,
+      # so reset the g values, setting G1 to the second most recent key pressed
+      # while we are iterating, we need to set the k value of whichever key is pressed to zero so we can reuse that index
+      ASS max = 0
+      ASS secondMax = 0
+      ASS iter = 1
+      WHILE iter <= 5
+        IF LI0 > max
+          ASS secondMax = max
+          ASS max = LI0
+          ASS secondMaxIndex = maxIndex
+          ASS maxIndex = iter
+        ELSE
+          IF LI0 > secondMax
+            ASS secondMax = LI0
+            ASS secondMaxIndex = iter
+          END
+        END
+        IF KI0 == M1
+          ASS LI0 = 0
+        END
+        MATH iter = iter + 1
+      END
+      IF KI6 == M1
+        # set value equal to second most recent key pressed
+        # ASS gateOpened = 1 # NOTE uncommenting this would restart phrase whenever key lifted
+        ASS phraseVal = KI8 # TODO
+      END
+      
     END
+
   END
 END
+
+# phraseLength likely global
+#setPhrase
+#G(phraseIndex)
+#phraseIndex[Pipehead]
+#tempPhraseVal
 
 IF setPhrase == 1
   IF MT == 90
@@ -348,60 +326,3 @@ IF setPhrase == 1
     END
   END
 END
-
-
-
-
-
-
-
-
-
-# SCRAPS:
-
-      # store note value in array
-      # NOTE this actually shouldn't be necessary if we are sorting after each operation
-#      ASS iter = 0
-#      ASS isSet = 0
-#      # loop through k array to see if there are any spots open
-#      WHILE isSet != 1
-#        ASS jIter = iter
-#        MATH kIter = jIter + 0A
-#        # if kIter is zero, set values
-#        IF GI1 == 0
-#          ASS GI1 = M1
-#          ASS GI1 = numPressedTotal
-#          ASS isSet = 1
-#        END
-#        MATH iter = iter + 1
-#      END
-
-  # array containing variables will be I
-  # number of notes currently pressed does not matter here, since notes are only sent on clock, not on press
-  # I4 will be number of notes that have been pressed total
-#  ASS I4 = 0
-#  ALIAS I4 numPressedTotal
-#  # I4 will be the iterator used
-#  ALIAS I4 iter
-#  # I4 will be a Boolean to run the note pressed while loop
-#  ALIAS I4 isSet
-#  # I9 will be the number of notes currently pressed
-#  ALIAS I9 numPressed
-#  # IA will be the index of the note to be played
-#  ALIAS IA arpIndex
-#  ASS arpIndex = 0
-#  # IB will be the clock reader
-#  ALIAS IB clock
-#  ASS clock = $-1
-#  # IC is numPressed - 1
-#  ALIAS IC numPressedMinusOne
-#  # ID is clockModulo
-#  ALIAS ID clockModulo
-#  # IE is gate
-#  ALIAS IE gate
-#  ASS gate = 0
-#  
-#  # array containing values will be J
-#  # array containing order pressed and signifying y or n will be K
-#  ASS J00 = 00 00 00 00 00 00 00 00 00 00 #$-1
-#  ASS K00 = 00 00 00 00 00 00 00 00 00 00 #$-1
