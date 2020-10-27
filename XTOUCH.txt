@@ -150,6 +150,7 @@ IF MT == 90
 			ELSE
 				ASS setPhrase = 0
 				SEND 9A 07 00
+				SEND F0 BB BB 07
 			END
 		END
 	END
@@ -157,14 +158,13 @@ IF MT == 90
 	# if it is a button 9 push
 	IF M1 == 10 7F
 		# if arp then decrease variable
-		# if variable is too low, reset
 		IF arpPhraseToggle == 0
 			MATH arpValueMode = arpValueMode - 1
 			# set value mode to variable modulo 11
 			MATH arpValueModeMod = arpValueMode % B
 		# if phrase then add rest to phrase sequence
 		ELSE
-		  # SEND rest
+		  SEND F0 AA AA F7
 		END
 	END
 
@@ -176,6 +176,11 @@ IF MT == 90
 		ELSE
 			ASS arpPhraseToggle = 0
 			SEND 9A 01 00
+			IF setPhrase == 1
+				ASS setPhrase = 0
+				SEND 9A 07 00
+				SEND F0 BB BB 07
+			END
 		END
 	END
 
@@ -555,7 +560,7 @@ END
   # YD - phrase sequence
 
   # we will use W, since it's the wide array, with 2048 slots over 256
-  # note - unsure if only using one array will have any noticeable 'access' slowness - should be constant, so don't think it'll be an issue
+  # NOTE unsure if only using one array will have any noticeable 'access' slowness - should be constant, so don't think it'll be an issue
 
   # currentChannelArray
 

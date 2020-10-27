@@ -4,6 +4,7 @@
 # if phrase and arp are off, notes will be passed through as expected
 
 # TODO:
+# NEXT STEPS need to test, and then organize in terms of multiple channels
 # NOTE: this will definitely run into issues with single note arp, since the note off can possibly come after multiple clock sent
 # Possibly investigate timing - being late on initial downbeat might not be preventing the second note from playing in order
 # This is actually likely due to the order in which the keys are initially pressed - the first button pressed might be what is sent, then when the array is sorted it may be sorted into the second spot
@@ -309,23 +310,26 @@ IF setPhrase == 1
       ASS tempPhraseVal = M1
     END
     # if phrase is at max limit, end setPhrase
-    # TODO ensure phraseIndex is reset when setPhrase is turned off from xtouch
     IF phraseIndex > 39
       ASS setPhrase = 0
       ASS tempPhraseVal = AAAA
     END
   END
   # if phraseRest is sent
-  IF M0 == (phraseRest) # TODO
+  # NOTE might need to filter the sysex messages here to prevent them from passing through and causing havoc
+  IF M0 == F0 AA AA F7
     # assign value to AAAA, indicating a rest
     ASS GIA = AAAA
     MATH phraseIndex = phraseIndex + 1
 
     # if phrase is at max limit, end setPhrase
-    # TODO ensure phraseIndex is reset when setPhrase is turned off from xtouch
     IF phraseIndex > 39
       ASS setPhrase = 0
       ASS tempPhraseVal = AAAA
     END
+  END
+  # ensure phraseIndex is reset when setPhrase is turned off from xtouch
+  IF M0 == F0 BB BB 07
+    ASS phraseIndex = AAAA
   END
 END
