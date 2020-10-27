@@ -78,6 +78,7 @@ SUBROUTINE INSERTION_SORT isOrder
   END
 END
 
+# TODO change these values so that INSERTION_SORT takes first variables
 IF LOAD
   # local
   ALIAS I0 iter
@@ -89,6 +90,8 @@ IF LOAD
   ALIAS I6 maxIndex
   ALIAS I7 secondMax
   ALIAS I8 secondMaxIndex
+  ALIAS I9 tempPhraseVal
+  ALIAS IA phraseIndex
 
   # global
   ALIAS G1 numPressed
@@ -102,6 +105,9 @@ IF LOAD
   # assign local
   ASS arpIndexOffset = 10
   ASS numPressedTotal = 0
+  # needs to be set to a value too far for both negatives and positives to reach
+  ASS tempPhraseVal = AAAA
+  ASS phraseIndex = 2A
   
 END
 
@@ -290,18 +296,14 @@ IF arpPhraseOnOffToggle == 1
   END
 END
 
-# phraseLength likely global
-#setPhrase
-#G(phraseIndex)
-#phraseIndex[Pipehead]
-#tempPhraseVal
-
 IF setPhrase == 1
   IF MT == 90
+    # because we're taking offset here, we need to record each step as the difference between it and the last step
     # if tempPhraseVal has a previous value (i.e. is not the first key pressed in the phrase)
-    IF tempPhraseVal != FFFF
-      # ASS G(phraseIndex) = M1 - tempPhraseVal
-      # MATH phraseIndex = phraseIndex + 1
+    IF tempPhraseVal != AAAA
+      ASS GIA = M1 - tempPhraseVal
+      ASS phraseLengthPlusOffset = phraseIndex
+      MATH phraseIndex = phraseIndex + 1
       ASS tempPhraseVal = M1
     # else tempPhraseVal does not have a previous value, this is the first entered value, and no record in the global array is necessary
     ELSE
@@ -309,20 +311,22 @@ IF setPhrase == 1
     END
     # if phrase is at max limit, end setPhrase
     # TODO ensure phraseIndex is reset when setPhrase is turned off from xtouch
-    IF phraseIndex > # TODO MAXVAL
+    IF phraseIndex > 39
       ASS setPhrase = 0
+      ASS tempPhraseVal = AAAA
     END
   END
   # if phraseRest is sent
-  IF M0 == (phraseRest)
-    # assign value to -1, indicating a rest
-    # ASS G(phraseIndex) = $-1 # TODO ensure consistency between FFFF and -1
-    # MATH phraseIndex = phraseIndex + 1
+  IF M0 == (phraseRest) # TODO
+    # assign value to AAAA, indicating a rest
+    ASS GIA = AAAA
+    MATH phraseIndex = phraseIndex + 1
 
     # if phrase is at max limit, end setPhrase
     # TODO ensure phraseIndex is reset when setPhrase is turned off from xtouch
-    IF phraseIndex > # TODO MAXVAL
+    IF phraseIndex > 39
       ASS setPhrase = 0
+      ASS tempPhraseVal = AAAA
     END
   END
 END
