@@ -13,7 +13,7 @@
 # NOTE will need to assign isOctave as 0 whenever mode is changed - might need to make global
 # NOTE this is the same with arpIndex
 
-# NOTE maxVal for clockNum is based off 227 * 288 = floor(65,535 / 288) (ffff / lcm of all possible tempoPulse)
+# NOTE maxVal for clockNum is based off 227 * 288 = floor(65,535 / 288) * (ffff / lcm of all possible tempoPulse)
 
 # arpTypes
 # 1: ascending one octave
@@ -28,11 +28,6 @@
 # 10: order pressed one octave
 # 11: order pressed two octave
 # 12: order pressed three octave
-
-# likely global
-# phraseIndex
-# phraseIndexInit (likely won't exist)
-# phraseLength
 
 # NOTE j (arp values) offset is 10 (16) and k (arp order pressed) is 1A (26)
 
@@ -90,8 +85,6 @@ IF channel == 1
           IF arpPhraseToggle == 0
             # note that this entire process is tricky due to possible ordering of values
             # it is automatically descending
-            # array j would contain the values locally
-            # array k would contain the order pressed locally
             # these will need to be saved in the global array
 
             # if value mode is 0 (asc 1)

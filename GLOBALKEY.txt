@@ -17,10 +17,9 @@
 # GB - drumParams (Part 2)
 # GC - drumParams (Part 1+2)
 # GD - velocity
-# GE - break (null)
+# GE - gateOpen
 # GF - break (null)
 # G10 - G19 - arp values        (G10 G11 G12 G13 G14 G15 G16 G17 G18 G19)
-# G1A - G23 - arp order pressed (G1A G1B G1C G1D G1E G1F G20 G21 G22 G23)
 # G24 - G43 - phrase sequence      (G24 G25 G26 G27 G28 G29 G2A G2B G2C G2D G2E G2F G30 G31 G32 G33 ETC.)
 
 
