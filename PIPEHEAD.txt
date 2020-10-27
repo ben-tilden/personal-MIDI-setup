@@ -78,7 +78,6 @@ SUBROUTINE INSERTION_SORT isOrder
   END
 END
 
-# TODO change these values so that INSERTION_SORT takes first variables
 IF LOAD
   # local
   ALIAS I0 iter
@@ -288,7 +287,7 @@ IF arpPhraseOnOffToggle == 1
       IF KI6 == M1
         # set value equal to second most recent key pressed
         # ASS gateOpened = 1 # NOTE uncommenting this would restart phrase whenever key lifted
-        ASS phraseVal = KI8 # TODO
+        ASS phraseVal = KI8
       END
       
     END
