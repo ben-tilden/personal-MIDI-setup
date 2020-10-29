@@ -78,7 +78,6 @@ IF MT == 90
 				SEND 90 00 01
 			ELSE
 				ASS setPhrase = 0
-				SEND 90 00 00
 				SEND F0 BB BB 07 +F
 			END
 		END
@@ -114,10 +113,9 @@ IF MT == 90
 			SEND 90 01 01
 		ELSE
 			ASS arpPhraseToggle = 0
-			SEND 90 01 00
 			IF setPhrase == 1
 				ASS setPhrase = 0
-				SEND 90 07 00
+				SEND 90 00 00
 				SEND F0 BB BB 07 +F
 			END
 		END
@@ -139,7 +137,6 @@ IF MT == 90
 			SEND 90 09 01
 		ELSE
 			ASS arpPhraseOnOffToggle = 0
-			SEND 90 09 00
 		END
 		# TEST
 		IF arpPhraseOnOffToggle == 0
@@ -235,8 +232,6 @@ IF MT == 80
 		IF arpPhraseToggle == 1
 			IF setPhrase == 1
 				SEND 90 00 01
-			ELSE
-				SEND 90 00 00
 			END
 		END
 	END
@@ -245,7 +240,6 @@ IF MT == 80
 		IF arpPhraseToggle == 1
 			SEND 90 01 01
 		ELSE
-			SEND 90 01 00
 			IF setPhrase == 0
 				SEND 90 07 00
 			END
@@ -255,8 +249,6 @@ IF MT == 80
 	IF M1 == 11 00
 		IF arpPhraseOnOffToggle == 1
 			SEND 90 09 01
-		ELSE
-			SEND 90 09 00
 		END
 	END
 END
