@@ -1,4 +1,4 @@
-# pipehead
+# launchkey mini (mk2)
 
 # this will feed data into each channel file and will be toggled by xtouch
 # if phrase and arp are off, notes will be passed through as expected
@@ -80,10 +80,16 @@ SUBROUTINE INSERTION_SORT isOrder
 END
 
 IF LOAD
+
+  # constant
+
+  ALIAS 10 arpIndexOffset
+
   # local
   ALIAS I0 iter
   ALIAS I1 isSet
   ALIAS I2 arpIndex
+  # TODO remove below and update
   ALIAS I3 arpIndexOffset
   ALIAS I4 numPressedTotal
   ALIAS I5 max
@@ -103,12 +109,55 @@ IF LOAD
   ALIAS G10 phraseLengthPlusOffset
 
   # assign local
-  ASS arpIndexOffset = 10
+  # NOTE technically K does not need to be reset here, since only L is parsed - doing so as good practice
+  ASS J0 = 00 00 00 00 00 00 00 00 00 00
+  ASS K0 = 00 00 00 00 00
+  ASS L0 = 00 00 00 00 00
+
   ASS numPressedTotal = 0
   # needs to be set to a value too far for both negatives and positives to reach
   ASS tempPhraseVal = AAAA
   ASS phraseIndex = 2A
   
+END
+
+IF MT = B0
+  IF M1 == 69 7F # TODO placeholder - two buttons at once? double tap?
+    # on init, this should init the global array to something basic
+    # NOTE init here?
+    # consider making init file, where one sysex inits just the global array, the other all channels are cleared
+    # channelmanage file? this would break with the one midi device to each SB instance
+    # can also possibly save instances from multiple sessions using another StreamByter and +P
+
+    # NOTE we could filter so that these messages only get sent to channels
+    # this would depend on how much data an SB file could interpret at once, with keys and everything being passed through as well
+
+    # NOTE depending on routing, we may just need to send one message
+    # receiving a message that does not match the channel triggers an auto save (this may require some timer, since this might be a race condition)
+    # signal previous channel file to save
+    # signal next channel file to load
+    # SEND F0 C4 MC G0 F7 +F
+
+    # NOTE will need to send lighting to x touch for sure, but setting the global channel should be enough to change routing
+    # NOTE need to review routing, because if only one channel can route through launchkeymini, only one channel can use these features at a time
+    # this is fine (and expected) for live keyboard playing without latch, but will likely be an issue when using modstep
+
+    # assign local variables
+    ASS J0 = 00 00 00 00 00 00 00 00 00 00
+    ASS K0 = 00 00 00 00 00
+    ASS L0 = 00 00 00 00 00
+    ASS numPressedTotal = 0
+    ASS tempPhraseVal = AAAA
+    ASS phraseIndex = 2A
+
+    # assign global variables
+    ASS G0 = MC
+
+    # NOTE only necessary for implementing latch functionality
+    # load local arrays for channel
+
+    # NOTE ensure to block specific sysex input so it isn't passed out
+  END
 END
 
 # if arp / phrase is on
@@ -120,7 +169,7 @@ IF arpPhraseOnOffToggle == 1
       
       # setting arbitrary limit on number of keys pressed at a time to 10
       IF numPressed == 11
-        ASS G10 = 00 00 00 00 00 00 00 00 00 00
+        ASS G20 = 00 00 00 00 00 00 00 00 00 00
         ASS J0 = 00 00 00 00 00 00 00 00 00 00
         ASS numPressed = 0
         ASS numPressedTotal = 0
@@ -200,7 +249,7 @@ IF arpPhraseOnOffToggle == 1
       
       MATH numPressed = numPressed - 1
       IF numPressed == 0
-        ASS G10 = 00 00 00 00 00 00 00 00 00 00
+        ASS G20 = 00 00 00 00 00 00 00 00 00 00
         ASS J0 = 00 00 00 00 00 00 00 00 00 00
         ASS numPressedTotal = 0
       END

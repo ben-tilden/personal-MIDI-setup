@@ -27,7 +27,13 @@
 # 12: order pressed three octave
 
 IF LOAD
+
+  # constant
+  ALIAS FF60 MaxValClockNum
+  ALIAS 01 thisChannel
+
   # local
+  # TODO remove below and update
   ALIAS I0 maxValClockNum
   ALIAS I1 clockNum
   ALIAS I2 clockNumMod
@@ -56,6 +62,24 @@ IF LOAD
   ASS clockNum = 0
   ASS isOctave = 0
 END
+
+# SEND F0 C4 MC G0 F7 +F
+#IF M0 == F0 C4
+#  IF M2 == thisChannel
+#    # delay?
+#    # load velocity from local
+#    # update channel
+#    # NOTE race condition
+#    # NOTE other data will need to be stored locally for latch
+#  ELSE
+#    IF M3 == thisChannel
+#      # NOTE save other data for latch
+#    END
+#  END
+#END
+
+# NOTE above should not matter without latch, since clock is only considered when channel is this file's channel
+
 
 # if channel is this channel (one)
 IF channel == 1

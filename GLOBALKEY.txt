@@ -20,5 +20,26 @@
 # GE - gateOpened
 # GF - phraseVal
 # G10 - phraseLengthPlusOffset
-# G20 - G29 - arp values        (G10 G11 G12 G13 G14 G15 G16 G17 G18 G19)
-# G2A - G39 - phrase sequence      (G24 G25 G26 G27 G28 G29 G2A G2B G2C G2D G2E G2F G30 G31 G32 G33 ETC.)
+# G20 - G29 - arp values (G10 G11 G12 G13 G14 G15 G16 G17 G18 G19)
+# G2A - G39 - phrase sequence (G24 G25 G26 G27 G28 G29 G2A G2B G2C G2D G2E G2F G30 G31 G32 G33 ETC.)
+
+# default global channel
+# G0 - 01 - channel
+# G1 - 00 - numPressed
+# G2 - 00 - arpPhraseToggle
+# G3 - 00 - arpPhraseOnOffToggle
+# G4 - 00 - tempoModeMod
+# G5 - 24 - tempoPulse
+# G6 - 1F4 - gate (500)
+# G7 - 00 - arpValueModeMod
+# G8 - 00 - setPhrase
+# G9 - 00 - waveguideToggle
+# GA - 0E - drumParams (Part 1)
+# GB - 0F - drumParams (Part 2)
+# GC - 10 - drumParams (Part 1+2)
+# GD - 64 - velocity
+# GE - 00 - gateOpened
+# GF - 00 - phraseVal
+# G10 - 2A - phraseLengthPlusOffset
+# G20 - G29 - 00 00 00 00 00 00 00 00 00 00- arp values (G10 G11 G12 G13 G14 G15 G16 G17 G18 G19)
+# G2A - G49 - 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ETC. - phrase sequence (G2A G2B G2C G2D G2E G2F G30 G31 G32 G33 G34 G35 G36 G37 G38 G39 ETC.)
