@@ -11,8 +11,6 @@
 
 # ensure rest sent
 
-# ensure arpValueModeMod changes accordingly
-
 # ensure arp and phrase are toggling and setPhrase is turned off (if on) when switched to arp
 
 # ensure arp/phrase module is turned off or on
@@ -21,19 +19,9 @@
 
 # ensure drumparams are assigned according to correct buttons
 
-# ensure drumparams are assigned according to correct buttons
+# ensure tempoPulse aligns with tempoMode
 
-# ensure drumparams are assigned according to correct buttons
-
-# ensure drumparams are assigned according to correct buttons
-
-# ensure drumparams are assigned according to correct buttons
-
-# ensure drumparams are assigned according to correct buttons
-
-# ensure drumparams are assigned according to correct buttons
-
-# ensure drumparams are assigned according to correct buttons
+# ensure gate aligns with gate
 
 ###
 # launchkey mini

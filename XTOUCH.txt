@@ -150,7 +150,6 @@ IF MT == 90
     ELSE
       IF setPhrase == 0
         ASS setPhrase = 1
-        SEND 90 00 01
       ELSE
         ASS setPhrase = 0
         SEND F0 BB BB 07 +F
@@ -175,7 +174,6 @@ IF MT == 90
   IF M1 == 09 7F
     IF arpPhraseToggle == 0
       ASS arpPhraseToggle = 1
-      SEND 90 01 01
     ELSE
       ASS arpPhraseToggle = 0
       IF setPhrase == 1
@@ -189,7 +187,6 @@ IF MT == 90
   IF M1 == 11 7F
     IF arpPhraseOnOffToggle == 0
       ASS arpPhraseOnOffToggle = 1
-      SEND 90 09 01
     ELSE
       ASS arpPhraseOnOffToggle = 0
     END
@@ -256,6 +253,7 @@ IF MT == 80
     IF arpPhraseToggle == 1
       SEND 90 01 01
     ELSE
+      # NOTE this sends even when light is off
       IF setPhrase == 0
         SEND 90 00 00
       END

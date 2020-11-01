@@ -2,4 +2,5 @@
 
 # filter to ensure that notes are not routed back to launchkey mini SB
 
-X0-F = XX +B
+N0-F = XX +B
+B0-F = XX +B

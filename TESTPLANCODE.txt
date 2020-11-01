@@ -3,6 +3,10 @@
 
 # xtouch
 
+# TEST NOTES
+# NOTE with filter added, do we need to be blocking output from this?
+# NOTE should channel comparison for drum be changed? (currently <=, might need to just be <)
+
 IF LOAD
 
   # NOTE dangerous - need to confirm that this is where we want the global reset to occur
@@ -78,7 +82,6 @@ IF MT == 90
     ELSE
       IF setPhrase == 0
         ASS setPhrase = 1
-        SEND 90 00 01
       ELSE
         ASS setPhrase = 0
         SEND F0 BB BB 07 +F
@@ -116,7 +119,6 @@ IF MT == 90
   IF M1 == 09 7F
     IF arpPhraseToggle == 0
       ASS arpPhraseToggle = 1
-      SEND 90 01 01
     ELSE
       ASS arpPhraseToggle = 0
       IF setPhrase == 1
@@ -140,7 +142,6 @@ IF MT == 90
   IF M1 == 11 7F
     IF arpPhraseOnOffToggle == 0
       ASS arpPhraseOnOffToggle = 1
-      SEND 90 09 01
     ELSE
       ASS arpPhraseOnOffToggle = 0
     END
@@ -257,6 +258,7 @@ IF MT == 80
     IF arpPhraseToggle == 1
       SEND 90 01 01
     ELSE
+      # NOTE this sends even when light is off
       IF setPhrase == 0
         SEND 90 00 00
       END
@@ -446,14 +448,24 @@ IF MT == B0
         END
       END
     END
+    # TEST
+    # ensure tempoPulse aligns with tempoMode
+    LOG tempoPulse tempoPulse
+    # END TEST
   END
   # if knob is 2 (gate)
   # starting points: max will be ~5 seconds (5000), min will be .1 seconds (100)
   IF M1 == 2
     MATH gate = M3 * 39
     MATH gate = gate + 100
+    # TEST
+    # ensure gate aligns with gate
+    LOG gate gate
+    # TEST END
   END
 END
+
+NX = XX +B
 
 # launchkey mini
 
