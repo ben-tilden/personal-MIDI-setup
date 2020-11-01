@@ -1,3 +1,18 @@
+# xtouch test code
+
+# TEST NOTES
+# NOTE with filter added, do we need to be blocking output from this?
+# NOTE should channel comparison for drum be changed? (currently <=, might need to just be <)
+
+
+
+
+
+
+
+
+
+
 # xtouch mini
 
 # UPDATE: Reviewing further, the plan will be for this to run as an 'xtouch service', completely separate and distinct from channel

@@ -1,4 +1,4 @@
-# x touch filter (launchkey mini)
+# xtouch filter (launchkey mini)
 
 # filter to ensure that notes are not routed back to launchkey mini SB
 

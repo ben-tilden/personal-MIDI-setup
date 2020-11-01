@@ -1,4 +1,4 @@
-# x touch filter (x touch)
+# xtouch filter (xtouch)
 
 # filter to ensure that sysex is not routed back to xtouch
 
