@@ -10,7 +10,7 @@
 # This is actually likely due to the order in which the keys are initially pressed - the first button pressed might be what is sent, then when the array is sorted it may be sorted into the second spot
 # sort each time clock is sent via some process similar to selection sort? this could prevent the timing issue above
 
-SUBROUTINE INSERTION_SORT isOrder
+SUBROUTINE INSERTION_SORT isOrder length
   ALIAS I10 i
   ALIAS I11 j
   ALIAS I12 jPlusOne
@@ -102,6 +102,7 @@ IF LOAD
   ALIAS G2 arpPhraseToggle
   ALIAS G3 arpPhraseOnOffToggle
   ALIAS G7 arpValueModeMod
+  ALIAS G8 setPhrase
   ALIAS GE gateOpened
   ALIAS GF phraseVal
   ALIAS G10 phraseLengthPlusOffset
@@ -119,7 +120,7 @@ IF LOAD
   
 END
 
-IF MT = B0
+IF MT == B0
   IF M1 == 69 7F # TODO placeholder - two buttons at once? double tap?
     # on init, this should init the global array to something basic
     # NOTE init here?
@@ -185,19 +186,19 @@ IF arpPhraseOnOffToggle == 1
 
       # sort array / hashmap according to ascending, descending, order pressed
       IF arpValueModeMod == 3
-        INSERTION_SORT 0
+        INSERTION_SORT 0 numPressed
       END
       IF arpValueModeMod == 4
-        INSERTION_SORT 0
+        INSERTION_SORT 0 numPressed
       END
       IF arpValueModeMod == 5
-        INSERTION_SORT 0
+        INSERTION_SORT 0 numPressed
       END
       IF arpValueModeMod < 3
-        INSERTION_SORT 0
+        INSERTION_SORT 0 numPressed
       END
       IF arpValueModeMod > 8
-        INSERTION_SORT 1
+        INSERTION_SORT 1 numPressed
       END
       
       MATH numPressed = numPressed + 1
@@ -230,19 +231,19 @@ IF arpPhraseOnOffToggle == 1
       
       # sort array / hashmap according to ascending, descending, order pressed
       IF arpValueModeMod == 3
-        INSERTION_SORT 0
+        INSERTION_SORT 0 numPressed
       END
       IF arpValueModeMod == 4
-        INSERTION_SORT 0
+        INSERTION_SORT 0 numPressed
       END
       IF arpValueModeMod == 5
-        INSERTION_SORT 0
+        INSERTION_SORT 0 numPressed
       END
       IF arpValueModeMod < 3
-        INSERTION_SORT 0
+        INSERTION_SORT 0 numPressed
       END
       IF arpValueModeMod > 8
-        INSERTION_SORT 1
+        INSERTION_SORT 1 numPressed
       END
       
       MATH numPressed = numPressed - 1
@@ -341,6 +342,7 @@ IF arpPhraseOnOffToggle == 1
     END
 
   END
+
 END
 
 IF setPhrase == 1
@@ -348,7 +350,7 @@ IF setPhrase == 1
     # because we're taking offset here, we need to record each step as the difference between it and the last step
     # if tempPhraseVal has a previous value (i.e. is not the first key pressed in the phrase)
     IF tempPhraseVal != AAAA
-      ASS GI9 = M1 - tempPhraseVal
+      MATH GI9 = M1 - tempPhraseVal
       ASS phraseLengthPlusOffset = phraseIndex
       MATH phraseIndex = phraseIndex + 1
       ASS tempPhraseVal = M1
@@ -379,4 +381,6 @@ IF setPhrase == 1
   IF M0 == F0 BB BB 07
     ASS phraseIndex = AAAA
   END
+  # NOTE could block whatever is inputted here
+  # this would make sense if phrase was toggled and on, but not if this was not the case
 END

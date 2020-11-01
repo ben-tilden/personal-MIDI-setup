@@ -82,6 +82,7 @@
 
 IF LOAD
 
+  # NOTE dangerous - need to confirm that this is where we want the global reset to occur
   ASS G0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
   # local
