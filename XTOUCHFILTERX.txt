@@ -1,0 +1,5 @@
+# x touch filter (x touch)
+
+# filter to ensure that sysex is not routed back to xtouch
+
+FX = XX +B

@@ -1,0 +1,5 @@
+# x touch filter (launchkey mini)
+
+# filter to ensure that notes are not routed back to launchkey mini SB
+
+X0-F = XX +B
