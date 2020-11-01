@@ -30,7 +30,7 @@ IF LOAD
 
   # constant
   ALIAS FF60 MaxValClockNum
-  ALIAS 01 thisChannel
+  ALIAS 00 thisChannel
 
   # local
   # TODO remove below and update
@@ -52,10 +52,10 @@ IF LOAD
   ALIAS G5 tempoPulse
   ALIAS G6 gate
   ALIAS G7 arpValueModeMod
-  ALIAS GD velocity
   ALIAS GE gateOpened
   ALIAS GF phraseVal
   ALIAS G10 phraseLengthPlusOffset
+  ALIAS G11 velocity
 
   # assign local
   ASS maxValClockNum = FF60
@@ -82,7 +82,7 @@ END
 
 
 # if channel is this channel (one)
-IF channel == 1
+IF channel == 0
   # if message is clock
   IF M0 == F8
     # if gate is open (numPressed is greater than zero)

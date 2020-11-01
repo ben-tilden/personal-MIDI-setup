@@ -1,6 +1,9 @@
+# key
+# this file acts as reference for values in the global array and internal sysex formatting
+
 # global array key
 
-# NOTE will need to reset global array using one service - possibly this one
+# TODO will need to reset global array using one service - possibly this one
 
 # global array will be set in the following way
 # G0 - channel
@@ -16,10 +19,11 @@
 # GA - drumParams (Part 1)
 # GB - drumParams (Part 2)
 # GC - drumParams (Part 1+2)
-# GD - velocity
+# GD - drumParams (waveguide send)
 # GE - gateOpened
 # GF - phraseVal
 # G10 - phraseLengthPlusOffset
+# G11 - velocity
 # G20 - G29 - arp values (G20 G21 G22 G23 G24 G25 G26 G27 G28 G29)
 # G2A - G49 - phrase sequence (G24 G25 G26 G27 G28 G29 G2A G2B G2C G2D G2E G2F G30 G31 G32 G33 ETC.)
 
@@ -46,3 +50,5 @@
 
 # sysex message key
 
+# F0 AA AA F7 - rest, sent from xtouch to launchkey
+# F0 BB BB F7 - message sent from xtouch to launchkey to signify that setPhrase has been turned off

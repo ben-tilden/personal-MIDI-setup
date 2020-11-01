@@ -203,6 +203,41 @@ IF arpPhraseOnOffToggle == 1
         ASS numPressedTotal = 0
         # necessary so that numPressed does not go past zero by mistake, as we have not yet incremented for this key press
         MATH numPressed = numPressed + 1
+        # TEST
+        # ensure G array contains correct key values pressed on reset (0)
+        # ensure J array contains correct order of keys pressed on reset (0)
+        # ensure numPressed aligns with number of keys pressed on reset (0)
+        # ensure numPressedTotal aligns with number of keys pressed total on reset (0)
+        LOG isArp
+        LOG G19 G19 # should always be 0, unless globalkey is updated
+        LOG G20 G20 
+        LOG G21 G21
+        LOG G22 G22
+        LOG G23 G23
+        LOG G24 G24
+        LOG G25 G25
+        LOG G26 G26
+        LOG G27 G27
+        LOG G28 G28
+        LOG G29 G29
+        LOG G2A G2A # should always be first value of phrase
+        LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+        LOG J19 J19 # should always be 0
+        LOG J20 J20
+        LOG J21 J21
+        LOG J22 J22
+        LOG J23 J23
+        LOG J24 J24
+        LOG J25 J25
+        LOG J26 J26
+        LOG J27 J27
+        LOG J28 J28
+        LOG J29 J29
+        LOG J2A J2A # should always be 0
+        LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+        LOG numPressed numPressed
+        LOG numPressedTotal numPressedTotal
+        # END TEST
         BLOCK
         EXIT
       END
@@ -230,7 +265,44 @@ IF arpPhraseOnOffToggle == 1
       IF numPressed == 1
         ASS gateOpened = 1
       END
-      
+      # TEST
+      # ensure G array contains correct key values pressed on key press
+      # ensure J array contains correct order of keys pressed on key press
+      # ensure numPressed aligns with number of keys pressed on key press
+      # ensure numPressedTotal aligns with number of keys pressed total on key press
+      # ensure gateOpened aligns with number of keys pressed total on key press
+      LOG isArp
+      LOG G19 G19 # should always be 0, unless globalkey is updated
+      LOG G20 G20 
+      LOG G21 G21
+      LOG G22 G22
+      LOG G23 G23
+      LOG G24 G24
+      LOG G25 G25
+      LOG G26 G26
+      LOG G27 G27
+      LOG G28 G28
+      LOG G29 G29
+      LOG G2A G2A # should always be first value of phrase
+      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+      LOG J19 J19 # should always be 0
+      LOG J20 J20
+      LOG J21 J21
+      LOG J22 J22
+      LOG J23 J23
+      LOG J24 J24
+      LOG J25 J25
+      LOG J26 J26
+      LOG J27 J27
+      LOG J28 J28
+      LOG J29 J29
+      LOG J2A J2A # should always be 0
+      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+      LOG numPressed numPressed
+      LOG numPressedTotal numPressedTotal
+      LOG gateOpened gateOpened
+      # END TEST
+
       NX = XX +B
       
     END
@@ -280,6 +352,43 @@ IF arpPhraseOnOffToggle == 1
         ASS J20 = 00 00 00 00 00 00 00 00 00 00
         ASS numPressedTotal = 0
       END
+      # TEST
+      # ensure G array contains correct key values pressed on key release
+      # ensure J array contains correct order of keys pressed on key release
+      # ensure numPressed aligns with number of keys pressed on key release
+      # ensure numPressedTotal aligns with number of keys pressed total on key release
+      # ensure gateOpened aligns with number of keys pressed total on key release
+      LOG isArp
+      LOG G19 G19 # should always be 0, unless globalkey is updated
+      LOG G20 G20 
+      LOG G21 G21
+      LOG G22 G22
+      LOG G23 G23
+      LOG G24 G24
+      LOG G25 G25
+      LOG G26 G26
+      LOG G27 G27
+      LOG G28 G28
+      LOG G29 G29
+      LOG G2A G2A # should always be first value of phrase
+      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+      LOG J19 J19 # should always be 0
+      LOG J20 J20
+      LOG J21 J21
+      LOG J22 J22
+      LOG J23 J23
+      LOG J24 J24
+      LOG J25 J25
+      LOG J26 J26
+      LOG J27 J27
+      LOG J28 J28
+      LOG J29 J29
+      LOG J2A J2A # should always be 0
+      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+      LOG numPressed numPressed
+      LOG numPressedTotal numPressedTotal
+      LOG gateOpened gateOpened
+      # END TEST
       
       NX = XX +B
       
@@ -305,6 +414,31 @@ IF arpPhraseOnOffToggle == 1
         ASS numPressedTotal = 0
         # necessary so that numPressed does not go past zero by mistake, as we have not yet incremented for this key press
         MATH numPressed = numPressed + 1
+        # TEST
+        # ensure K array contains correct key values pressed on reset (0)
+        # ensure L array contains correct order of keys pressed on reset (0)
+        # ensure numPressed aligns with number of keys pressed on reset (0)
+        # ensure numPressedTotal aligns with number of keys pressed total on reset (0)
+        LOG isPhrase
+        LOG K0 K0 should always be zero
+        LOG K1 K1
+        LOG K2 K2
+        LOG K3 K3
+        LOG K4 K4
+        LOG K5 K5
+        LOG K6 K6 # should always be zero
+        LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+        LOG L0 L0 # should always be zero
+        LOG L1 L1
+        LOG L2 L2
+        LOG L3 L3
+        LOG L4 L4
+        LOG L5 L5
+        LOG L6 L6 # should always be zero
+        LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+        LOG numPressed numPressed
+        LOG numPressedTotal numPressedTotal
+        # END TEST
         BLOCK
         EXIT
       END
@@ -335,6 +469,34 @@ IF arpPhraseOnOffToggle == 1
       IF numPressed == 1
         ASS gateOpened = 1
       END
+      # TEST
+      # ensure K array contains correct key values pressed on key press
+      # ensure L array contains correct order of keys pressed on key press
+      # ensure numPressed aligns with number of keys pressed on key press
+      # ensure numPressedTotal aligns with number of keys pressed total on key press
+      # ensure gateOpened aligns with number of keys pressed total on key press
+      LOG isPhrase
+      LOG K0 K0 should always be zero
+      LOG K1 K1
+      LOG K2 K2
+      LOG K3 K3
+      LOG K4 K4
+      LOG K5 K5
+      LOG K6 K6 # should always be zero
+      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+      LOG L0 L0 # should always be zero
+      LOG L1 L1
+      LOG L2 L2
+      LOG L3 L3
+      LOG L4 L4
+      LOG L5 L5
+      LOG L6 L6 # should always be zero
+      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+      LOG numPressed numPressed
+      LOG numPressedTotal numPressedTotal
+      LOG gateOpened gateOpened
+      LOG phraseVal phraseVal
+      # END TEST
       
     END
 
@@ -386,7 +548,35 @@ IF arpPhraseOnOffToggle == 1
         # ASS gateOpened = 1 # NOTE uncommenting this would restart phrase whenever key lifted
         ASS phraseVal = KI7
       END
-      
+      # TEST
+      # ensure K array contains correct key values pressed on key release
+      # ensure L array contains correct order of keys pressed on key release
+      # ensure numPressed aligns with number of keys pressed on key release
+      # ensure numPressedTotal aligns with number of keys pressed total on key release
+      # ensure gateOpened aligns with number of keys pressed total on key release
+      LOG isPhrase
+      LOG K0 K0 should always be zero
+      LOG K1 K1
+      LOG K2 K2
+      LOG K3 K3
+      LOG K4 K4
+      LOG K5 K5
+      LOG K6 K6 # should always be zero
+      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+      LOG L0 L0 # should always be zero
+      LOG L1 L1
+      LOG L2 L2
+      LOG L3 L3
+      LOG L4 L4
+      LOG L5 L5
+      LOG L6 L6 # should always be zero
+      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+      LOG numPressed numPressed
+      LOG numPressedTotal numPressedTotal
+      LOG gateOpened gateOpened
+      LOG phraseVal phraseVal
+      # END TEST
+
     END
 
   END
@@ -394,6 +584,12 @@ IF arpPhraseOnOffToggle == 1
 END
 
 IF setPhrase == 1
+  # TEST
+  IF MT == 80
+    BLOCK
+    EXIT
+  END
+  # END TEST
   IF MT == 90
     # because we're taking offset here, we need to record each step as the difference between it and the last step
     # if tempPhraseVal has a previous value (i.e. is not the first key pressed in the phrase)
@@ -429,8 +625,51 @@ IF setPhrase == 1
   IF M0 == F0 BB BB 07
     ASS phraseIndex = AAAA
   END
-  # NOTE could block whatever is inputted here
+  # NOTE could block whatever is inputted here, to prevent notes from passing through while the phrase is running
   # this would make sense if phrase was toggled and on, but not if this was not the case
+  # TEST
+  # ensure phrase is being correctly set
+  # ensure setPhrase is 0 if max limit reached, otherwise 1
+  # ensure tempPhraseVal is the previous value
+  # ensure phraseIndex is the previous index plus one
+  LOG setPhrase
+  LOG G2A G2A
+  LOG G2B G2B
+  LOG G2C G2C
+  LOG G2D G2D
+  LOG G2E G2E
+  LOG G2F G2F
+  LOG G30 G30
+  LOG G31 G31
+  LOG G32 G32
+  LOG G33 G33
+  LOG G34 G34
+  LOG G35 G35
+  LOG G36 G36
+  LOG G37 G37
+  LOG G38 G38
+  LOG G39 G39
+  LOG G3A G3A
+  LOG G3B G3B
+  LOG G3C G3C
+  LOG G3D G3D
+  LOG G3E G3E
+  LOG G3F G3F
+  LOG G40 G40
+  LOG G41 G41
+  LOG G42 G42
+  LOG G43 G43
+  LOG G44 G44
+  LOG G45 G45
+  LOG G46 G46
+  LOG G47 G47
+  LOG G48 G48
+  LOG G49 G49
+  LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+  LOG setPhrase setPhrase
+  LOG tempPhraseVal tempPhraseVal
+  LOG phraseIndex phraseIndex
+  # END TEST
 END
 
 IF M0 == F0
