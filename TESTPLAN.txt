@@ -1,4 +1,5 @@
 # test plan
+# NOTE that each file test is meant to be copied and pasted into SB - using this whole file will not function as expected
 
 # xtouch
 
@@ -436,4 +437,399 @@ IF MT == B0
 		MATH gate = M3 * 39
 		MATH gate = gate + 100
 	END
+END
+
+# launchkey mini
+
+SUBROUTINE INSERTION_SORT isOrder
+  ALIAS I10 i
+  ALIAS I11 j
+  ALIAS I12 jPlusOne
+  ALIAS I13 keyVal
+  ALIAS I14 keyBool
+  ALIAS I15 isSetSort
+
+  IF isOrder == 1
+    ASS i = 10
+    WHILE i < length
+      ASS keyVal = JI10
+      ASS keyBool = GI10
+      MATH j = i - 1
+      MATH jPlusOne = j + 1
+      ASS isSetSort = 0
+      IF j >= 0
+        IF JI11 < keyVal
+          ASS isSetSort = 1
+        END
+      END
+      WHILE isSetSort == 1
+        ASS JI12 = JI11
+        ASS GI12 = GI11
+        MATH j = j - 1
+        MATH jPlusOne = j + 1
+        ASS isSetSort = 0
+        IF j >= 0
+          IF JI11 < keyVal
+            ASS isSetSort = 1
+          END
+        END
+      END
+      ASS JI12 = keyVal
+      ASS GI12 = keyBool
+      MATH i = i + 1
+    END
+  ELSE
+    ASS i = 10
+    WHILE i < length
+      ASS keyVal = GI10
+      ASS keyBool = JI10
+      MATH j = i - 1
+      MATH jPlusOne = j + 1
+      ASS isSetSort = 0
+      IF j >= 0
+        IF GI11 < keyVal
+          ASS isSetSort = 1
+        END
+      END
+      WHILE isSetSort == 1
+        ASS GI12 = GI11
+        ASS JI12 = JI11
+        MATH j = j - 1
+        MATH jPlusOne = j + 1
+        ASS isSetSort = 0
+        IF j >= 0
+          IF GI11 < keyVal
+            ASS isSetSort = 1
+          END
+        END
+      END
+      ASS GI12 = keyVal
+      ASS JI12 = keyBool
+      MATH i = i + 1
+    END
+  END
+END
+
+IF LOAD
+
+  # constant
+
+  ALIAS 10 arpIndexOffset
+
+  # local
+  ALIAS I0 iter
+  ALIAS I1 isSet
+  ALIAS I2 arpIndex
+  ALIAS I3 numPressedTotal
+  ALIAS I4 max
+  ALIAS I5 maxIndex
+  ALIAS I6 secondMax
+  ALIAS I7 secondMaxIndex
+  ALIAS I8 tempPhraseVal
+  ALIAS I9 phraseIndex
+
+  # global
+  ALIAS G1 numPressed
+  ALIAS G2 arpPhraseToggle
+  ALIAS G3 arpPhraseOnOffToggle
+  ALIAS G7 arpValueModeMod
+  ALIAS GE gateOpened
+  ALIAS GF phraseVal
+  ALIAS G10 phraseLengthPlusOffset
+
+  # assign local
+  # NOTE technically K does not need to be reset here, since only L is parsed - doing so as good practice
+  ASS J0 = 00 00 00 00 00 00 00 00 00 00
+  ASS K0 = 00 00 00 00 00
+  ASS L0 = 00 00 00 00 00
+
+  ASS numPressedTotal = 0
+  # needs to be set to a value too far for both negatives and positives to reach
+  ASS tempPhraseVal = AAAA
+  ASS phraseIndex = 2A
+  
+END
+
+IF MT = B0
+  IF M1 == 69 7F # TODO placeholder - two buttons at once? double tap?
+    # on init, this should init the global array to something basic
+    # NOTE init here?
+    # consider making init file, where one sysex inits just the global array, the other all channels are cleared
+    # channelmanage file? this would break with the one midi device to each SB instance
+    # can also possibly save instances from multiple sessions using another StreamByter and +P
+
+    # NOTE we could filter so that these messages only get sent to channels
+    # this would depend on how much data an SB file could interpret at once, with keys and everything being passed through as well
+
+    # NOTE depending on routing, we may just need to send one message
+    # receiving a message that does not match the channel triggers an auto save (this may require some timer, since this might be a race condition)
+    # signal previous channel file to save
+    # signal next channel file to load
+    # SEND F0 C4 MC G0 F7 +F
+
+    # NOTE will need to send lighting to x touch for sure, but setting the global channel should be enough to change routing
+    # NOTE need to review routing, because if only one channel can route through launchkeymini, only one channel can use these features at a time
+    # this is fine (and expected) for live keyboard playing without latch, but will likely be an issue when using modstep
+
+    # assign local variables
+    ASS J0 = 00 00 00 00 00 00 00 00 00 00
+    ASS K0 = 00 00 00 00 00
+    ASS L0 = 00 00 00 00 00
+    ASS numPressedTotal = 0
+    ASS tempPhraseVal = AAAA
+    ASS phraseIndex = 2A
+
+    # assign global variables
+    ASS G0 = MC
+
+    # NOTE only necessary for implementing latch functionality
+    # load local arrays for channel
+
+    # NOTE ensure to block specific sysex input so it isn't passed out
+  END
+END
+
+# if arp / phrase is on
+IF arpPhraseOnOffToggle == 1
+  # if arp / phrase is arp
+  IF arpPhraseToggle == 0
+    # if key is pressed
+    IF MT == 90
+      
+      # setting arbitrary limit on number of keys pressed at a time to 10
+      IF numPressed == 11
+        ASS G20 = 00 00 00 00 00 00 00 00 00 00
+        ASS J0 = 00 00 00 00 00 00 00 00 00 00
+        # TEST
+        LOG G20 G20
+        LOG G21 G21
+        LOG G22 G22
+        LOG G23 G23
+        LOG G24 G24
+        LOG G25 G25
+        LOG G26 G26
+        LOG G27 G27
+        LOG G28 G28
+        LOG G29 G29
+        LOG J0 J0
+        LOG J1 J1
+        LOG J2 J2
+        LOG J3 J3
+        LOG J4 J4
+        LOG J5 J5
+        LOG J6 J6
+        LOG J7 J7
+        LOG J8 J8
+        LOG J9 J9
+        # END TEST
+        ASS numPressed = 0
+        ASS numPressedTotal = 0
+        BLOCK
+        EXIT
+      END
+      
+      # add one to notes overall pressed
+      MATH numPressedTotal = numPressedTotal + 1
+
+      # store note value in first open spot in array
+      MATH arpIndex = arpIndexOffset + numPressed
+      ASS GI2 = M1
+      ASS JI2 = numPressedTotal
+
+      # sort array / hashmap according to ascending, descending, order pressed
+      IF arpValueModeMod == 3
+        INSERTION_SORT 0
+      END
+      IF arpValueModeMod == 4
+        INSERTION_SORT 0
+      END
+      IF arpValueModeMod == 5
+        INSERTION_SORT 0
+      END
+      IF arpValueModeMod < 3
+        INSERTION_SORT 0
+      END
+      IF arpValueModeMod > 8
+        INSERTION_SORT 1
+      END
+      
+      MATH numPressed = numPressed + 1
+
+      IF numPressed == 1
+        ASS gateOpened = 1
+      END
+      
+      NX = XX +B
+      
+    END
+
+    IF MT == 80
+      # remove note value from array
+      # decrease number of notes that need to be iterated through
+      ASS iter = 10
+      ASS isSet = 0
+      WHILE isSet != 1
+        # if iter is the note value, remove values
+        IF GI0 == M1
+          ASS GI0 = 0
+          ASS JI0 = 0
+          ASS isSet = 1
+        END
+        MATH iter = iter + 1
+        IF iter == numPressed
+          ASS isSet = 1
+        END
+      END
+      
+      # sort array / hashmap according to ascending, descending, order pressed
+      IF arpValueModeMod == 3
+        INSERTION_SORT 0
+      END
+      IF arpValueModeMod == 4
+        INSERTION_SORT 0
+      END
+      IF arpValueModeMod == 5
+        INSERTION_SORT 0
+      END
+      IF arpValueModeMod < 3
+        INSERTION_SORT 0
+      END
+      IF arpValueModeMod > 8
+        INSERTION_SORT 1
+      END
+      
+      MATH numPressed = numPressed - 1
+      IF numPressed == 0
+        ASS G20 = 00 00 00 00 00 00 00 00 00 00
+        ASS J0 = 00 00 00 00 00 00 00 00 00 00
+        ASS numPressedTotal = 0
+      END
+      
+      NX = XX +B
+      
+    END
+  # else isPhrase
+  ELSE
+    # if key pressed
+    IF MT == 90
+      
+      # ASS gateOpened = 1 # NOTE uncommenting this would restart phrase whenever key pressed
+
+      # setting arbitrary limit on number of keys pressed at a time to 5
+      IF numPressed == 5
+        ASS L0 = 00 00 00 00 00
+        ASS numPressed = 0
+        ASS numPressedTotal = 0
+        BLOCK
+        EXIT
+      END
+      
+      # set initial note to calculate offset
+      ASS phraseVal = M1
+      
+      # add to number of keys pressed
+      MATH numPressed = numPressed + 1
+      MATH numPressedTotal = numPressedTotal + 1
+      
+      # we need to have a while loop here to account for the user pressing and releasing keys in different orders
+      # say user presses A, B, C, then lifts up B
+      # this sets numPressed to 2, but when another key is pressed it will overwrite C if we continue linearly
+      ASS iter = 1
+      ASS isSet = 0
+      WHILE isSet != 1
+        IF LI0 == 0
+          # add note value into K - this array's indices will all be >= 1
+          ASS KI0 = M1
+          # add note index in L to show it is pressed - this array's indices will all be >= 1
+          ASS LI0 = numPressedTotal
+          ASS isSet = 1
+        END
+        MATH iter = iter + 1
+      END
+
+      IF numPressed == 1
+        ASS gateOpened = 1
+      END
+      
+    END
+
+    IF MT == 80
+      # stop if no keys pressed
+      MAT numPressed = numPressed - 1
+      IF numPressed < 1
+        ASS L0 = 00 00 00 00 00
+        ASS numPressedTotal = 0
+      END
+      
+      # find the max k value, or the most recent key pressed
+      # if the j value, or note value of that max is M1, we need to change the phrase offset,
+      # so reset the g values, setting G1 to the second most recent key pressed
+      # while we are iterating, we need to set the k value of whichever key is pressed to zero so we can reuse that index
+      ASS max = 0
+      ASS secondMax = 0
+      ASS iter = 1
+      WHILE iter <= 5
+        IF LI0 > max
+          ASS secondMax = max
+          ASS max = LI0
+          ASS secondMaxIndex = maxIndex
+          ASS maxIndex = iter
+        ELSE
+          IF LI0 > secondMax
+            ASS secondMax = LI0
+            ASS secondMaxIndex = iter
+          END
+        END
+        IF KI0 == M1
+          ASS LI0 = 0
+        END
+        MATH iter = iter + 1
+      END
+      IF KI5 == M1
+        # set value equal to second most recent key pressed
+        # ASS gateOpened = 1 # NOTE uncommenting this would restart phrase whenever key lifted
+        ASS phraseVal = KI7
+      END
+      
+    END
+
+  END
+END
+
+IF setPhrase == 1
+  IF MT == 90
+    # because we're taking offset here, we need to record each step as the difference between it and the last step
+    # if tempPhraseVal has a previous value (i.e. is not the first key pressed in the phrase)
+    IF tempPhraseVal != AAAA
+      ASS GI9 = M1 - tempPhraseVal
+      ASS phraseLengthPlusOffset = phraseIndex
+      MATH phraseIndex = phraseIndex + 1
+      ASS tempPhraseVal = M1
+    # else tempPhraseVal does not have a previous value, this is the first entered value, and no record in the global array is necessary
+    ELSE
+      ASS tempPhraseVal = M1
+    END
+    # if phrase is at max limit, end setPhrase
+    IF phraseIndex > 39
+      ASS setPhrase = 0
+      ASS tempPhraseVal = AAAA
+    END
+  END
+  # if phraseRest is sent
+  # NOTE might need to filter the sysex messages here to prevent them from passing through and causing havoc
+  IF M0 == F0 AA AA F7
+    # assign value to AAAA, indicating a rest
+    ASS GI9 = AAAA
+    MATH phraseIndex = phraseIndex + 1
+
+    # if phrase is at max limit, end setPhrase
+    IF phraseIndex > 39
+      ASS setPhrase = 0
+      ASS tempPhraseVal = AAAA
+    END
+  END
+  # ensure phraseIndex is reset when setPhrase is turned off from xtouch
+  IF M0 == F0 BB BB 07
+    ASS phraseIndex = AAAA
+  END
 END

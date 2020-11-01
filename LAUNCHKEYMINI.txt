@@ -89,15 +89,13 @@ IF LOAD
   ALIAS I0 iter
   ALIAS I1 isSet
   ALIAS I2 arpIndex
-  # TODO remove below and update
-  ALIAS I3 arpIndexOffset
-  ALIAS I4 numPressedTotal
-  ALIAS I5 max
-  ALIAS I6 maxIndex
-  ALIAS I7 secondMax
-  ALIAS I8 secondMaxIndex
-  ALIAS I9 tempPhraseVal
-  ALIAS IA phraseIndex
+  ALIAS I3 numPressedTotal
+  ALIAS I4 max
+  ALIAS I5 maxIndex
+  ALIAS I6 secondMax
+  ALIAS I7 secondMaxIndex
+  ALIAS I8 tempPhraseVal
+  ALIAS I9 phraseIndex
 
   # global
   ALIAS G1 numPressed
@@ -334,10 +332,10 @@ IF arpPhraseOnOffToggle == 1
         END
         MATH iter = iter + 1
       END
-      IF KI6 == M1
+      IF KI5 == M1
         # set value equal to second most recent key pressed
         # ASS gateOpened = 1 # NOTE uncommenting this would restart phrase whenever key lifted
-        ASS phraseVal = KI8
+        ASS phraseVal = KI7
       END
       
     END
@@ -350,7 +348,7 @@ IF setPhrase == 1
     # because we're taking offset here, we need to record each step as the difference between it and the last step
     # if tempPhraseVal has a previous value (i.e. is not the first key pressed in the phrase)
     IF tempPhraseVal != AAAA
-      ASS GIA = M1 - tempPhraseVal
+      ASS GI9 = M1 - tempPhraseVal
       ASS phraseLengthPlusOffset = phraseIndex
       MATH phraseIndex = phraseIndex + 1
       ASS tempPhraseVal = M1
@@ -368,7 +366,7 @@ IF setPhrase == 1
   # NOTE might need to filter the sysex messages here to prevent them from passing through and causing havoc
   IF M0 == F0 AA AA F7
     # assign value to AAAA, indicating a rest
-    ASS GIA = AAAA
+    ASS GI9 = AAAA
     MATH phraseIndex = phraseIndex + 1
 
     # if phrase is at max limit, end setPhrase
