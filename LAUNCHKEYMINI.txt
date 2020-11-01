@@ -19,7 +19,7 @@ SUBROUTINE INSERTION_SORT isOrder length
   ALIAS I15 isSetSort
 
   IF isOrder == 1
-    ASS i = 10
+    ASS i = 20
     WHILE i < length
       ASS keyVal = JI10
       ASS keyBool = GI10
@@ -48,7 +48,7 @@ SUBROUTINE INSERTION_SORT isOrder length
       MATH i = i + 1
     END
   ELSE
-    ASS i = 10
+    ASS i = 20
     WHILE i < length
       ASS keyVal = GI10
       ASS keyBool = JI10
@@ -83,7 +83,7 @@ IF LOAD
 
   # constant
 
-  ALIAS 10 arpIndexOffset
+  ALIAS 20 arpIndexOffset
 
   # local
   ALIAS I0 iter
@@ -167,7 +167,7 @@ IF arpPhraseOnOffToggle == 1
     IF MT == 90
       
       # setting arbitrary limit on number of keys pressed at a time to 10
-      IF numPressed == 11
+      IF numPressed == B
         ASS G20 = 00 00 00 00 00 00 00 00 00 00
         ASS J0 = 00 00 00 00 00 00 00 00 00 00
         ASS numPressed = 0
@@ -214,7 +214,7 @@ IF arpPhraseOnOffToggle == 1
     IF MT == 80
       # remove note value from array
       # decrease number of notes that need to be iterated through
-      ASS iter = 10
+      ASS iter = arpIndexOffset
       ASS isSet = 0
       WHILE isSet != 1
         # if iter is the note value, remove values

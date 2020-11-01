@@ -477,7 +477,7 @@ SUBROUTINE INSERTION_SORT isOrder length
   ALIAS I15 isSetSort
 
   IF isOrder == 1
-    ASS i = 10
+    ASS i = 20
     WHILE i < length
       ASS keyVal = JI10
       ASS keyBool = GI10
@@ -506,7 +506,7 @@ SUBROUTINE INSERTION_SORT isOrder length
       MATH i = i + 1
     END
   ELSE
-    ASS i = 10
+    ASS i = 20
     WHILE i < length
       ASS keyVal = GI10
       ASS keyBool = JI10
@@ -541,7 +541,7 @@ IF LOAD
 
   # constant
 
-  ALIAS 10 arpIndexOffset
+  ALIAS 20 arpIndexOffset
 
   # local
   ALIAS I0 iter
@@ -625,7 +625,7 @@ IF arpPhraseOnOffToggle == 1
     IF MT == 90
       
       # setting arbitrary limit on number of keys pressed at a time to 10
-      IF numPressed == 11
+      IF numPressed == B
         ASS G20 = 00 00 00 00 00 00 00 00 00 00
         ASS J0 = 00 00 00 00 00 00 00 00 00 00
         ASS numPressed = 0
@@ -647,16 +647,16 @@ IF arpPhraseOnOffToggle == 1
         LOG G28 G28
         LOG G29 G29
         LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-        LOG J0 J0
-        LOG J1 J1
-        LOG J2 J2
-        LOG J3 J3
-        LOG J4 J4
-        LOG J5 J5
-        LOG J6 J6
-        LOG J7 J7
-        LOG J8 J8
-        LOG J9 J9
+        LOG J20 J20
+        LOG J21 J21
+        LOG J22 J22
+        LOG J23 J23
+        LOG J24 J24
+        LOG J25 J25
+        LOG J26 J26
+        LOG J27 J27
+        LOG J28 J28
+        LOG J29 J29
         LOG ~~~~~~~~~~BREAK~~~~~~~~~~
         LOG numPressed numPressed
         LOG numPressedTotal numPressedTotal
@@ -696,39 +696,39 @@ IF arpPhraseOnOffToggle == 1
         ASS gateOpened = 1
       END
 
-    # TEST
-    # ensure G array contains correct key values pressed on key press
-    # ensure J array contains correct order of keys pressed on key press
-    # ensure numPressed aligns with number of keys pressed on key press
-    # ensure numPressedTotal aligns with number of keys pressed total on key press
-    # ensure gateOpened aligns with number of keys pressed total on key press
-    LOG isArp
-    LOG G20 G20
-    LOG G21 G21
-    LOG G22 G22
-    LOG G23 G23
-    LOG G24 G24
-    LOG G25 G25
-    LOG G26 G26
-    LOG G27 G27
-    LOG G28 G28
-    LOG G29 G29
-    LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-    LOG J0 J0
-    LOG J1 J1
-    LOG J2 J2
-    LOG J3 J3
-    LOG J4 J4
-    LOG J5 J5
-    LOG J6 J6
-    LOG J7 J7
-    LOG J8 J8
-    LOG J9 J9
-    LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-    LOG numPressed numPressed
-    LOG numPressedTotal numPressedTotal
-    LOG gateOpened gateOpened
-    # END TEST
+      # TEST
+      # ensure G array contains correct key values pressed on key press
+      # ensure J array contains correct order of keys pressed on key press
+      # ensure numPressed aligns with number of keys pressed on key press
+      # ensure numPressedTotal aligns with number of keys pressed total on key press
+      # ensure gateOpened aligns with number of keys pressed total on key press
+      LOG isArp
+      LOG G20 G20
+      LOG G21 G21
+      LOG G22 G22
+      LOG G23 G23
+      LOG G24 G24
+      LOG G25 G25
+      LOG G26 G26
+      LOG G27 G27
+      LOG G28 G28
+      LOG G29 G29
+      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+      LOG J20 J20
+      LOG J21 J21
+      LOG J22 J22
+      LOG J23 J23
+      LOG J24 J24
+      LOG J25 J25
+      LOG J26 J26
+      LOG J27 J27
+      LOG J28 J28
+      LOG J29 J29
+      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+      LOG numPressed numPressed
+      LOG numPressedTotal numPressedTotal
+      LOG gateOpened gateOpened
+      # END TEST
       
       NX = XX +B
       
@@ -737,7 +737,7 @@ IF arpPhraseOnOffToggle == 1
     IF MT == 80
       # remove note value from array
       # decrease number of notes that need to be iterated through
-      ASS iter = 10
+      ASS iter = arpIndexOffset
       ASS isSet = 0
       WHILE isSet != 1
         # if iter is the note value, remove values
@@ -794,16 +794,16 @@ IF arpPhraseOnOffToggle == 1
     LOG G28 G28
     LOG G29 G29
     LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-    LOG J0 J0
-    LOG J1 J1
-    LOG J2 J2
-    LOG J3 J3
-    LOG J4 J4
-    LOG J5 J5
-    LOG J6 J6
-    LOG J7 J7
-    LOG J8 J8
-    LOG J9 J9
+    LOG J20 J20
+    LOG J21 J21
+    LOG J22 J22
+    LOG J23 J23
+    LOG J24 J24
+    LOG J25 J25
+    LOG J26 J26
+    LOG J27 J27
+    LOG J28 J28
+    LOG J29 J29
     LOG ~~~~~~~~~~BREAK~~~~~~~~~~
     LOG numPressed numPressed
     LOG numPressedTotal numPressedTotal
