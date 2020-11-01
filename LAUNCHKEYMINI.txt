@@ -17,16 +17,19 @@ SUBROUTINE INSERTION_SORT isOrder length
   ALIAS I13 keyVal
   ALIAS I14 keyBool
   ALIAS I15 isSetSort
+  ALIAS I16 lengthOffset
+
+  MATH lengthOffset = length + 20
 
   IF isOrder == 1
-    ASS i = 20
-    WHILE i < length
+    ASS i = 21
+    WHILE i < lengthOffset
       ASS keyVal = JI10
       ASS keyBool = GI10
       MATH j = i - 1
       MATH jPlusOne = j + 1
       ASS isSetSort = 0
-      IF j >= 0
+      IF j >= 20
         IF JI11 < keyVal
           ASS isSetSort = 1
         END
@@ -37,7 +40,7 @@ SUBROUTINE INSERTION_SORT isOrder length
         MATH j = j - 1
         MATH jPlusOne = j + 1
         ASS isSetSort = 0
-        IF j >= 0
+        IF j >= 20
           IF JI11 < keyVal
             ASS isSetSort = 1
           END
@@ -48,14 +51,14 @@ SUBROUTINE INSERTION_SORT isOrder length
       MATH i = i + 1
     END
   ELSE
-    ASS i = 20
-    WHILE i < length
+    ASS i = 21
+    WHILE i < lengthOffset
       ASS keyVal = GI10
       ASS keyBool = JI10
       MATH j = i - 1
       MATH jPlusOne = j + 1
       ASS isSetSort = 0
-      IF j >= 0
+      IF j >= 20
         IF GI11 < keyVal
           ASS isSetSort = 1
         END
@@ -66,7 +69,7 @@ SUBROUTINE INSERTION_SORT isOrder length
         MATH j = j - 1
         MATH jPlusOne = j + 1
         ASS isSetSort = 0
-        IF j >= 0
+        IF j >= 20
           IF GI11 < keyVal
             ASS isSetSort = 1
           END
@@ -96,6 +99,7 @@ IF LOAD
   ALIAS I7 secondMaxIndex
   ALIAS I8 tempPhraseVal
   ALIAS I9 phraseIndex
+  ALIAS IA reset
 
   # global
   ALIAS G1 numPressed
@@ -109,7 +113,7 @@ IF LOAD
 
   # assign local
   # NOTE technically K does not need to be reset here, since only L is parsed - doing so as good practice
-  ASS J0 = 00 00 00 00 00 00 00 00 00 00
+  ASS J20 = 00 00 00 00 00 00 00 00 00 00
   ASS K0 = 00 00 00 00 00
   ASS L0 = 00 00 00 00 00
 
@@ -117,6 +121,7 @@ IF LOAD
   # needs to be set to a value too far for both negatives and positives to reach
   ASS tempPhraseVal = AAAA
   ASS phraseIndex = 2A
+  ASS reset = 0
   
 END
 
@@ -142,7 +147,7 @@ IF MT == B0
     # this is fine (and expected) for live keyboard playing without latch, but will likely be an issue when using modstep
 
     # assign local variables
-    ASS J0 = 00 00 00 00 00 00 00 00 00 00
+    ASS J20 = 00 00 00 00 00 00 00 00 00 00
     ASS K0 = 00 00 00 00 00
     ASS L0 = 00 00 00 00 00
     ASS numPressedTotal = 0
@@ -165,17 +170,26 @@ IF arpPhraseOnOffToggle == 1
   IF arpPhraseToggle == 0
     # if key is pressed
     IF MT == 90
-      
-      # setting arbitrary limit on number of keys pressed at a time to 10
-      IF numPressed == B
-        ASS G20 = 00 00 00 00 00 00 00 00 00 00
-        ASS J0 = 00 00 00 00 00 00 00 00 00 00
-        ASS numPressed = 0
-        ASS numPressedTotal = 0
+
+      # if reset (key pressed limit exceeded), handle differently
+      IF reset == 1
+        MATH numPressed = numPressed + 1
         BLOCK
         EXIT
       END
-      
+
+      # setting arbitrary limit on number of keys pressed at a time to 10 (using 10 as comparator here because numPressed has not yet been increased)
+      IF numPressed == A
+        ASS G20 = 00 00 00 00 00 00 00 00 00 00
+        ASS J20 = 00 00 00 00 00 00 00 00 00 00
+        ASS reset = 1
+        ASS numPressedTotal = 0
+        # necessary so that numPressed does not go past zero by mistake, as we have not yet incremented for this key press
+        MATH numPressed = numPressed + 1
+        BLOCK
+        EXIT
+      END
+
       # add one to notes overall pressed
       MATH numPressedTotal = numPressedTotal + 1
 
@@ -184,24 +198,17 @@ IF arpPhraseOnOffToggle == 1
       ASS GI2 = M1
       ASS JI2 = numPressedTotal
 
+      # add one to current notes pressed
+      # NOTE this is done before sorting to make sure proper length is parsed
+      MATH numPressed = numPressed + 1
+
       # sort array / hashmap according to ascending, descending, order pressed
-      IF arpValueModeMod == 3
-        INSERTION_SORT 0 numPressed
-      END
-      IF arpValueModeMod == 4
-        INSERTION_SORT 0 numPressed
-      END
-      IF arpValueModeMod == 5
-        INSERTION_SORT 0 numPressed
-      END
-      IF arpValueModeMod < 3
+      IF arpValueModeMod < 6
         INSERTION_SORT 0 numPressed
       END
       IF arpValueModeMod > 8
         INSERTION_SORT 1 numPressed
       END
-      
-      MATH numPressed = numPressed + 1
 
       IF numPressed == 1
         ASS gateOpened = 1
@@ -212,6 +219,17 @@ IF arpPhraseOnOffToggle == 1
     END
 
     IF MT == 80
+
+      # if reset (key pressed limit exceeded), handle differently
+      IF reset == 1
+        MATH numPressed = numPressed - 1
+        IF numPressed == 0
+          ASS reset = 0
+        END
+        BLOCK
+        EXIT
+      END
+
       # remove note value from array
       # decrease number of notes that need to be iterated through
       ASS iter = arpIndexOffset
@@ -230,26 +248,19 @@ IF arpPhraseOnOffToggle == 1
       END
       
       # sort array / hashmap according to ascending, descending, order pressed
-      IF arpValueModeMod == 3
-        INSERTION_SORT 0 numPressed
-      END
-      IF arpValueModeMod == 4
-        INSERTION_SORT 0 numPressed
-      END
-      IF arpValueModeMod == 5
-        INSERTION_SORT 0 numPressed
-      END
-      IF arpValueModeMod < 3
+      IF arpValueModeMod < 6
         INSERTION_SORT 0 numPressed
       END
       IF arpValueModeMod > 8
         INSERTION_SORT 1 numPressed
       END
       
+      # subract one from current notes pressed
+      # NOTE this is done after sorting to make sure any removed values are pushed out
       MATH numPressed = numPressed - 1
       IF numPressed == 0
         ASS G20 = 00 00 00 00 00 00 00 00 00 00
-        ASS J0 = 00 00 00 00 00 00 00 00 00 00
+        ASS J20 = 00 00 00 00 00 00 00 00 00 00
         ASS numPressedTotal = 0
       END
       
@@ -383,4 +394,8 @@ IF setPhrase == 1
   END
   # NOTE could block whatever is inputted here
   # this would make sense if phrase was toggled and on, but not if this was not the case
+END
+
+IF M0 == F0
+  XX = XX +B
 END

@@ -6,7 +6,7 @@
 # TEST NOTES
 # NOTE with filter added, do we need to be blocking output from this?
 # NOTE should channel comparison for drum be changed? (currently <=, might need to just be <)
-# NOTE tempo mode 0 is setting tempoPulse incorrectly
+# NOTE arp value mode always set to A first?
 
 IF LOAD
 
@@ -475,16 +475,21 @@ SUBROUTINE INSERTION_SORT isOrder length
   ALIAS I13 keyVal
   ALIAS I14 keyBool
   ALIAS I15 isSetSort
+  ALIAS I16 lengthOffset
+
+  LOG length length
+
+  MATH lengthOffset = length + 20
 
   IF isOrder == 1
-    ASS i = 20
-    WHILE i < length
+    ASS i = 21
+    WHILE i < lengthOffset
       ASS keyVal = JI10
       ASS keyBool = GI10
       MATH j = i - 1
       MATH jPlusOne = j + 1
       ASS isSetSort = 0
-      IF j >= 0
+      IF j >= 20
         IF JI11 < keyVal
           ASS isSetSort = 1
         END
@@ -495,7 +500,7 @@ SUBROUTINE INSERTION_SORT isOrder length
         MATH j = j - 1
         MATH jPlusOne = j + 1
         ASS isSetSort = 0
-        IF j >= 0
+        IF j >= 20
           IF JI11 < keyVal
             ASS isSetSort = 1
           END
@@ -506,14 +511,14 @@ SUBROUTINE INSERTION_SORT isOrder length
       MATH i = i + 1
     END
   ELSE
-    ASS i = 20
-    WHILE i < length
+    ASS i = 21
+    WHILE i < lengthOffset
       ASS keyVal = GI10
       ASS keyBool = JI10
       MATH j = i - 1
       MATH jPlusOne = j + 1
       ASS isSetSort = 0
-      IF j >= 0
+      IF j >= 20
         IF GI11 < keyVal
           ASS isSetSort = 1
         END
@@ -524,7 +529,7 @@ SUBROUTINE INSERTION_SORT isOrder length
         MATH j = j - 1
         MATH jPlusOne = j + 1
         ASS isSetSort = 0
-        IF j >= 0
+        IF j >= 20
           IF GI11 < keyVal
             ASS isSetSort = 1
           END
@@ -554,6 +559,7 @@ IF LOAD
   ALIAS I7 secondMaxIndex
   ALIAS I8 tempPhraseVal
   ALIAS I9 phraseIndex
+  ALIAS IA reset
 
   # global
   ALIAS G1 numPressed
@@ -567,7 +573,7 @@ IF LOAD
 
   # assign local
   # NOTE technically K does not need to be reset here, since only L is parsed - doing so as good practice
-  ASS J0 = 00 00 00 00 00 00 00 00 00 00
+  ASS J20 = 00 00 00 00 00 00 00 00 00 00
   ASS K0 = 00 00 00 00 00
   ASS L0 = 00 00 00 00 00
 
@@ -575,6 +581,7 @@ IF LOAD
   # needs to be set to a value too far for both negatives and positives to reach
   ASS tempPhraseVal = AAAA
   ASS phraseIndex = 2A
+  ASS reset = 0
   
 END
 
@@ -600,7 +607,7 @@ IF MT == B0
     # this is fine (and expected) for live keyboard playing without latch, but will likely be an issue when using modstep
 
     # assign local variables
-    ASS J0 = 00 00 00 00 00 00 00 00 00 00
+    ASS J20 = 00 00 00 00 00 00 00 00 00 00
     ASS K0 = 00 00 00 00 00
     ASS L0 = 00 00 00 00 00
     ASS numPressedTotal = 0
@@ -623,20 +630,30 @@ IF arpPhraseOnOffToggle == 1
   IF arpPhraseToggle == 0
     # if key is pressed
     IF MT == 90
-      
-      # setting arbitrary limit on number of keys pressed at a time to 10
-      IF numPressed == B
+
+      # if reset (key pressed limit exceeded), handle differently
+      IF reset == 1
+        MATH numPressed = numPressed + 1
+        BLOCK
+        EXIT
+      END
+
+      # setting arbitrary limit on number of keys pressed at a time to 10 (using 10 as comparator here because numPressed has not yet been increased)
+      IF numPressed == A
         ASS G20 = 00 00 00 00 00 00 00 00 00 00
-        ASS J0 = 00 00 00 00 00 00 00 00 00 00
-        ASS numPressed = 0
+        ASS J20 = 00 00 00 00 00 00 00 00 00 00
+        ASS reset = 1
         ASS numPressedTotal = 0
+        # necessary so that numPressed does not go past zero by mistake, as we have not yet incremented for this key press
+        MATH numPressed = numPressed + 1
         # TEST
         # ensure G array contains correct key values pressed on reset (0)
         # ensure J array contains correct order of keys pressed on reset (0)
         # ensure numPressed aligns with number of keys pressed on reset (0)
         # ensure numPressedTotal aligns with number of keys pressed total on reset (0)
         LOG isArp
-        LOG G20 G20
+        LOG G19 G19 # should always be 0, unless globalkey is updated
+        LOG G20 G20 
         LOG G21 G21
         LOG G22 G22
         LOG G23 G23
@@ -646,7 +663,9 @@ IF arpPhraseOnOffToggle == 1
         LOG G27 G27
         LOG G28 G28
         LOG G29 G29
+        LOG G2A G2A # should always be first value of phrase
         LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+        LOG J19 J19 # should always be 0
         LOG J20 J20
         LOG J21 J21
         LOG J22 J22
@@ -657,6 +676,7 @@ IF arpPhraseOnOffToggle == 1
         LOG J27 J27
         LOG J28 J28
         LOG J29 J29
+        LOG J2A J2A # should always be 0
         LOG ~~~~~~~~~~BREAK~~~~~~~~~~
         LOG numPressed numPressed
         LOG numPressedTotal numPressedTotal
@@ -664,7 +684,7 @@ IF arpPhraseOnOffToggle == 1
         BLOCK
         EXIT
       END
-      
+
       # add one to notes overall pressed
       MATH numPressedTotal = numPressedTotal + 1
 
@@ -673,29 +693,21 @@ IF arpPhraseOnOffToggle == 1
       ASS GI2 = M1
       ASS JI2 = numPressedTotal
 
+      # add one to current notes pressed
+      # NOTE this is done before sorting to make sure proper length is parsed
+      MATH numPressed = numPressed + 1
+
       # sort array / hashmap according to ascending, descending, order pressed
-      IF arpValueModeMod == 3
-        INSERTION_SORT 0 numPressed
-      END
-      IF arpValueModeMod == 4
-        INSERTION_SORT 0 numPressed
-      END
-      IF arpValueModeMod == 5
-        INSERTION_SORT 0 numPressed
-      END
-      IF arpValueModeMod < 3
+      IF arpValueModeMod < 6
         INSERTION_SORT 0 numPressed
       END
       IF arpValueModeMod > 8
         INSERTION_SORT 1 numPressed
       END
-      
-      MATH numPressed = numPressed + 1
 
       IF numPressed == 1
         ASS gateOpened = 1
       END
-
       # TEST
       # ensure G array contains correct key values pressed on key press
       # ensure J array contains correct order of keys pressed on key press
@@ -703,7 +715,8 @@ IF arpPhraseOnOffToggle == 1
       # ensure numPressedTotal aligns with number of keys pressed total on key press
       # ensure gateOpened aligns with number of keys pressed total on key press
       LOG isArp
-      LOG G20 G20
+      LOG G19 G19 # should always be 0, unless globalkey is updated
+      LOG G20 G20 
       LOG G21 G21
       LOG G22 G22
       LOG G23 G23
@@ -713,7 +726,9 @@ IF arpPhraseOnOffToggle == 1
       LOG G27 G27
       LOG G28 G28
       LOG G29 G29
+      LOG G2A G2A # should always be first value of phrase
       LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+      LOG J19 J19 # should always be 0
       LOG J20 J20
       LOG J21 J21
       LOG J22 J22
@@ -724,6 +739,7 @@ IF arpPhraseOnOffToggle == 1
       LOG J27 J27
       LOG J28 J28
       LOG J29 J29
+      LOG J2A J2A # should always be 0
       LOG ~~~~~~~~~~BREAK~~~~~~~~~~
       LOG numPressed numPressed
       LOG numPressedTotal numPressedTotal
@@ -735,6 +751,17 @@ IF arpPhraseOnOffToggle == 1
     END
 
     IF MT == 80
+
+      # if reset (key pressed limit exceeded), handle differently
+      IF reset == 1
+        MATH numPressed = numPressed - 1
+        IF numPressed == 0
+          ASS reset = 0
+        END
+        BLOCK
+        EXIT
+      END
+
       # remove note value from array
       # decrease number of notes that need to be iterated through
       ASS iter = arpIndexOffset
@@ -753,29 +780,21 @@ IF arpPhraseOnOffToggle == 1
       END
       
       # sort array / hashmap according to ascending, descending, order pressed
-      IF arpValueModeMod == 3
-        INSERTION_SORT 0 numPressed
-      END
-      IF arpValueModeMod == 4
-        INSERTION_SORT 0 numPressed
-      END
-      IF arpValueModeMod == 5
-        INSERTION_SORT 0 numPressed
-      END
-      IF arpValueModeMod < 3
+      IF arpValueModeMod < 6
         INSERTION_SORT 0 numPressed
       END
       IF arpValueModeMod > 8
         INSERTION_SORT 1 numPressed
       END
       
+      # subract one from current notes pressed
+      # NOTE this is done after sorting to make sure any removed values are pushed out
       MATH numPressed = numPressed - 1
       IF numPressed == 0
         ASS G20 = 00 00 00 00 00 00 00 00 00 00
-        ASS J0 = 00 00 00 00 00 00 00 00 00 00
+        ASS J20 = 00 00 00 00 00 00 00 00 00 00
         ASS numPressedTotal = 0
       END
-
     # TEST
     # ensure G array contains correct key values pressed on key release
     # ensure J array contains correct order of keys pressed on key release
@@ -783,7 +802,8 @@ IF arpPhraseOnOffToggle == 1
     # ensure numPressedTotal aligns with number of keys pressed total on key release
     # ensure gateOpened aligns with number of keys pressed total on key release
     LOG isArp
-    LOG G20 G20
+    LOG G19 G19 # should always be 0, unless globalkey is updated
+    LOG G20 G20 
     LOG G21 G21
     LOG G22 G22
     LOG G23 G23
@@ -793,7 +813,9 @@ IF arpPhraseOnOffToggle == 1
     LOG G27 G27
     LOG G28 G28
     LOG G29 G29
+    LOG G2A G2A # should always be first value of phrase
     LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+    LOG J19 J19 # should always be 0
     LOG J20 J20
     LOG J21 J21
     LOG J22 J22
@@ -804,6 +826,7 @@ IF arpPhraseOnOffToggle == 1
     LOG J27 J27
     LOG J28 J28
     LOG J29 J29
+    LOG J2A J2A # should always be 0
     LOG ~~~~~~~~~~BREAK~~~~~~~~~~
     LOG numPressed numPressed
     LOG numPressedTotal numPressedTotal
@@ -836,12 +859,14 @@ IF arpPhraseOnOffToggle == 1
         LOG K2 K2
         LOG K3 K3
         LOG K4 K4
+        LOG K5 K5 # should always be zero
         LOG ~~~~~~~~~~BREAK~~~~~~~~~~
         LOG L0 L0
         LOG L1 L1
         LOG L2 L2
         LOG L3 L3
         LOG L4 L4
+        LOG L5 L5 # should always be zero
         LOG ~~~~~~~~~~BREAK~~~~~~~~~~
         LOG numPressed numPressed
         LOG numPressedTotal numPressedTotal
@@ -876,7 +901,6 @@ IF arpPhraseOnOffToggle == 1
       IF numPressed == 1
         ASS gateOpened = 1
       END
-
       # TEST
       # ensure K array contains correct key values pressed on key press
       # ensure L array contains correct order of keys pressed on key press
@@ -889,12 +913,14 @@ IF arpPhraseOnOffToggle == 1
       LOG K2 K2
       LOG K3 K3
       LOG K4 K4
+      LOG K5 K5 # should always be zero
       LOG ~~~~~~~~~~BREAK~~~~~~~~~~
       LOG L0 L0
       LOG L1 L1
       LOG L2 L2
       LOG L3 L3
       LOG L4 L4
+      LOG L5 L5 # should always be zero
       LOG ~~~~~~~~~~BREAK~~~~~~~~~~
       LOG numPressed numPressed
       LOG numPressedTotal numPressedTotal
@@ -940,7 +966,6 @@ IF arpPhraseOnOffToggle == 1
         # ASS gateOpened = 1 # NOTE uncommenting this would restart phrase whenever key lifted
         ASS phraseVal = KI7
       END
-
       # TEST
       # ensure K array contains correct key values pressed on key release
       # ensure L array contains correct order of keys pressed on key release
@@ -953,12 +978,14 @@ IF arpPhraseOnOffToggle == 1
       LOG K2 K2
       LOG K3 K3
       LOG K4 K4
+      LOG K5 K5 # should always be zero
       LOG ~~~~~~~~~~BREAK~~~~~~~~~~
       LOG L0 L0
       LOG L1 L1
       LOG L2 L2
       LOG L3 L3
       LOG L4 L4
+      LOG L5 L5 # should always be zero
       LOG ~~~~~~~~~~BREAK~~~~~~~~~~
       LOG numPressed numPressed
       LOG numPressedTotal numPressedTotal

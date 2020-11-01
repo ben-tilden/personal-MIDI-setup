@@ -59,6 +59,8 @@
 # button 2 will toggle arp / phrase
 # button 10 will turn arp / phrase on or off
 
+# TODO send lights off on reset
+
 # global array will be set in the following way
 # G0 - channel
 # G1 - numPressed
