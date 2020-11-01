@@ -3,8 +3,10 @@
 
 # xtouch
 
+
 IF LOAD
 
+  # NOTE dangerous - need to confirm that this is where we want the global reset to occur
   ASS G0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
   # local
@@ -120,7 +122,6 @@ IF MT == 90
       ASS arpPhraseToggle = 0
       IF setPhrase == 1
         ASS setPhrase = 0
-        SEND 90 00 00
         SEND F0 BB BB 07 +F
       END
     END
@@ -173,6 +174,7 @@ IF MT == 90
       END
       # END TEST
     END
+    # TODO add lighting here
     # for all except the last, order is part 1, part 2, part 1 and 2
     # if it is button 5 - knobs control 'select'
     IF M1 == 0C 7F
@@ -257,7 +259,7 @@ IF MT == 80
       SEND 90 01 01
     ELSE
       IF setPhrase == 0
-        SEND 90 07 00
+        SEND 90 00 00
       END
     END
   END

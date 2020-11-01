@@ -1,4 +1,5 @@
 # test plan
+# regex for code: +# TEST\n(.+\n)+? +# END TEST\n
 
 ###
 # x touch
