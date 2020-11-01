@@ -7,11 +7,12 @@
 # NOTE with filter added, do we need to be blocking output from this?
 # NOTE should channel comparison for drum be changed? (currently <=, might need to just be <)
 # NOTE arp value mode always set to A first?
+# NOTE setPhrase light remains on when limit exceeded
 
 IF LOAD
 
   # NOTE dangerous - need to confirm that this is where we want the global reset to occur
-  ASS G0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  ASS G0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
   # local
   ALIAS I0 tempoMode
@@ -1027,6 +1028,12 @@ IF arpPhraseOnOffToggle == 1
 END
 
 IF setPhrase == 1
+  # TEST
+  IF MT == 80
+    BLOCK
+    EXIT
+  END
+  # END TEST
   IF MT == 90
     # because we're taking offset here, we need to record each step as the difference between it and the last step
     # if tempPhraseVal has a previous value (i.e. is not the first key pressed in the phrase)
@@ -1040,7 +1047,7 @@ IF setPhrase == 1
       ASS tempPhraseVal = M1
     END
     # if phrase is at max limit, end setPhrase
-    IF phraseIndex > 39
+    IF phraseIndex > 49
       ASS setPhrase = 0
       ASS tempPhraseVal = AAAA
     END
@@ -1053,7 +1060,7 @@ IF setPhrase == 1
     MATH phraseIndex = phraseIndex + 1
 
     # if phrase is at max limit, end setPhrase
-    IF phraseIndex > 39
+    IF phraseIndex > 49
       ASS setPhrase = 0
       ASS tempPhraseVal = AAAA
     END
