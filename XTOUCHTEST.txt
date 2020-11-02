@@ -1,7 +1,6 @@
 # xtouch test code
 
 # TEST NOTES
-# NOTE with filter added, do we need to be blocking output from this?
 # TODO send lights off on reset
 # NOTE address global reset
 # TODO will need to handle sysex for lights reset
@@ -126,6 +125,14 @@ IF LOAD
   # NOTE if this isn't reset on each 'install', then it's technically possible it could decrease/increase to the value min/max
   ASS arpValueMode = 8000
   ASS previousDrumVal = 04
+END
+
+# SEND
+IF M0 == F0 BB BB 07
+  IF setPhrase == 0
+    SEND 90 00 00
+  END
+  FX = XX +B
 END
 
 # if it is a button push

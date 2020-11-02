@@ -594,7 +594,7 @@ IF setPhrase == 1
     # because we're taking offset here, we need to record each step as the difference between it and the last step
     # if tempPhraseVal has a previous value (i.e. is not the first key pressed in the phrase)
     IF tempPhraseVal != AAAA
-      MATH GI9 = M1 - tempPhraseVal
+      MATH GI9 = M1 - phraseVal
       ASS phraseLengthPlusOffset = phraseIndex
       MATH phraseIndex = phraseIndex + 1
       ASS tempPhraseVal = M1
@@ -605,11 +605,12 @@ IF setPhrase == 1
     # if phrase is at max limit, end setPhrase
     IF phraseIndex > 49
       ASS setPhrase = 0
+      ASS phraseIndex = 2A
       ASS tempPhraseVal = AAAA
+      SEND F0 BB BB F7 +F
     END
   END
   # if phraseRest is sent
-  # NOTE might need to filter the sysex messages here to prevent them from passing through and causing havoc
   IF M0 == F0 AA AA F7
     # assign value to AAAA, indicating a rest
     ASS GI9 = AAAA
@@ -618,12 +619,14 @@ IF setPhrase == 1
     # if phrase is at max limit, end setPhrase
     IF phraseIndex > 49
       ASS setPhrase = 0
+      ASS phraseIndex = 2A
       ASS tempPhraseVal = AAAA
+      SEND F0 BB BB F7 +F
     END
   END
   # ensure phraseIndex is reset when setPhrase is turned off from xtouch
-  IF M0 == F0 BB BB 07
-    ASS phraseIndex = AAAA
+  IF M0 == F0 BB BB F7
+    ASS phraseIndex = 2A
   END
   # NOTE could block whatever is inputted here, to prevent notes from passing through while the phrase is running
   # this would make sense if phrase was toggled and on, but not if this was not the case
@@ -670,8 +673,4 @@ IF setPhrase == 1
   LOG tempPhraseVal tempPhraseVal
   LOG phraseIndex phraseIndex
   # END TEST
-END
-
-IF M0 == F0
-  XX = XX +B
 END

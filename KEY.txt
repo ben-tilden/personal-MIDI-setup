@@ -51,4 +51,4 @@
 # sysex message key
 
 # F0 AA AA F7 - rest, sent from xtouch to launchkey
-# F0 BB BB F7 - message sent from xtouch to launchkey to signify that setPhrase has been turned off
+# F0 BB BB F7 - message sent from xtouch to launchkey or launchkey to xtouch to signify that setPhrase has been turned off
