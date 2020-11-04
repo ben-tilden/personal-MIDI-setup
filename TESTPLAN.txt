@@ -67,3 +67,76 @@
 # ensure phraseIndex is the previous index plus one
 
 # ensure sysex resets phraseIndex when setPhrase is turned off
+
+###
+# channel #
+###
+
+# ensure maxValClockNum mod any possible tempoPulse is equal to 0 mod the same tempoPulse
+
+# ensure gateOpened resets clockNum
+
+# ensure notes are processed if clockNumMod is zero
+
+# ensure arp only goes to arp
+
+  # mode 0
+  # ensure arpValueMode is correct
+  # ensure gateOpened resets arpIndex
+
+  # mode 1
+  # ensure arpValueMode is correct
+  # ensure gateOpened resets arpIndex
+  # ensure isOctave is cycling through correctly
+
+  # mode 2
+  # ensure arpValueMode is correct
+  # ensure gateOpened resets arpIndex
+  # ensure isOctave is cycling through correctly
+
+  # mode 3
+  # ensure arpValueMode is correct
+  # ensure gateOpened resets arpIndex
+
+  # mode 4
+  # ensure arpValueMode is correct
+  # ensure gateOpened resets arpIndex
+  # ensure isOctave is cycling through correctly
+
+  # mode 5
+  # ensure arpValueMode is correct
+  # ensure gateOpened resets arpIndex
+  # ensure isOctave is cycling through correctly
+
+  # mode 6
+  # ensure arpValueMode is correct
+  # ensure random is random
+
+  # mode 7
+  # ensure arpValueMode is correct
+  # ensure random is random
+
+  # mode 8
+  # ensure arpValueMode is correct
+  # ensure random is random
+
+  # mode 9
+  # ensure arpValueMode is correct
+  # ensure gateOpened resets arpIndex
+
+  # mode A
+  # ensure arpValueMode is correct
+  # ensure gateOpened resets arpIndex
+  # ensure isOctave is cycling through correctly
+
+  # mode B
+  # ensure arpValueMode is correct
+  # ensure gateOpened resets arpIndex
+  # ensure isOctave is cycling through correctly
+
+# ensure phrase only goes to phrase
+
+  # ensure gateOpened resets phraseIndex
+  # ensure correct offset is sending 
+  # ensure rest functionality is working
+  # ensure phraseIndex is reset at the end of the phrase

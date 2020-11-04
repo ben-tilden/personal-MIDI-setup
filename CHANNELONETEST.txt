@@ -1,3 +1,15 @@
+# channel one test code
+
+# TEST NOTES
+
+
+
+
+
+
+
+
+
 # channel one
 
 # this instance will constantly be receiving clock, the question will be whether it responds to it or not
@@ -61,8 +73,16 @@ IF LOAD
 
   # assign local
   ASS maxValClockNum = FF60
+  # TEST
+  # assign clockNum close to maxVal
+  # END TEST
   ASS clockNum = 0
   ASS isOctave = 0
+
+  # TEST
+  ALIAS L0 tempVar1
+  ALIAS L1 tempVar2
+  # END TEST
 END
 
 # SEND F0 C4 MC G0 F7 +F
@@ -96,20 +116,50 @@ IF channel == 0
         IF clockNum == maxValClockNum
           ASS clockNum = 0
         END
+        # TEST
+        # ensure maxValClockNum mod any possible tempoPulse is equal to 0 mod the same tempoPulse
+        MATH tempVar1 = maxValClockNum % tempoPulse
+        MATH tempVar2 = 0 % tempoPulse
+        IF tempVar1 == tempVar2
+          LOG maxValClockNum_GOOD
+        ELSE
+          LOG maxValClockNum_BAD
+        END
+        # END TEST
         IF gateOpened = 1
           ASS clockNum = 0 # NOTE might need to be reconfigured if clock signal is too fast for processing, as this may reset clock inadvertantly
+          # TEST
+          # ensure gateOpened resets clockNum
+          LOG clockNum_AFTER_gateOpened_RESET clockNum
+          # END TEST
         END
         MATH clockNumMod = clockNum % tempoPulse
         # if clockNum modulo the number set from above is zero, allow clock
         IF clockNumMod == 0
+          # TEST
+          # ensure notes are processed if clockNumMod is zero
+          LOG clockNumMod_ZERO
+          # END TEST
           # if isArp
           IF arpPhraseToggle == 0
+            # TEST
+            # ensure arp only goes to arp
+            LOG IS_ARP
+            # END TEST
             # if value mode is 0 (asc 1)
             IF arpValueModeMod == 0
+              # TEST
+              # ensure arpValueMode is correct
+              LOG arpValueMode arpValueModeMod
+              # END TEST
               # if gateOpened, or if first instance of clock since first key was pressed
               IF gateOpened == 1
                 MATH arpIndex = numPressed + arpOffset
                 ASS gateOpened = 0
+                # TEST
+                # ensure gateOpened resets arpIndex
+                LOG arpIndex_AFTER_gateOpened_RESET arpIndex
+                # END TEST
               END
               # arpIndex will initially be set to numPressed + 32, but after it's set to numPressed + 32 - 1, it will be automatically decreased each run through
               # this decrease stops once we go under 32 - at that point it's reset
@@ -122,12 +172,24 @@ IF channel == 0
             END
             # if value mode is 1 (asc 2)
             IF arpValueModeMod == 1
+              # TEST
+              # ensure arpValueMode is correct
+              LOG arpValueMode arpValueModeMod
+              # END TEST
               # if gateOpened, or if first instance of clock since first key was pressed
               IF gateOpened == 1
                 MATH arpIndex = numPressed + arpOffset
                 ASS isOctave = 0
                 ASS gateOpened = 0
+                # TEST
+                # ensure gateOpened resets arpIndex
+                LOG arpIndex_AFTER_gateOpened_RESET arpIndex
+                # END TEST
               END
+              # TEST
+              # ensure isOctave is cycling through correctly
+              LOG isOctave isOctave
+              # END TEST
               # if not isOctave, business as usual
               IF isOctave == 0
                 MATH arpIndex = arpIndex - 1
@@ -147,12 +209,24 @@ IF channel == 0
             END
             # if value mode is 2 (asc 3)
             IF arpValueModeMod == 2
+              # TEST
+              # ensure arpValueMode is correct
+              LOG arpValueMode arpValueModeMod
+              # END TEST
               # if gateOpened, or if first instance of clock since first key was pressed
               IF gateOpened == 1
                 MATH arpIndex = numPressed + arpOffset
                 ASS isOctave = 0
                 ASS gateOpened = 0
+                # TEST
+                # ensure gateOpened resets arpIndex
+                LOG arpIndex_AFTER_gateOpened_RESET arpIndex
+                # END TEST
               END
+              # TEST
+              # ensure isOctave is cycling through correctly
+              LOG isOctave isOctave
+              # END TEST
               MATH isOctaveMod = isOctave % 3
               # if isOctaveMod is 0, business as usual
               IF isOctaveMod == 0
@@ -181,10 +255,18 @@ IF channel == 0
             END
             # if value mode is 3 (desc 1)
             IF arpValueModeMod == 3
+              # TEST
+              # ensure arpValueMode is correct
+              LOG arpValueMode arpValueModeMod
+              # END TEST
               # if gateOpened, or if first instance of clock since first key was pressed
               IF gateOpened == 1
                 ASS arpIndex = 1F
                 ASS gateOpened = 0
+                # TEST
+                # ensure gateOpened resets arpIndex
+                LOG arpIndex_AFTER_gateOpened_RESET arpIndex
+                # END TEST
               END
               # arpIndex will initially be set to 31, but after it's set to 32, it will be automatically increased each run through
               # this increase stops once we go over numPressed - at that point it's reset
@@ -198,12 +280,24 @@ IF channel == 0
             END
             # if value mode is 4 (desc 2)
             IF arpValueModeMod == 4
+              # TEST
+              # ensure arpValueMode is correct
+              LOG arpValueMode arpValueModeMod
+              # END TEST
               # if gateOpened, or if first instance of clock since first key was pressed
               IF gateOpened == 1
                 ASS arpIndex = 1F
                 ASS isOctave = 0
                 ASS gateOpened = 0
+                # TEST
+                # ensure gateOpened resets arpIndex
+                LOG arpIndex_AFTER_gateOpened_RESET arpIndex
+                # END TEST
               END
+              # TEST
+              # ensure isOctave is cycling through correctly
+              LOG isOctave isOctave
+              # END TEST
               # if not isOctave, business as usual
               IF isOctave == 0
                 MATH arpIndex = arpIndex + 1
@@ -224,12 +318,24 @@ IF channel == 0
             END
             # if value mode is 5 (desc 3)
             IF arpValueModeMod == 5
+              # TEST
+              # ensure arpValueMode is correct
+              LOG arpValueMode arpValueModeMod
+              # END TEST
               # if gateOpened, or if first instance of clock since first key was pressed
               IF gateOpened == 1
                 ASS arpIndex = 1F
                 ASS isOctave = 0
                 ASS gateOpened = 0
+                # TEST
+                # ensure gateOpened resets arpIndex
+                LOG arpIndex_AFTER_gateOpened_RESET arpIndex
+                # END TEST
               END
+              # TEST
+              # ensure isOctave is cycling through correctly
+              LOG isOctave isOctave
+              # END TEST
               MATH isOctaveMod = isOctave % 3
               # if isOctaveMod is 0, business as usual
               IF isOctaveMod == 0
@@ -262,16 +368,33 @@ IF channel == 0
             END
             # if value mode is 6 (rand 1)
             IF arpValueModeMod == 6
+              # TEST
+              # ensure arpValueMode is correct
+              LOG arpValueMode arpValueModeMod
+              # END TEST
               MATH arpIndex = RFF % numPressed
+              # TEST
+              # ensure random is random
+              LOG arpIndex_RANDOM arpIndex
+              # END TEST
               MATH arpIndex = arpIndex + arpOffset
               SEND 90 GI3 velocity
               SEND 80 GI3 velocity +DG6
             END
             # if value mode is 7 (rand 2)
             IF arpValueModeMod == 7
+              # TEST
+              # ensure arpValueMode is correct
+              LOG arpValueMode arpValueModeMod
+              # END TEST
               # NOTE this is completely random - thus ignoring the note played before it - the octave will not necessarily match up with previous note
               MATH arpIndex = RFF % numPressed
               MATH isOctaveMod = RFF % 2
+              # TEST
+              # ensure random is random
+              LOG arpIndex_RANDOM arpIndex
+              LOG isOctave_RANDOM isOctave
+              # END TEST
               MATH arpIndex = arpIndex + arpOffset
               # if not isOctaveMod, business as usual
               IF isOctaveMod == 0
@@ -286,8 +409,17 @@ IF channel == 0
             END
             # if value mode is 8 (rand 3)
             IF arpValueModeMod == 8
+              # TEST
+              # ensure arpValueMode is correct
+              LOG arpValueMode arpValueModeMod
+              # END TEST
               MATH arpIndex = RFF % numPressed
               MATH isOctaveMod = RFF % 3
+              # TEST
+              # ensure random is random
+              LOG arpIndex_RANDOM arpIndex
+              LOG isOctave_RANDOM isOctave
+              # END TEST
               MATH arpIndex = arpIndex + arpOffset
               # if isOctaveMod is 0, business as usual
               IF isOctave == 0
@@ -310,9 +442,17 @@ IF channel == 0
             # NOTE this currently appears the same as the general asc - this is because the way they are sorted will be the same
             # if value mode is 9 (order 1)
             IF arpValueModeMod == 9
+              # TEST
+              # ensure arpValueMode is correct
+              LOG arpValueMode arpValueModeMod
+              # END TEST
               IF gateOpened == 1
                 MATH arpIndex = numPressed + arpOffset
                 ASS gateOpened = 0
+                # TEST
+                # ensure gateOpened resets arpIndex
+                LOG arpIndex_AFTER_gateOpened_RESET arpIndex
+                # END TEST
               END
               # arpIndex will initially be set to numPressed + 32, but after it's set to numPressed + 32 - 1, it will be automatically decreased each run through
               # this decrease stops once we go under 32 - at that point it's reset
@@ -325,12 +465,24 @@ IF channel == 0
             END
             # if value mode is 10 (order 2)
             IF arpValueModeMod == A
+              # TEST
+              # ensure arpValueMode is correct
+              LOG arpValueMode arpValueModeMod
+              # END TEST
               # if gateOpened, or if first instance of clock since first key was pressed
               IF gateOpened == 1
                 MATH arpIndex = numPressed + arpOffset
                 ASS isOctave = 0
                 ASS gateOpened = 0
+                # TEST
+                # ensure gateOpened resets arpIndex
+                LOG arpIndex_AFTER_gateOpened_RESET arpIndex
+                # END TEST
               END
+              # TEST
+              # ensure isOctave is cycling through correctly
+              LOG isOctave isOctave
+              # END TEST
               # if not isOctave, business as usual
               IF isOctave == 0
                 MATH arpIndex = arpIndex - 1
@@ -350,12 +502,24 @@ IF channel == 0
             END
             # if value mode is 11 (order 3)
             IF arpValueModeMod == B
+              # TEST
+              # ensure arpValueMode is correct
+              LOG arpValueMode arpValueModeMod
+              # END TEST
               # if gateOpened, or if first instance of clock since first key was pressed
               IF gateOpened == 1
                 MATH arpIndex = numPressed + arpOffset
                 ASS isOctave = 0
                 ASS gateOpened = 0
+                # TEST
+                # ensure gateOpened resets arpIndex
+                LOG arpIndex_AFTER_gateOpened_RESET arpIndex
+                # END TEST
               END
+              # TEST
+              # ensure isOctave is cycling through correctly
+              LOG isOctave isOctave
+              # END TEST
               MATH isOctaveMod = isOctave % 3
               # if isOctaveMod is 0, business as usual
               IF isOctaveMod == 0
@@ -387,21 +551,43 @@ IF channel == 0
           # offset will be used in conjunction with note in, also stored in the global array
           # additionally, -1 implies a rest, so nothing will be played
           ELSE
+            # TEST
+            # ensure phrase only goes to phrase
+            LOG IS_PHRASE
+            # END TEST
             # if gateOpened, or if first instance of clock since first key was pressed
             IF gateOpened == 1
               MATH phraseIndex = 2A
               ASS gateOpened = 0
+              # TEST
+              # ensure gateOpened resets phraseIndex
+              LOG phraseIndex_AFTER_gateOpened_RESET phraseIndex
+              # END TEST
             END
             # if phrase offset is not a rest
             IF GI8 != 2E57
               MATH phraseValSend = phraseVal + GI8
+              # TEST
+              # ensure correct offset is sending 
+              LOG phraseVal_OFFSET GI8
+              # END TEST
               SEND 90 phraseValSend velocity
               SEND 80 phraseValSend velocity +DG6
             END
+            # TEST
+            # ensure rest functionality is working
+            IF GI8 == 2E57
+              LOG IS_REST
+            END
+            # END TEST
             IF phraseIndex != phraseLengthPlusOffset
               MATH phraseIndex = phraseIndex + 1
             ELSE
               ASS phraseIndex = 2A
+              # TEST
+              # ensure phraseIndex is reset at the end of the phrase
+              LOG phraseIndex_RESET
+              # END TEST
             END
           END
         ELSE
