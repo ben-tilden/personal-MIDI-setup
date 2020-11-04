@@ -1,8 +1,6 @@
 # launchkey mini test code
 
 # TEST NOTES
-# NOTE arp value mode always set to A first?
-# NOTE setPhrase light remains on when limit exceeded
 
 
 
