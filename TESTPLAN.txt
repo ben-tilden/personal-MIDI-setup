@@ -65,3 +65,5 @@
 # ensure setPhrase is 0 if max limit reached, otherwise 1
 # ensure tempPhraseVal is the previous value
 # ensure phraseIndex is the previous index plus one
+
+# ensure sysex resets phraseIndex when setPhrase is turned off

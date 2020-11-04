@@ -99,7 +99,7 @@
 IF LOAD
 
   # NOTE dangerous - need to confirm that this is where we want the global reset to occur
-  ASS G0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  ASS G0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 2A 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
   # local
   ALIAS I0 tempoMode
@@ -117,7 +117,8 @@ IF LOAD
   ALIAS G8 setPhrase
   ALIAS G9 waveguideToggle
   ALIAS GA drumParams
-  ALIAS GE arpModeSwitched # gateOpened
+  ALIAS GE arpModeSwitched # NOTE gateOpened
+  ALIAS G12 phraseIndex
 
   # assign local
   # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
@@ -125,10 +126,13 @@ IF LOAD
   # NOTE if this isn't reset on each 'install', then it's technically possible it could decrease/increase to the value min/max
   ASS arpValueMode = 8000
   ASS previousDrumVal = 04
+  # TEST
+  LOG phraseIndex phraseIndex
+  # END TEST
 END
 
-# SEND
-IF M0 == F0 BB BB 07
+# Turn off setPhrase light when sysex received
+IF M0 == F0 BB BB F7
   IF setPhrase == 0
     SEND 90 00 00
   END
@@ -183,7 +187,7 @@ IF MT == 90
         ASS setPhrase = 1
       ELSE
         ASS setPhrase = 0
-        SEND F0 BB BB 07 +F
+        SEND F0 BB BB F7 +F
       END
     END
     # TEST
@@ -202,12 +206,16 @@ IF MT == 90
       MATH arpValueModeMod = arpValueMode % B
     # if phrase then add rest to phrase sequence
     ELSE
-      SEND F0 AA AA F7 +F
-      # TEST
-      # ensure rest sent
-      LOG REST_SYSEX_SENT
-      # END TEST
+      IF setPhrase == 1
+        SEND F0 2E 57 F7 +F
+        # NOTE not currently planning on handling this, but there may is likely a race condition between rest and note that could cause issues
+        # TEST
+        # ensure rest sent
+        LOG REST_SYSEX_SENT
+        # END TEST
+      END
     END
+    # TODO ensure arpPhraseToggle is working as expected here
     # TEST
     # ensure arpValueModeMod changes accordingly
     LOG arpValueMode arpValueModeMod
@@ -222,7 +230,7 @@ IF MT == 90
       ASS arpPhraseToggle = 0
       IF setPhrase == 1
         ASS setPhrase = 0
-        SEND F0 BB BB 07 +F
+        SEND F0 BB BB F7 +F
       END
     END
     # TEST
@@ -390,6 +398,14 @@ IF MT == 80
   IF M1 == 11 00
     IF arpPhraseOnOffToggle == 1
       SEND 90 09 01
+    END
+  END
+
+  IF M1 == 10 00
+    LOG HERE
+    IF phraseIndex >= 49 # NOTE 49 because this is the last value for which phraseIndex records
+      LOG HERE2
+      SEND 90 00 00
     END
   END
 
