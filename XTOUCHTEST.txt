@@ -124,7 +124,8 @@ IF LOAD
   # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
   ASS tempoMode = 0
   # NOTE if this isn't reset on each 'install', then it's technically possible it could decrease/increase to the value min/max
-  ASS arpValueMode = 8000
+  ASS arpValueMode = 8004
+  # NOTE this is set to 'select' on initial load
   ASS previousDrumVal = 04
   # TEST
   LOG phraseIndex phraseIndex
@@ -177,8 +178,8 @@ IF MT == 90
     # if arp then increase variable
     IF arpPhraseToggle == 0
       MATH arpValueMode = arpValueMode + 1
-      # set value mode to variable modulo 11
-      MATH arpValueModeMod = arpValueMode % B
+      # set value mode to variable modulo 12
+      MATH arpValueModeMod = arpValueMode % C
       # NOTE uncommenting this makes clockNum, isOctave, and arpIndex reset whenever the arpMode changes
       # ASS arpModeSwitched = 1
     # if phrase then toggle setPhrase
@@ -202,8 +203,8 @@ IF MT == 90
     # if arp then decrease variable
     IF arpPhraseToggle == 0
       MATH arpValueMode = arpValueMode - 1
-      # set value mode to variable modulo 11
-      MATH arpValueModeMod = arpValueMode % B
+      # set value mode to variable modulo 12
+      MATH arpValueModeMod = arpValueMode % C
     # if phrase then add rest to phrase sequence
     ELSE
       IF setPhrase == 1
