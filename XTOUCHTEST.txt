@@ -132,7 +132,7 @@ IF LOAD
 END
 
 # Turn off setPhrase light when sysex received
-IF M0 == F0 BB BB F7
+IF M0 == F0 90 FF F7
   IF setPhrase == 0
     SEND 90 00 00
   END
@@ -187,7 +187,7 @@ IF MT == 90
         ASS setPhrase = 1
       ELSE
         ASS setPhrase = 0
-        SEND F0 BB BB F7 +F
+        SEND F0 90 FF F7 +F
       END
     END
     # TEST
@@ -230,7 +230,7 @@ IF MT == 90
       ASS arpPhraseToggle = 0
       IF setPhrase == 1
         ASS setPhrase = 0
-        SEND F0 BB BB F7 +F
+        SEND F0 90 FF F7 +F
       END
     END
     # TEST
@@ -402,9 +402,7 @@ IF MT == 80
   END
 
   IF M1 == 10 00
-    LOG HERE
     IF phraseIndex >= 49 # NOTE 49 because this is the last value for which phraseIndex records
-      LOG HERE2
       SEND 90 00 00
     END
   END

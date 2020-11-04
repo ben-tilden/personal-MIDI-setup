@@ -617,7 +617,7 @@ IF setPhrase == 1
     # NOTE since this message is for turning off the light, it only needs to be sent when the final note is not a rest
     # rest button handles this in xtouch
     IF G49 != 2E57
-      SEND F0 BB BB F7 +F
+      SEND F0 90 FF F7 +F
     END
   END
   FX = XX +B
@@ -669,7 +669,7 @@ IF setPhrase == 1
   # END TEST
 ELSE
   # ensure phraseIndex is reset when setPhrase is turned off from xtouch
-  IF M0 == F0 BB BB F7
+  IF M0 == F0 90 FF F7
     ASS phraseIndex = 2A
     ASS tempPhraseVal = AAAA
     FX = XX +B
