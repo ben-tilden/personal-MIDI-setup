@@ -216,7 +216,6 @@ IF MT == 90
         # END TEST
       END
     END
-    # TODO ensure arpPhraseToggle is working as expected here
     # TEST
     # ensure arpValueModeMod changes accordingly
     LOG arpValueMode arpValueModeMod

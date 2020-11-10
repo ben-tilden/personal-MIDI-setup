@@ -43,23 +43,21 @@
 IF LOAD
 
   # constant
-  ALIAS FF60 MaxValClockNum
+  ALIAS FF60 maxValClockNum
   ALIAS 00 thisChannel
   ALIAS 20 arpOffset
 
   # local
-  # TODO remove below and update
-  ALIAS I0 maxValClockNum
-  ALIAS I1 clockNum
-  ALIAS I2 clockNumMod
-  ALIAS I3 arpIndex
-  ALIAS I4 isOctave
-  ALIAS I5 isOctaveMod
-  ALIAS I6 arpOctaveValue
-  ALIAS I7 phraseValSend
+  ALIAS I0 clockNum
+  ALIAS I1 clockNumMod
+  ALIAS I2 arpIndex
+  ALIAS I3 isOctave
+  ALIAS I4 isOctaveMod
+  ALIAS I5 arpOctaveValue
+  ALIAS I6 phraseValSend
   # NOTE this phraseIndex is the playing index, not the setting index
-  ALIAS I8 phraseIndex
-  ALIAS I9 numPressedOffset
+  ALIAS I7 phraseIndex
+  ALIAS I8 numPressedOffset
 
   # global
   ALIAS G0 channel
@@ -75,10 +73,6 @@ IF LOAD
   ALIAS G11 velocity
 
   # assign local
-  ASS maxValClockNum = FF60
-  # TEST
-  # assign clockNum close to maxVal
-  # END TEST
   ASS clockNum = 0
   ASS isOctave = 0
 
@@ -118,6 +112,9 @@ IF channel == 0
         # maxVal = (floor of (ffff / lcm of all possible tempoPulse)) * lcm of all possible tempoPulse
         IF clockNum == maxValClockNum
           ASS clockNum = 0
+          # TEST
+          LOG clockNum_RESET
+          # END TEST
         END
         # TEST
         # ensure maxValClockNum mod any possible tempoPulse is equal to 0 mod the same tempoPulse
@@ -131,6 +128,10 @@ IF channel == 0
         # END TEST
         IF gateOpened == 1
           ASS clockNum = 0 # NOTE might need to be reconfigured if clock signal is too fast for processing, as this may reset clock inadvertantly
+          # TEST
+          # uncomment to check that maxValClockNum is set correctly
+          # ASS clockNum = FF48
+          # END TEST
           # TEST
           # ensure gateOpened resets clockNum
           LOG clockNum_AFTER_gateOpened_RESET clockNum
@@ -195,8 +196,8 @@ IF channel == 0
               LOG numPressed numPressed
               LOG arpIndex arpIndex
               # END TEST
-              SEND 90 GI3 velocity
-              SEND 80 GI3 velocity +DG6
+              SEND 90 GI2 velocity
+              SEND 80 GI2 velocity +DG6
             END
             # if value mode is 1 (asc 2)
             IF arpValueModeMod == 1
@@ -226,12 +227,12 @@ IF channel == 0
                   # NOTE need to subtract one here because subtraction always needs to occur after reset
                   MATH arpIndex = arpIndex - 1
                 END
-                SEND 90 GI3 velocity
-                SEND 80 GI3 velocity +DG6
+                SEND 90 GI2 velocity
+                SEND 80 GI2 velocity +DG6
                 ASS isOctave = 1
               # if isOctave, add 12 semitones and send that instead
               ELSE
-                MATH arpOctaveValue = GI3 + $12 # NOTE see if this should be -12 or +12
+                MATH arpOctaveValue = GI2 + $12 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
                 SEND 80 arpOctaveValue velocity +DG6
                 ASS isOctave = 0
@@ -266,20 +267,20 @@ IF channel == 0
                   # NOTE need to subtract one here because subtraction always needs to occur after reset
                   MATH arpIndex = arpIndex - 1
                 END
-                SEND 90 GI3 velocity
-                SEND 80 GI3 velocity +DG6
+                SEND 90 GI2 velocity
+                SEND 80 GI2 velocity +DG6
                 MATH isOctave = isOctave + 1
               END
               # if isOctaveMod is 1, add 12 semitones and send that instead
               IF isOctaveMod == 1
-                MATH arpOctaveValue = GI3 + $12 # NOTE see if this should be -12 or +12
+                MATH arpOctaveValue = GI2 + $12 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
                 SEND 80 arpOctaveValue velocity +DG6
                 MATH isOctave = isOctave + 1
               END
               # if isOctaveMod is 2, add 24 semitones and send that instead
               IF isOctaveMod == 2
-                MATH arpOctaveValue = GI3 + $24 # NOTE see if this should be -12 or +12
+                MATH arpOctaveValue = GI2 + $24 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
                 SEND 80 arpOctaveValue velocity +DG6
                 MATH isOctave = isOctave + 1
@@ -309,8 +310,8 @@ IF channel == 0
                 # NOTE need to add one here because subtraction always needs to occur after reset
                 MATH arpIndex = arpIndex + 1
               END
-              SEND 90 GI3 velocity
-              SEND 80 GI3 velocity +DG6
+              SEND 90 GI2 velocity
+              SEND 80 GI2 velocity +DG6
             END
             # if value mode is 4 (desc 2)
             IF arpValueModeMod == 4
@@ -341,12 +342,12 @@ IF channel == 0
                   # NOTE need to add one here because subtraction always needs to occur after reset
                   MATH arpIndex = arpIndex + 1
                 END
-                SEND 90 GI3 velocity
-                SEND 80 GI3 velocity +DG6
+                SEND 90 GI2 velocity
+                SEND 80 GI2 velocity +DG6
                 ASS isOctave = 1
               # if isOctave, add 12 semitones and send that instead
               ELSE
-                MATH arpOctaveValue = GI3 + $12 # NOTE see if this should be -12 or +12
+                MATH arpOctaveValue = GI2 + $12 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
                 SEND 80 arpOctaveValue velocity +DG6
                 ASS isOctave = 0
@@ -382,20 +383,20 @@ IF channel == 0
                   # NOTE need to add one here because subtraction always needs to occur after reset
                   MATH arpIndex = arpIndex + 1
                 END
-                SEND 90 GI3 velocity
-                SEND 80 GI3 velocity +DG6
+                SEND 90 GI2 velocity
+                SEND 80 GI2 velocity +DG6
                 ASS isOctave = 1
               END
               # if isOctaveMod is 1, add 12 semitones and send that instead
               IF isOctaveMod == 1
-                MATH arpOctaveValue = GI3 + $12 # NOTE see if this should be -12 or +12
+                MATH arpOctaveValue = GI2 + $12 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
                 SEND 80 arpOctaveValue velocity +DG6
                 MATH isOctave = isOctave + 1
               END
               # if isOctaveMod is 2, add 24 semitones and send that instead
               IF isOctaveMod == 2
-                MATH arpOctaveValue = GI3 + $24 # NOTE see if this should be -12 or +12
+                MATH arpOctaveValue = GI2 + $24 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
                 SEND 80 arpOctaveValue velocity +DG6
                 MATH isOctave = isOctave + 1
@@ -416,8 +417,8 @@ IF channel == 0
               LOG arpIndex_RANDOM arpIndex
               # END TEST
               MATH arpIndex = arpIndex + arpOffset
-              SEND 90 GI3 velocity
-              SEND 80 GI3 velocity +DG6
+              SEND 90 GI2 velocity
+              SEND 80 GI2 velocity +DG6
             END
             # if value mode is 7 (rand 2)
             IF arpValueModeMod == 7
@@ -436,11 +437,11 @@ IF channel == 0
               MATH arpIndex = arpIndex + arpOffset
               # if not isOctaveMod, business as usual
               IF isOctaveMod == 0
-                SEND 90 GI3 velocity
-                SEND 80 GI3 velocity +DG6
+                SEND 90 GI2 velocity
+                SEND 80 GI2 velocity +DG6
               # if isOctaveMod, add 12 semitones and send that instead
               ELSE
-                MATH arpOctaveValue = GI3 + $12 # NOTE see if this should be -12 or +12
+                MATH arpOctaveValue = GI2 + $12 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
                 SEND 80 arpOctaveValue velocity +DG6
               END
@@ -461,18 +462,18 @@ IF channel == 0
               MATH arpIndex = arpIndex + arpOffset
               # if isOctaveMod is 0, business as usual
               IF isOctave == 0
-                SEND 90 GI3 velocity
-                SEND 80 GI3 velocity +DG6
+                SEND 90 GI2 velocity
+                SEND 80 GI2 velocity +DG6
               END
               # if isOctaveMod is 1, add 12 semitones and send that instead
               IF isOctave == 1
-                MATH arpOctaveValue = GI3 + $12 # NOTE see if this should be -12 or +12
+                MATH arpOctaveValue = GI2 + $12 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
                 SEND 80 arpOctaveValue velocity +DG6
               END
               # if isOctaveMod is 2, add 24 semitones and send that instead
               IF isOctave == 2
-                MATH arpOctaveValue = GI3 + $24 # NOTE see if this should be -12 or +12
+                MATH arpOctaveValue = GI2 + $24 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
                 SEND 80 arpOctaveValue velocity +DG6
               END
@@ -500,8 +501,8 @@ IF channel == 0
                 # NOTE need to subtract one here because subtraction always needs to occur after reset
                 MATH arpIndex = arpIndex - 1
               END
-              SEND 90 GI3 velocity
-              SEND 80 GI3 velocity +DG6
+              SEND 90 GI2 velocity
+              SEND 80 GI2 velocity +DG6
             END
             # if value mode is 10 (order 2)
             IF arpValueModeMod == A
@@ -531,12 +532,12 @@ IF channel == 0
                   # NOTE need to subtract one here because subtraction always needs to occur after reset
                   MATH arpIndex = arpIndex - 1
                 END
-                SEND 90 GI3 velocity
-                SEND 80 GI3 velocity +DG6
+                SEND 90 GI2 velocity
+                SEND 80 GI2 velocity +DG6
                 ASS isOctave = 1
               # if isOctave, add 12 semitones and send that instead
               ELSE
-                MATH arpOctaveValue = GI3 + $12 # NOTE see if this should be -12 or +12
+                MATH arpOctaveValue = GI2 + $12 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
                 SEND 80 arpOctaveValue velocity +DG6
                 ASS isOctave = 0
@@ -571,20 +572,20 @@ IF channel == 0
                   # NOTE need to subtract one here because subtraction always needs to occur after reset
                   MATH arpIndex = arpIndex - 1
                 END
-                SEND 90 GI3 velocity
-                SEND 80 GI3 velocity +DG6
+                SEND 90 GI2 velocity
+                SEND 80 GI2 velocity +DG6
                 MATH isOctave = isOctave + 1
               END
               # if isOctaveMod is 1, add 12 semitones and send that instead
               IF isOctaveMod == 1
-                MATH arpOctaveValue = GI3 + $12 # NOTE see if this should be -12 or +12
+                MATH arpOctaveValue = GI2 + $12 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
                 SEND 80 arpOctaveValue velocity +DG6
                 MATH isOctave = isOctave + 1
               END
               # if isOctaveMod is 2, add 24 semitones and send that instead
               IF isOctaveMod == 2
-                MATH arpOctaveValue = GI3 + $24 # NOTE see if this should be -12 or +12
+                MATH arpOctaveValue = GI2 + $24 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
                 SEND 80 arpOctaveValue velocity +DG6
                 MATH isOctave = isOctave + 1
@@ -609,18 +610,18 @@ IF channel == 0
               # END TEST
             END
             # if phrase offset is not a rest
-            IF GI8 != 2E57
-              MATH phraseValSend = phraseVal + GI8
+            IF GI7 != 2E57
+              MATH phraseValSend = phraseVal + GI7
               # TEST
               # ensure correct offset is sending 
-              LOG phraseVal_OFFSET GI8
+              LOG phraseVal_OFFSET GI7
               # END TEST
               SEND 90 phraseValSend velocity
               SEND 80 phraseValSend velocity +DG6
             END
             # TEST
             # ensure rest functionality is working
-            IF GI8 == 2E57
+            IF GI7 == 2E57
               LOG IS_REST
             END
             # END TEST

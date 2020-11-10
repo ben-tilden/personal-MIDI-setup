@@ -111,9 +111,8 @@ IF LOAD
   ALIAS I6 secondMax
   ALIAS I7 secondMaxIndex
   ALIAS I8 tempPhraseVal
-  # TODO ALIAS G12 phraseIndex
-  ALIAS IA resetArp
-  ALIAS IB resetPhrase
+  ALIAS I9 resetArp
+  ALIAS IA resetPhrase
 
   # global
   ALIAS G1 numPressed
