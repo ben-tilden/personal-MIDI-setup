@@ -263,6 +263,11 @@ IF arpPhraseOnOffToggle == 1
       IF numPressed == 1
         ASS gateOpened = 1
       END
+      # TEST TRY
+      #IF numPressed > 1
+      #  ASS gateOpened = 2
+      #END
+      # END TEST TRY
       # TEST
       # ensure G array contains correct key values pressed on key press
       # ensure J array contains correct order of keys pressed on key press
@@ -585,20 +590,13 @@ IF setPhrase == 1
   IF MT == 90
     # because we're taking offset here, we need to record each step as the difference between it and the last step
     # if tempPhraseVal has a previous value (i.e. is not the first key pressed in the phrase)
-    # NOTE beginning a phrase with rests does not allow the initial value to be added
-    # when beginning a phrase, a value will always be sent first, so there is no starting a phrase with rests
-    # starting phrase storage with rests does function correctly, but at some point the initial value must be recorded
-    # so if initial value is recorded after rests, there will be no data stored in the array for that keypress, as it is meant for storing initial value
-    # the recommended process is to always record the initial value first
-    # NOTE max phrase length at this point is 33
-    IF tempPhraseVal != AAAA
-      MATH GG12 = M1 - tempPhraseVal
-      ASS phraseLengthPlusOffset = phraseIndex
-      MATH phraseIndex = phraseIndex + 1
-    # else tempPhraseVal does not have a previous value, this is the first entered value, and no record in the global array is necessary
-    ELSE
+    # NOTE max phrase length at this point is 32
+    IF tempPhraseVal == AAAA
       ASS tempPhraseVal = M1
     END
+    MATH GG12 = M1 - tempPhraseVal
+    ASS phraseLengthPlusOffset = phraseIndex
+    MATH phraseIndex = phraseIndex + 1
   END
   # if phraseRest is sent
   IF M0 == F0 2E 57 F7
