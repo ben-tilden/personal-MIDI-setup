@@ -183,7 +183,6 @@ IF MT == 90
         # NOTE not currently planning on handling this, but there may is likely a race condition between rest and note that could cause issues
       END
     END
-    # TODO ensure arpPhraseToggle is working as expected here
   END
 
   # if it is a button 2 push toggle arp / phrase

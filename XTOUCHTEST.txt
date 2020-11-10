@@ -5,6 +5,7 @@
 # NOTE address global reset
 # TODO will need to handle sysex for lights reset
 # TODO will need to eventually handle knobs for drumparams - this might need to be global
+# TODO need to add velocity
 
 
 

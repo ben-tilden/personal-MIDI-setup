@@ -98,9 +98,8 @@ IF LOAD
   ALIAS I6 secondMax
   ALIAS I7 secondMaxIndex
   ALIAS I8 tempPhraseVal
-  ALIAS I9 phraseIndex
-  ALIAS IA resetArp
-  ALIAS IB resetPhrase
+  ALIAS I9 resetArp
+  ALIAS IA resetPhrase
 
   # global
   ALIAS G1 numPressed
@@ -111,6 +110,7 @@ IF LOAD
   ALIAS GE gateOpened
   ALIAS GF phraseVal
   ALIAS G10 phraseLengthPlusOffset
+  ALIAS G12 phraseIndex
 
   # assign local
   # NOTE technically K does not need to be reset here, since only L is parsed - doing so as good practice
@@ -121,7 +121,6 @@ IF LOAD
   ASS numPressedTotal = 0
   # needs to be set to a value too far for both negatives and positives to reach
   ASS tempPhraseVal = AAAA
-  ASS phraseIndex = 2A
   ASS resetArp = 0
   ASS resetPhrase = 0
   
@@ -215,7 +214,12 @@ IF arpPhraseOnOffToggle == 1
       IF numPressed == 1
         ASS gateOpened = 1
       END
-      
+      # TEST TRY
+      #IF numPressed > 1
+      #  ASS gateOpened = 2
+      #END
+      # END TEST TRY
+
       NX = XX +B
       
     END
@@ -371,7 +375,7 @@ IF arpPhraseOnOffToggle == 1
         # ASS gateOpened = 1 # NOTE uncommenting this would restart phrase whenever key lifted
         ASS phraseVal = KI7
       END
-      
+
     END
 
   END
@@ -382,42 +386,41 @@ IF setPhrase == 1
   IF MT == 90
     # because we're taking offset here, we need to record each step as the difference between it and the last step
     # if tempPhraseVal has a previous value (i.e. is not the first key pressed in the phrase)
-    IF tempPhraseVal != AAAA
-      MATH GI9 = M1 - tempPhraseVal
-      ASS phraseLengthPlusOffset = phraseIndex
-      MATH phraseIndex = phraseIndex + 1
-      ASS tempPhraseVal = M1
-    # else tempPhraseVal does not have a previous value, this is the first entered value, and no record in the global array is necessary
-    ELSE
+    # NOTE max phrase length at this point is 32
+    IF tempPhraseVal == AAAA
       ASS tempPhraseVal = M1
     END
-    # if phrase is at max limit, end setPhrase
-    IF phraseIndex > 49
-      ASS setPhrase = 0
-      ASS tempPhraseVal = AAAA
-    END
+    MATH GG12 = M1 - tempPhraseVal
+    ASS phraseLengthPlusOffset = phraseIndex
+    MATH phraseIndex = phraseIndex + 1
   END
   # if phraseRest is sent
-  # NOTE might need to filter the sysex messages here to prevent them from passing through and causing havoc
-  IF M0 == F0 AA AA F7
-    # assign value to AAAA, indicating a rest
-    ASS GI9 = AAAA
+  IF M0 == F0 2E 57 F7
+    # assign value to 2E57, indicating a rest
+    ASS GG12 = 2E57
+    ASS phraseLengthPlusOffset = phraseIndex
     MATH phraseIndex = phraseIndex + 1
-
-    # if phrase is at max limit, end setPhrase
-    IF phraseIndex > 49
-      ASS setPhrase = 0
-      ASS tempPhraseVal = AAAA
+  END
+  # if phrase is at max limit, end setPhrase
+  IF phraseIndex > 49
+    ASS setPhrase = 0
+    ASS phraseIndex = 2A
+    ASS tempPhraseVal = AAAA
+    # NOTE since this message is for turning off the light, it only needs to be sent when the final note is not a rest
+    # rest button handles this in xtouch
+    IF G49 != 2E57
+      SEND F0 90 FF F7 +F
     END
   END
-  # ensure phraseIndex is reset when setPhrase is turned off from xtouch
-  IF M0 == F0 BB BB 07
-    ASS phraseIndex = AAAA
-  END
-  # NOTE could block whatever is inputted here
+  FX = XX +B
+  # NOTE could block whatever is inputted here, to prevent notes from passing through while the phrase is running
   # this would make sense if phrase was toggled and on, but not if this was not the case
-END
-
-IF M0 == F0
-  XX = XX +B
+ELSE
+  # ensure phraseIndex is reset when setPhrase is turned off from xtouch
+  IF M0 == F0 90 FF F7
+    ASS phraseIndex = 2A
+    ASS tempPhraseVal = AAAA
+    FX = XX +B
+  END
+  FX = XX +B
 END
