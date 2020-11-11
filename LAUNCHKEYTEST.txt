@@ -578,11 +578,12 @@ IF arpPhraseOnOffToggle == 1
       LOG gateOpened gateOpened
       LOG phraseVal phraseVal
       # END TEST
-
     END
-
+    # only block notes if setPhrase is zero - if it's one, we need the next if statement to process the note
+    IF setPhrase == 0
+      NX = XX +B
+    END
   END
-
 END
 
 IF setPhrase == 1
@@ -616,6 +617,10 @@ IF setPhrase == 1
     END
   END
   FX = XX +B
+  # block notes if phrase is on, since keypresses then should not make a noise
+  IF arpPhraseOnOffToggle == 1
+    NX = XX +B
+  END
   # NOTE could block whatever is inputted here, to prevent notes from passing through while the phrase is running
   # this would make sense if phrase was toggled and on, but not if this was not the case
   # TEST
@@ -675,3 +680,5 @@ ELSE
   END
   FX = XX +B
 END
+
+# NOTE could likely reorder everything here to be grouped in one if statement to make code more readable if desired

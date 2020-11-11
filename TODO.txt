@@ -3,18 +3,9 @@
 # notes on live testing:
 # gate needs to be shortened in general - it's too long
 # some tempos simply aren't feasible (or necessary)
-# note off may not need to occur for percussion - or gate maybe
+# note off may not need to occur for percussion - or gate maybe - ensure timing is greater than zero?
 # app crashes when order used at a very high tempo
-# make knobs more sensitive
-
-# setphrase doesn't work when phrase on
-# notes still go through when phrase on
-# phrase has a beat go missing when restarting - needs to be continuous
-# at high tempos, sometimes the gate messes up, or the gate is long for the first, but short for the rest
-
-# arp value mode 8 doesn't send anything?
-
-# random arp values don't seem to pay attention to tempo?
+# make knobs more sensitive and gate shorter
 
 # have init send lighting
 
