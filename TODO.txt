@@ -1,28 +1,43 @@
 # TODO IDEAS
 
-# make knobs infinite - so +1 instead of 0-127
-# make knobs control tempo - 1-10 1x Ableton link tempo, 11 1.1, 12 = 1.2, ... , 20 - 29 2x Ableton link tempo
+# notes on live testing:
+# gate needs to be shortened in general - it's too long
+# some tempos simply aren't feasible (or necessary)
+# note off may not need to occur for percussion - or gate maybe
+# app crashes when order used at a very high tempo
+# make knobs more sensitive
+
+# setphrase doesn't work when phrase on
+# notes still go through when phrase on
+# phrase has a beat go missing when restarting - needs to be continuous
+# at high tempos, sometimes the gate messes up, or the gate is long for the first, but short for the rest
+
+# arp value mode 8 doesn't send anything?
+
+# random arp values don't seem to pay attention to tempo?
+
+# have init send lighting
+
 # lfo's
 
-# arp add rest?
-# randomizer / drunk mode in terms of value
+# drunk mode in terms of value
+# randomizer probability implemented with current arp value implementation
 # randomizer / drunk mode in terms of tempo / probability
-# NOTE: this is likely more feasible for ARP, but phrase may work too by filtering clock through a streambyter instance (randomly / precisely add delays)
-# NOTE: aka swing
-# mapping everything
+# NOTE aka swing
+
+# ARP sync (button)
+# NOTE could technically do this via offset, but likely not valuable at this point
+# PHRASE sync (button)
+# NOTE could technically do this via offset, but likely not valuable at this point
 
 # parts we can map that have not been mapped yet
 
 Best based on channel - 1-8, 10-12 (layer A)
 ----------------------------------
-ARP on (button)
-ARP tempo (knob)
-ARP type (button)
-# ARP sync (button)
-PHRASE on (button)
-PHRASE tempo (knob)
-PHRASE type (button)
-# PHRASE sync (button)
+ARP/PHRASE on (button)
+ARP/PHRASE tempo (knob)
+ARP/PHRASE toggle (button)
+
 LFO on (button)
 LFO tempo (knob)
 LFO type (button)
@@ -41,6 +56,8 @@ Can change knob controls by pressing - cycles through
 - sample mode 'TOGGLE' (Scene - up, down)
 - play, stop (|>)
 
+- channel 9 to channel 16
+
 Other notes:
 ------------
 ARP can be used as a drum roll for any instrument by changing tempo accordingly
@@ -53,3 +70,16 @@ Midifire can remain open in front of modstep, but modstep will be doing most of 
 Fugue Machine can be used to reverse, invert, bounce phrase
 
 Micron and MicroBrute will be incorporated eventually
+
+Completed:
+----------
+
+# make knobs infinite - so +1 instead of 0-127
+# NOTE this will be unnecessary since we're implementing something similar by storing values
+# make knobs control tempo - 1-10 1x Ableton link tempo, 11 1.1, 12 = 1.2, ... , 20 - 29 2x Ableton link tempo
+# DONE
+
+# arp add rest?
+# DONE
+# randomizer in terms of value
+# DONE

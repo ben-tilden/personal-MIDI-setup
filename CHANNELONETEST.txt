@@ -75,6 +75,9 @@ IF LOAD
   # assign local
   ASS clockNum = 0
   ASS isOctave = 0
+  # TEST LIVE
+  ASS velocity = $100
+  # END TEST LIVE
 
   # TEST
   ALIAS L0 tempVar1
@@ -411,6 +414,14 @@ IF channel == 0
               # ensure arpValueMode is correct
               LOG arpValueMode arpValueModeMod
               # END TEST
+              # if gateOpened, or if first instance of clock since first key was pressed
+              IF gateOpened == 1
+                ASS gateOpened = 0
+                # TEST
+                # ensure gateOpened resets arpIndex
+                LOG arpIndex_AFTER_gateOpened_RESET arpIndex
+                # END TEST
+              END
               MATH arpIndex = RFF % numPressed
               # TEST
               # ensure random is random
@@ -426,6 +437,14 @@ IF channel == 0
               # ensure arpValueMode is correct
               LOG arpValueMode arpValueModeMod
               # END TEST
+              # if gateOpened, or if first instance of clock since first key was pressed
+              IF gateOpened == 1
+                ASS gateOpened = 0
+                # TEST
+                # ensure gateOpened resets arpIndex
+                LOG arpIndex_AFTER_gateOpened_RESET arpIndex
+                # END TEST
+              END
               # NOTE this is completely random - thus ignoring the note played before it - the octave will not necessarily match up with previous note
               MATH arpIndex = RFF % numPressed
               MATH isOctaveMod = RFF % 2
@@ -452,6 +471,14 @@ IF channel == 0
               # ensure arpValueMode is correct
               LOG arpValueMode arpValueModeMod
               # END TEST
+              # if gateOpened, or if first instance of clock since first key was pressed
+              IF gateOpened == 1
+                ASS gateOpened = 0
+                # TEST
+                # ensure gateOpened resets arpIndex
+                LOG arpIndex_AFTER_gateOpened_RESET arpIndex
+                # END TEST
+              END
               MATH arpIndex = RFF % numPressed
               MATH isOctaveMod = RFF % 3
               # TEST
@@ -461,18 +488,18 @@ IF channel == 0
               # END TEST
               MATH arpIndex = arpIndex + arpOffset
               # if isOctaveMod is 0, business as usual
-              IF isOctave == 0
+              IF isOctaveMod == 0
                 SEND 90 GI2 velocity
                 SEND 80 GI2 velocity +DG6
               END
               # if isOctaveMod is 1, add 12 semitones and send that instead
-              IF isOctave == 1
+              IF isOctaveMod == 1
                 MATH arpOctaveValue = GI2 + $12 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
                 SEND 80 arpOctaveValue velocity +DG6
               END
               # if isOctaveMod is 2, add 24 semitones and send that instead
-              IF isOctave == 2
+              IF isOctaveMod == 2
                 MATH arpOctaveValue = GI2 + $24 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
                 SEND 80 arpOctaveValue velocity +DG6
