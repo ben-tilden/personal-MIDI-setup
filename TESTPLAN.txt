@@ -1,5 +1,5 @@
 # test plan
-# regex for code: +# TEST\n(.+\n)+? +# END TEST\n
+# regex for code:( +# TEST\n(.+\n)+? +# END TEST\n)|( +# TEST LIVE\n(.+\n)+? +# END TEST LIVE\n)
 
 ###
 # x touch
