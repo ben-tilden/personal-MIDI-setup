@@ -6,6 +6,10 @@
 # TODO will need to handle sysex for lights reset
 # TODO will need to eventually handle knobs for drumparams - this might need to be global
 # TODO need to add velocity
+# TODO add option to make gate longer
+# 0-127 (*2) (*5) (*10) (*20) (*40)
+# 2.5 seconds should be enough to handle 96 pulses at 120 bpm,  but slower bpm's might be helpful to move up to 5 seconds
+# TODO make tempo knobs more sensitive (one notch / two notch - will need to send lighting accordingly)
 
 
 
@@ -629,8 +633,8 @@ IF MT == B0
   # if knob is 2 (gate)
   # starting points: max will be ~5 seconds (5000), min will be .1 seconds (100)
   IF M1 == 2
-    MATH gate = M2 * $39
-    MATH gate = gate + $100
+    ASS gate = M2 # could multiply
+    # TODO add option for pushing the button here for gate lengthening
     # TEST
     # ensure gate aligns with gate
     LOG gate $G6

@@ -1,13 +1,14 @@
 # TODO IDEAS
 
 # notes on live testing:
-# gate needs to be shortened in general - it's too long
-# some tempos simply aren't feasible (or necessary)
-# note off may not need to occur for percussion - or gate maybe - ensure timing is greater than zero?
-# app crashes when order used at a very high tempo
-# make knobs more sensitive and gate shorter
+# app crashes when order / phrase used at a very high tempo
+# can put red tape to indicate
+
+# test with local setup to see if expanding is practical
+# could easily change 90 to 90 + channel to make channel one more general
 
 # have init send lighting
+# knob to change channel instead of launchkey button
 
 # lfo's
 
