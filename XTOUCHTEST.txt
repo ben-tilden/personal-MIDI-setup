@@ -6,10 +6,6 @@
 # TODO will need to handle sysex for lights reset
 # TODO will need to eventually handle knobs for drumparams - this might need to be global
 # TODO need to add velocity
-# TODO add option to make gate longer
-# 0-127 (*2) (*5) (*10) (*20) (*40)
-# 2.5 seconds should be enough to handle 96 pulses at 120 bpm,  but slower bpm's might be helpful to move up to 5 seconds
-# TODO make tempo knobs more sensitive (one notch / two notch - will need to send lighting accordingly)
 
 
 
@@ -160,7 +156,7 @@ IF MT == 90
     MATH tempoModeMod = tempoMode % 4
     IF tempoModeMod == 0
       ASS tempoPulse = $24
-      SEND BA 01 $28
+      SEND BA 01 $26
     END
     # set each tempoPulse to default value on switching
     # also send data to xtouch to reflect this
@@ -170,11 +166,11 @@ IF MT == 90
     END
     IF tempoModeMod == 2
       ASS tempoPulse = $24
-      SEND BA 01 $53
+      SEND BA 01 $48
     END
     IF tempoModeMod == 3
       ASS tempoPulse = $18
-      SEND BA 01 $53
+      SEND BA 01 $48
     END
     # TEST
     # ensure tempoModeMod changes accordingly and tempoPulse correlates
@@ -493,177 +489,165 @@ IF MT == 80
 END
 
 # if it is a knob turn
+# knobs are sensitive down to one notch
 IF MT == B0
   # if knob is 1 (tempo)
   IF M1 == 1
     # if tempo mode is 0
     IF tempoModeMod == 0
-      # if knob value is 0-11
-      IF M2 < $12
-        ASS tempoPulse = $48
+      # if knob value is 0
+      IF M2 == 0
+        ASS tempoPulse = 48
+        SEND BA 01 $0
       END
-      # if knob value is 12-22
-      IF M2 >= $12
-        IF M2 < $23
-          ASS tempoPulse = $36
-        END
+      # if knob value is 1
+      IF M2 == 1
+        ASS tempoPulse = 36
+        SEND BA 01 $13
       END
-      # if knob value is 23-33
-      IF M2 >= $23
-        IF M2 < $34
-          ASS tempoPulse = $24
-        END
+      # if knob value is 2
+      IF M2 == 2
+        ASS tempoPulse = 24
+        SEND BA 01 $26
       END
-      # if knob value is 34-45
-      IF M2 >= $34
-        IF M2 < $46
-          ASS tempoPulse = $18
-        END
+      # if knob value is 3
+      IF M2 == 3
+        ASS tempoPulse = 18
+        SEND BA 01 $39
       END
-      # if knob value is 46-57
-      IF M2 >= $46
-        IF M2 < $58
-          ASS tempoPulse = $12
-        END
+      # if knob value is 4
+      IF M2 == 4
+        ASS tempoPulse = 12
+        SEND BA 01 $52
       END
-      # if knob value is 58-69
-      IF M2 >= $58
-        IF M2 < $70
-          ASS tempoPulse = $9
-        END
+      # if knob value is 5
+      IF M2 == 5
+        ASS tempoPulse = 9
+        SEND BA 01 $65
       END
-      # if knob value is 70-81
-      IF M2 >= $70
-        IF M2 < $82
-          ASS tempoPulse = $6
-        END
+      # if knob value is 6
+      IF M2 == 6
+        ASS tempoPulse = 6
+        SEND BA 01 $78
       END
-      # if knob value is 82-93
-      IF M2 >= $82
-        IF M2 < $94
-          ASS tempoPulse = $4
-        END
+      # if knob value is 7
+      IF M2 == 7
+        ASS tempoPulse = 4
+        SEND BA 01 $91
       END
-      # if knob value is 94-104
-      IF M2 >= $94
-        IF M2 < $105
-          ASS tempoPulse = $3
-        END
+      # if knob value is 8
+      IF M2 == 8
+        ASS tempoPulse = 3
+        SEND BA 01 $104
       END
-      # if knob value is 105-115
-      IF M2 >= $105
-        IF M2 < $116
-          ASS tempoPulse = $2
-        END
+      # if knob value is 9
+      IF M2 == 9
+        ASS tempoPulse = 2
+        SEND BA 01 $117
       END
-      # if knob value is 116-127
-      IF M2 >= $116
-        ASS tempoPulse = $1
+      # if knob value is 10
+      IF M2 == 10
+        ASS tempoPulse = 1
+        SEND BA 01 $127
       END
     END
     # if tempo mode is 1
     IF tempoModeMod == 1
-      # if knob value is 0-21
-      IF M2 < $22
-        ASS tempoPulse = $24
+      # if knob value is 0
+      IF M2 == 0
+        ASS tempoPulse = 24
+        SEND BA 01 $0
       END
-      # if knob value is 22-42
-      IF M2 >= $22
-        IF M2 < $43
-          ASS tempoPulse = $12
-        END
+      # if knob value is 1
+      IF M2 == 1
+        ASS tempoPulse = 12
+        SEND BA 01 $24
       END
-      # if knob value is 43-63
-      IF M2 >= $43
-        IF M2 < $64
-          ASS tempoPulse = $9
-        END
+      # if knob value is 2
+      IF M2 == 2
+        ASS tempoPulse = 9
+        SEND BA 01 $48
       END
-      # if knob value is 64-84
-      IF M2 >= $64
-        IF M2 < $85
-          ASS tempoPulse = $6
-        END
+      # if knob value is 3
+      IF M2 == 3
+        ASS tempoPulse = 6
+        SEND BA 01 $72
       END
-      # if knob value is 85-105
-      IF M2 >= $85
-        IF M2 < $106
-          ASS tempoPulse = $4
-        END
+      # if knob value is 4
+      IF M2 == 4
+        ASS tempoPulse = 4
+        SEND BA 01 $96
       END
-      # if knob value is 106-127
-      IF M2 >= $106
-        ASS tempoPulse = $3
+      # if knob value is 5
+      IF M2 == 5
+        ASS tempoPulse = 3
+        SEND BA 01 $127
       END
     END
     # if tempo mode is 2
     IF tempoModeMod == 2
-      # if knob value is 0-21
-      IF M2 < $22
-        ASS tempoPulse = $96
+      # if knob value is 0
+      IF M2 == 0
+        ASS tempoPulse = 96
+        SEND BA 01 $0
       END
-      # if knob value is 22-42
-      IF M2 >= $22
-        IF M2 < $43
-          ASS tempoPulse = $48
-        END
+      # if knob value is 1
+      IF M2 == 1
+        ASS tempoPulse = 48
+        SEND BA 01 $24
       END
-      # if knob value is 43-63
-      IF M2 >= $43
-        IF M2 < $64
-          ASS tempoPulse = $24
-        END
+      # if knob value is 2
+      IF M2 == 2
+        ASS tempoPulse = 24
+        SEND BA 01 $48
       END
-      # if knob value is 64-84
-      IF M2 >= $64
-        IF M2 < $85
-          ASS tempoPulse = $12
-        END
+      # if knob value is 3
+      IF M2 == 3
+        ASS tempoPulse = 12
+        SEND BA 01 $72
       END
-      # if knob value is 85-105
-      IF M2 >= $85
-        IF M2 < $106
-          ASS tempoPulse = $6
-        END
+      # if knob value is 4
+      IF M2 == 4
+        ASS tempoPulse = 6
+        SEND BA 01 $96
       END
-      # if knob value is 106-127
-      IF M2 >= $106
-        ASS tempoPulse = $3
+      # if knob value is 5
+      IF M2 == 5
+        ASS tempoPulse = 3
+        SEND BA 01 $127
       END
     END
     # if tempo mode is 3
     IF tempoModeMod == 3
-      # if knob value is 0-21
-      IF M2 < $22
-        ASS tempoPulse = $72
+      # if knob value is 0
+      IF M2 == 0
+        ASS tempoPulse = 72
+        SEND BA 01 $0
       END
-      # if knob value is 22-42
-      IF M2 >= $22
-        IF M2 < $43
-          ASS tempoPulse = $36
-        END
+      # if knob value is 1
+      IF M2 == 1
+        ASS tempoPulse = 36
+        SEND BA 01 $24
       END
-      # if knob value is 43-63
-      IF M2 >= $43
-        IF M2 < $64
-          ASS tempoPulse = $18
-        END
+      # if knob value is 2
+      IF M2 == 2
+        ASS tempoPulse = 18
+        SEND BA 01 $48
       END
-      # if knob value is 64-84
-      IF M2 >= $64
-        IF M2 < $85
-          ASS tempoPulse = $9
-        END
+      # if knob value is 3
+      IF M2 == 3
+        ASS tempoPulse = 9
+        SEND BA 01 $72
       END
-      # if knob value is 85-105
-      IF M2 >= $85
-        IF M2 < $106
-          ASS tempoPulse = $4
-        END
+      # if knob value is 4
+      IF M2 == 4
+        ASS tempoPulse = 4
+        SEND BA 01 $96
       END
-      # if knob value is 106-127
-      IF M2 >= $106
-        ASS tempoPulse = $2
+      # if knob value is 5
+      IF M2 == 5
+        ASS tempoPulse = 2
+        SEND BA 01 $127
       END
     END
     # TEST
@@ -673,9 +657,10 @@ IF MT == B0
   END
   # if knob is 2 (gate)
   # starting points: max will be ~5 seconds (5000), min will be .1 seconds (100)
+  # 2.5 seconds should be enough to handle 96 pulses at 120 bpm,  but slower bpm's can move up to 5 seconds
+  # overall: 0-127 (*2) (*5) (*10) (*20) (*40)
   IF M1 == 2
     MATH gate = M2 * gateFactor
-    # TODO add option for pushing the button here for gate lengthening
     # TEST
     # ensure gate aligns with gate
     # ensure gateFactor is correct
@@ -849,3 +834,178 @@ END
 #  ALIAS W$1000 channelEleven
 #  # channelTwelve
 #  ALIAS W$1100 channelTwelve
+
+#    # if tempo mode is 0
+#    IF tempoModeMod == 0
+#      # if knob value is 0-11
+#      IF M2 < $12
+#        ASS tempoPulse = $48
+#      END
+#      # if knob value is 12-22
+#      IF M2 >= $12
+#        IF M2 < $23
+#          ASS tempoPulse = $36
+#        END
+#      END
+#      # if knob value is 23-33
+#      IF M2 >= $23
+#        IF M2 < $34
+#          ASS tempoPulse = $24
+#        END
+#      END
+#      # if knob value is 34-45
+#      IF M2 >= $34
+#        IF M2 < $46
+#          ASS tempoPulse = $18
+#        END
+#      END
+#      # if knob value is 46-57
+#      IF M2 >= $46
+#        IF M2 < $58
+#          ASS tempoPulse = $12
+#        END
+#      END
+#      # if knob value is 58-69
+#      IF M2 >= $58
+#        IF M2 < $70
+#          ASS tempoPulse = $9
+#        END
+#      END
+#      # if knob value is 70-81
+#      IF M2 >= $70
+#        IF M2 < $82
+#          ASS tempoPulse = $6
+#        END
+#      END
+#      # if knob value is 82-93
+#      IF M2 >= $82
+#        IF M2 < $94
+#          ASS tempoPulse = $4
+#        END
+#      END
+#      # if knob value is 94-104
+#      IF M2 >= $94
+#        IF M2 < $105
+#          ASS tempoPulse = $3
+#        END
+#      END
+#      # if knob value is 105-115
+#      IF M2 >= $105
+#        IF M2 < $116
+#          ASS tempoPulse = $2
+#        END
+#      END
+#      # if knob value is 116-127
+#      IF M2 >= $116
+#        ASS tempoPulse = $1
+#      END
+#    END
+#    # if tempo mode is 1
+#    IF tempoModeMod == 1
+#      # if knob value is 0-21
+#      IF M2 < $22
+#        ASS tempoPulse = $24
+#      END
+#      # if knob value is 22-42
+#      IF M2 >= $22
+#        IF M2 < $43
+#          ASS tempoPulse = $12
+#        END
+#      END
+#      # if knob value is 43-63
+#      IF M2 >= $43
+#        IF M2 < $64
+#          ASS tempoPulse = $9
+#        END
+#      END
+#      # if knob value is 64-84
+#      IF M2 >= $64
+#        IF M2 < $85
+#          ASS tempoPulse = $6
+#        END
+#      END
+#      # if knob value is 85-105
+#      IF M2 >= $85
+#        IF M2 < $106
+#          ASS tempoPulse = $4
+#        END
+#      END
+#      # if knob value is 106-127
+#      IF M2 >= $106
+#        ASS tempoPulse = $3
+#      END
+#    END
+#    # if tempo mode is 2
+#    IF tempoModeMod == 2
+#      # if knob value is 0-21
+#      IF M2 < $22
+#        ASS tempoPulse = $96
+#      END
+#      # if knob value is 22-42
+#      IF M2 >= $22
+#        IF M2 < $43
+#          ASS tempoPulse = $48
+#        END
+#      END
+#      # if knob value is 43-63
+#      IF M2 >= $43
+#        IF M2 < $64
+#          ASS tempoPulse = $24
+#        END
+#      END
+#      # if knob value is 64-84
+#      IF M2 >= $64
+#        IF M2 < $85
+#          ASS tempoPulse = $12
+#        END
+#      END
+#      # if knob value is 85-105
+#      IF M2 >= $85
+#        IF M2 < $106
+#          ASS tempoPulse = $6
+#        END
+#      END
+#      # if knob value is 106-127
+#      IF M2 >= $106
+#        ASS tempoPulse = $3
+#      END
+#    END
+#    # if tempo mode is 3
+#    IF tempoModeMod == 3
+#      # if knob value is 0-21
+#      IF M2 < $22
+#        ASS tempoPulse = $72
+#      END
+#      # if knob value is 22-42
+#      IF M2 >= $22
+#        IF M2 < $43
+#          ASS tempoPulse = $36
+#        END
+#      END
+#      # if knob value is 43-63
+#      IF M2 >= $43
+#        IF M2 < $64
+#          ASS tempoPulse = $18
+#        END
+#      END
+#      # if knob value is 64-84
+#      IF M2 >= $64
+#        IF M2 < $85
+#          ASS tempoPulse = $9
+#        END
+#      END
+#      # if knob value is 85-105
+#      IF M2 >= $85
+#        IF M2 < $106
+#          ASS tempoPulse = $4
+#        END
+#      END
+#      # if knob value is 106-127
+#      IF M2 >= $106
+#        ASS tempoPulse = $2
+#      END
+#    END
+#    # TEST
+#    # ensure tempoPulse aligns with tempoMode
+#    LOG tempoPulse tempoPulse
+#    # END TEST
