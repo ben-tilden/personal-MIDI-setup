@@ -5,7 +5,6 @@
 # NOTE address global reset
 # TODO will need to handle sysex for lights reset
 # TODO will need to eventually handle knobs for drumparams - this might need to be global
-# TODO need to add velocity
 
 
 
@@ -123,6 +122,7 @@ IF LOAD
   ALIAS G9 waveguideToggle
   ALIAS GA drumParams
   ALIAS GE arpModeSwitched # NOTE gateOpened
+  ALIAS G11 velocity
   ALIAS G12 phraseIndex
   ALIAS G13 gateModeMod
 
@@ -489,9 +489,9 @@ IF MT == 80
 END
 
 # if it is a knob turn
-# knobs are sensitive down to one notch
 IF MT == B0
   # if knob is 1 (tempo)
+  # knob is sensitive down to one notch
   IF M1 == 1
     # if tempo mode is 0
     IF tempoModeMod == 0
@@ -545,8 +545,8 @@ IF MT == B0
         ASS tempoPulse = 2
         SEND BA 01 $117
       END
-      # if knob value is 10
-      IF M2 == 10
+      # if knob value is 10 or greater
+      IF M2 >= 10
         ASS tempoPulse = 1
         SEND BA 01 $127
       END
@@ -578,8 +578,8 @@ IF MT == B0
         ASS tempoPulse = 4
         SEND BA 01 $96
       END
-      # if knob value is 5
-      IF M2 == 5
+      # if knob value is 5 or greater
+      IF M2 >= 5
         ASS tempoPulse = 3
         SEND BA 01 $127
       END
@@ -611,8 +611,8 @@ IF MT == B0
         ASS tempoPulse = 6
         SEND BA 01 $96
       END
-      # if knob value is 5
-      IF M2 == 5
+      # if knob value is 5 or greater
+      IF M2 >= 5
         ASS tempoPulse = 3
         SEND BA 01 $127
       END
@@ -644,8 +644,8 @@ IF MT == B0
         ASS tempoPulse = 4
         SEND BA 01 $96
       END
-      # if knob value is 5
-      IF M2 == 5
+      # if knob value is 5 or greater
+      IF M2 >= 5
         ASS tempoPulse = 2
         SEND BA 01 $127
       END
@@ -666,6 +666,14 @@ IF MT == B0
     # ensure gateFactor is correct
     LOG gate gate
     LOG gateFactor gateFactor
+    # END TEST
+  END
+  # if knob is 3 (velocity)
+  IF M1 == 3
+    ASS velocity = M2
+    # TEST
+    # ensure velocity aligns with velocity
+    LOG velocity velocity
     # END TEST
   END
 END

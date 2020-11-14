@@ -26,6 +26,8 @@
 # ensure gate aligns with gate
 # ensure gateFactor is correct
 
+# ensure velocity aligns with velocity
+
 ###
 # launchkey mini
 ###
