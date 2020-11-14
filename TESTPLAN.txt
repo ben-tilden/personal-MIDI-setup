@@ -7,6 +7,8 @@
 
 # ensure tempoModeMod changes accordingly and tempoPulse correlates
 
+# ensure gateModeMod changes accordingly and gate correlates
+
 # ensure arpValueModeMod changes accordingly or setPhrase changes
 
 # ensure rest sent
@@ -22,6 +24,7 @@
 # ensure tempoPulse aligns with tempoMode
 
 # ensure gate aligns with gate
+# ensure gateFactor is correct
 
 ###
 # launchkey mini

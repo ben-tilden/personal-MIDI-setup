@@ -112,6 +112,8 @@ IF LOAD
   ALIAS I0 tempoMode
   ALIAS I1 arpValueMode
   ALIAS I2 previousDrumVal
+  ALIAS I3 gateMode
+  ALIAS I4 gateFactor
 
   # global
   ALIAS G0 channel
@@ -126,6 +128,7 @@ IF LOAD
   ALIAS GA drumParams
   ALIAS GE arpModeSwitched # NOTE gateOpened
   ALIAS G12 phraseIndex
+  ALIAS G13 gateModeMod
 
   # assign local
   # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
@@ -153,7 +156,7 @@ IF MT == 90
   # if variable is too high, reset
   IF M1 == 00 7F
     MATH tempoMode = tempoMode + 1
-    # set tempo mode to variable modulo 3
+    # set tempo mode to variable modulo 4
     MATH tempoModeMod = tempoMode % 4
     IF tempoModeMod == 0
       ASS tempoPulse = $24
@@ -177,6 +180,44 @@ IF MT == 90
     # ensure tempoModeMod changes accordingly and tempoPulse correlates
     LOG tempoMode tempoModeMod
     LOG tempoPulse tempoPulse
+    # END TEST
+  END
+
+  # if it is a knob 2 button push, increase gate mode
+  # if variable is too high, reset
+  IF M1 == 01 7F
+    MATH gateMode = gateMode + 1
+    # set tempo mode to variable modulo 6
+    MATH gateModeMod = gateMode % 6
+    IF gateModeMod == 0
+      ASS gate = 0
+      ASS gateFactor = 1
+      SEND BA 02 00
+    END
+    IF gateModeMod == 1
+      ASS gateFactor = 2
+      SEND BA 02 00
+    END
+    IF gateModeMod == 2
+      ASS gateFactor = 5
+      SEND BA 02 00
+    END
+    IF gateModeMod == 3
+      ASS gateFactor = 10
+      SEND BA 02 00
+    END
+    IF gateModeMod == 4
+      ASS gateFactor = 20
+      SEND BA 02 00
+    END
+    IF gateModeMod == 5
+      ASS gateFactor = 40
+      SEND BA 02 00
+    END
+    # TEST
+    # ensure gateModeMod changes accordingly and gate correlates
+    LOG gateMode gateModeMod
+    LOG gate gate
     # END TEST
   END
 
@@ -633,11 +674,13 @@ IF MT == B0
   # if knob is 2 (gate)
   # starting points: max will be ~5 seconds (5000), min will be .1 seconds (100)
   IF M1 == 2
-    ASS gate = M2 # could multiply
+    MATH gate = M2 * gateFactor
     # TODO add option for pushing the button here for gate lengthening
     # TEST
     # ensure gate aligns with gate
-    LOG gate $G6
+    # ensure gateFactor is correct
+    LOG gate gate
+    LOG gateFactor gateFactor
     # END TEST
   END
 END
