@@ -1,5 +1,31 @@
 # TODO IDEAS
 
+# phase 1: add latch functionality
+# all buttons available for latch
+# review possible filtering for clock (possible to add channel? send from filter as sysex?)
+# create local storage array on channel file
+
+# lfo params
+# knob 1 press alternates lfo control
+# knob 2 press restarts current lfo
+# knob 1 rate; knob 2 depth
+
+# TODO send lights off on reset
+# NOTE address global reset
+# TODO will need to handle sysex for lights reset
+# TODO will need to eventually handle knobs for drumparams - this might need to be global
+# TODO implement push control
+# push control will be set such that when the knob is pushed, knobPush is set to true, and the current value is saved
+# if knobPush is set to true and knobTurned is set to true, the original value will be sent back to the parameter and the knob lighting
+# on knob release, knobPush will be set to false and the settings will change if knobTurned is set to false
+# cons: this may make it more difficult in a live setting, since pushing and not turning by accident could cause issues
+# pros: it's more intuitive, prevents two hands from being used at the same time, and allows for more mapping on xtouch
+# this way we could save knobs by combining the waveguide send and one of the other waveguide knobs
+# tempo gate velocity lfoDepth lfoSpeed decay body tune send
+# single knob press - switch to send
+# double knob press - switch waveguide model
+# change lighting type to indicate whether 'send' or one of the other waveguide parameters
+
 # notes on live testing:
 # app crashes when order / phrase used at a very high tempo
 # can put red tape to indicate

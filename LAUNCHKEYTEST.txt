@@ -97,6 +97,61 @@ END
 
 IF LOAD
 
+  # setup init - comment out if there is a need to save global information between sessions
+  # reset global array
+  ASS G0 = 00 # currentChannel
+  ASS G1 = 00 # numPressed
+  ASS G2 = 00 # arpPhraseToggle
+  ASS G3 = 00 # arpPhraseOnOffToggle
+  ASS G4 = 00 # tempoModeMod
+  ASS G5 = 24 # tempoPulse
+  ASS G6 = 00 # gateModeMod
+  ASS G7 = 00 # gate
+  ASS G8 = 00 # arpValueModeMod
+  ASS G9 = 00 # setPhrase
+  ASS GA = 00 # waveguideToggle
+  ASS GB = 0E # drumParams (Part 1)
+  ASS GC = 0F # drumParams (Part 2)
+  ASS GD = 10 # drumParams (Part 1+2)
+  ASS GE = 67 # drumParams (wg send) (103)
+  ASS GF = 00 # gateOpened
+  ASS G10 = 00 # phraseVal
+  ASS G11 = 2A # phraseLengthPlusOffset
+  ASS G12 = 64 # velocity
+  ASS G13 = 2A # phraseindex
+  ASS G20 = 00 00 00 00 00 00 00 00 00 00 # arp values (G10 G11 G12 G13 G14 G15 G16 G17 G18 G19)
+  ASS G2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (G2A G2B G2C G2D G2E G2F G30 G31 G32 G33 G34 G35 G36 G37 G38 G39 ETC.)
+  ASS G4A = 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # channel booleans
+  # TEST
+  # ensure global array reset
+  ASS IFF = 0
+  WHILE IFF < 5A
+    LOG G_INDEX IFF
+    LOG IFF GIFF
+    MATH IFF = IFF + 1
+  END
+  # END TEST
+
+  # reset xtouch lighting
+  SEND F0 01 1F 00 00 F7
+  # TEST
+  # ensure xtouch lighting reset
+  LOG LIGHTS_RESET
+  # END TEST
+
+  # full setup init - comment out if there is a need to save channel information between sessions
+  # TODO create command that will log all channel session information
+  # NOTE possible issue here that latch info will likely not save between sessions - or if there is need to, it must be added in manually
+  # NOTE this can likely be done by creating a whole other SB to act as a db
+  # reset channel information
+  SEND F0 01 1C 00 00 F7
+  # TEST
+  # ensure channel information reset (will need to be done on individual files)
+  # LOG CHANNELS_RESET
+  # END TEST
+
+  # end init
+
   # constant
 
   ALIAS 20 arpIndexOffset
@@ -118,12 +173,12 @@ IF LOAD
   ALIAS G1 numPressed
   ALIAS G2 arpPhraseToggle
   ALIAS G3 arpPhraseOnOffToggle
-  ALIAS G7 arpValueModeMod
-  ALIAS G8 setPhrase
-  ALIAS GE gateOpened
-  ALIAS GF phraseVal
-  ALIAS G10 phraseLengthPlusOffset
-  ALIAS G12 phraseIndex
+  ALIAS G8 arpValueModeMod
+  ALIAS G9 setPhrase
+  ALIAS GF gateOpened
+  ALIAS G10 phraseVal
+  ALIAS G11 phraseLengthPlusOffset
+  ALIAS G13 phraseIndex
 
   # assign local
   # NOTE technically K does not need to be reset here, since only L is parsed - doing so as good practice
@@ -140,9 +195,9 @@ IF LOAD
 END
 
 IF MT == B0
-  IF M1 == 69 7F # TODO placeholder - two buttons at once? double tap?
+  IF M1 == 6B 7F # TODO two buttons at once? triple tap?
     # on init, this should init the global array to something basic
-    # NOTE init here?
+    # NOTE init here? make it a possibility, but don't make it basic functionality
     # consider making init file, where one sysex inits just the global array, the other all channels are cleared
     # channelmanage file? this would break with the one midi device to each SB instance
     # can also possibly save instances from multiple sessions using another StreamByter and +P
@@ -594,14 +649,14 @@ IF setPhrase == 1
     IF tempPhraseVal == AAAA
       ASS tempPhraseVal = M1
     END
-    MATH GG12 = M1 - tempPhraseVal
+    MATH GG13 = M1 - tempPhraseVal
     ASS phraseLengthPlusOffset = phraseIndex
     MATH phraseIndex = phraseIndex + 1
   END
   # if phraseRest is sent
-  IF M0 == F0 2E 57 F7
+  IF M0 == F0 01 F1 2E 57 F7
     # assign value to 2E57, indicating a rest
-    ASS GG12 = 2E57
+    ASS GG13 = 2E57
     ASS phraseLengthPlusOffset = phraseIndex
     MATH phraseIndex = phraseIndex + 1
   END
@@ -613,7 +668,7 @@ IF setPhrase == 1
     # NOTE since this message is for turning off the light, it only needs to be sent when the final note is not a rest
     # rest button handles this in xtouch
     IF G49 != 2E57
-      SEND F0 90 FF F7 +F
+      SEND F0 02 1F F1 90 FF F7 +F
     END
   END
   FX = XX +B
@@ -669,7 +724,7 @@ IF setPhrase == 1
   # END TEST
 ELSE
   # ensure phraseIndex is reset when setPhrase is turned off from xtouch
-  IF M0 == F0 90 FF F7
+  IF M0 == F0 02 1F F1 90 FF F7
     ASS phraseIndex = 2A
     ASS tempPhraseVal = AAAA
     FX = XX +B

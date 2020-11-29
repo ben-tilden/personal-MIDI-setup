@@ -1,16 +1,7 @@
 # xtouch test code
 
 # TEST NOTES
-# TODO send lights off on reset
-# NOTE address global reset
-# TODO will need to handle sysex for lights reset
-# TODO will need to eventually handle knobs for drumparams - this might need to be global
-# TODO implement push control
-# push control will be set such that when the knob is pushed, knobPush is set to true, and the current value is saved
-# if knobPush is set to true and knobTurned is set to true, the original value will be sent back to the parameter and the knob lighting
-# on knob release, knobPush will be set to false and the settings will change if knobTurned is set to false
-# cons: this may make it more difficult in a live setting, since pushing and not turning by accident could cause issues
-# pros: it's more intuitive, prevents two hands from being used at the same time, and allows for more mapping on xtouch
+
 
 
 
@@ -81,33 +72,7 @@
 # button 2 will toggle arp / phrase
 # button 10 will turn arp / phrase on or off
 
-# global array will be set in the following way
-# G0 - channel
-# G1 - numPressed
-# G2 - arpPhraseToggle
-# G3 - arpPhraseOnOffToggle
-# G4 - tempoModeMod
-# G5 - tempoPulse
-# G6 - gate
-# G7 - arpValueModeMod
-# G8 - setPhrase
-# G9 - waveguideToggle
-# GA - drumParams (Part 1)
-# GB - drumParams (Part 2)
-# GC - drumParams (Part 1+2)
-# GD - velocity
-# GE - break (null)
-# GF - break (null)
-# G10 - G19 - arp values        (G10 G11 G12 G13 G14 G15 G16 G17 G18 G19)
-# G1A - G23 - arp order pressed (G1A G1B G1C G1D G1E G1F G20 G21 G22 G23)
-# G24 - G43 - phrase sequence      (G24 G25 G26 G27 G28 G29 G2A G2B G2C G2D G2E G2F G30 G31 G32 G33 ETC.)
-
 IF LOAD
-
-  # TEST LIVE
-  # NOTE dangerous - need to confirm that this is where we want the global reset to occur
-  ASS G0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 2A 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-  # END TEST LIVE
 
   # local
   ALIAS I0 tempoMode
@@ -122,15 +87,15 @@ IF LOAD
   ALIAS G3 arpPhraseOnOffToggle
   ALIAS G4 tempoModeMod
   ALIAS G5 tempoPulse
-  ALIAS G6 gate
-  ALIAS G7 arpValueModeMod
-  ALIAS G8 setPhrase
-  ALIAS G9 waveguideToggle
-  ALIAS GA drumParams
-  ALIAS GE arpModeSwitched # NOTE gateOpened
-  ALIAS G11 velocity
-  ALIAS G12 phraseIndex
-  ALIAS G13 gateModeMod
+  ALIAS G6 gateModeMod
+  ALIAS G7 gate
+  ALIAS G8 arpValueModeMod
+  ALIAS G9 setPhrase
+  ALIAS GA waveguideToggle
+  ALIAS GB drumParams
+  ALIAS GF arpModeSwitched # NOTE gateOpened
+  ALIAS G12 velocity
+  ALIAS G13 phraseIndex
 
   # assign local
   # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
@@ -145,7 +110,7 @@ IF LOAD
 END
 
 # Turn off setPhrase light when sysex received
-IF M0 == F0 90 FF F7
+IF M0 == F0 02 1F F1 90 FF F7
   IF setPhrase == 0
     SEND 90 00 00
   END
@@ -238,7 +203,7 @@ IF MT == 90
         ASS setPhrase = 1
       ELSE
         ASS setPhrase = 0
-        SEND F0 90 FF F7 +F
+        SEND F0 02 1F F1 90 FF F7 +F
       END
     END
     # TEST
@@ -258,7 +223,7 @@ IF MT == 90
     # if phrase then add rest to phrase sequence
     ELSE
       IF setPhrase == 1
-        SEND F0 2E 57 F7 +F
+        SEND F0 01 F1 2E 57 F7 +F
         # NOTE not currently planning on handling this, but there may is likely a race condition between rest and note that could cause issues
         # TEST
         # ensure rest sent
@@ -280,7 +245,7 @@ IF MT == 90
       ASS arpPhraseToggle = 0
       IF setPhrase == 1
         ASS setPhrase = 0
-        SEND F0 90 FF F7 +F
+        SEND F0 02 1F F1 90 FF F7 +F
       END
     END
     # TEST
