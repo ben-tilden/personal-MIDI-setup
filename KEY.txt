@@ -30,7 +30,6 @@
 # G2A - G49 - phrase sequence (G24 G25 G26 G27 G28 G29 G2A G2B G2C G2D G2E G2F G30 G31 G32 G33 ETC.)
 # G4A - G59 - channel booleans
 
-# TODO need to fix this
 # default global channel
 # G0 - 00 - currentChannel
 # G1 - 00 - numPressed

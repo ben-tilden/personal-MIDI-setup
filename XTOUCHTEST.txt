@@ -80,6 +80,8 @@ IF LOAD
   ALIAS I2 previousDrumVal
   ALIAS I3 gateMode
   ALIAS I4 gateFactor
+  ALIAS I5 resetIndex
+  ALIAS I6 resetIndexMinusOne
 
   # global
   ALIAS G0 channel
@@ -107,6 +109,25 @@ IF LOAD
   # TEST
   LOG phraseIndex phraseIndex
   # END TEST
+END
+
+# Turn off lights when init sysex received
+IF M0 == F0 01 1F 00 00 F7
+  ASS resetIndex = 1
+  # loop until this is done for all sixteen buttons
+  WHILE restIndex < 11
+    MATH restIndexMinusOne = restIndex - 1
+    # these should only go up to eight
+    IF restIndex < 9
+      # reset lighting on knobs
+      SEND BA resetIndex 00
+      # set lighting to 'pan'
+      SEND B0 resetIndexMinusOne 01
+    END
+    # reset button lighting
+    SEND 90 resetIndexMinusOne 00
+    MATH resetIndex = resetIndex + 1
+  END
 END
 
 # Turn off setPhrase light when sysex received
