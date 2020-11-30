@@ -59,18 +59,20 @@ IF LOAD
   ALIAS I7 phraseIndex
   ALIAS I8 numPressedOffset
 
+  ALIAS J0 currentChannel
+  ALIAS J1 numPressed
+  ALIAS J2 arpPhraseToggle
+  ALIAS J3 arpPhraseOnOffToggle
+  ALIAS J5 tempoPulse
+  ALIAS J7 gate
+  ALIAS J8 arpValueModeMod
+  ALIAS JF gateOpened
+  ALIAS J10 phraseVal
+  ALIAS J11 phraseLengthPlusOffset
+  ALIAS J12 velocity
+
   # global
-  ALIAS G0 currentChannel
-  ALIAS G1 numPressed
-  ALIAS G2 arpPhraseToggle
-  ALIAS G3 arpPhraseOnOffToggle
-  ALIAS G5 tempoPulse
-  ALIAS G7 gate
-  ALIAS G8 arpValueModeMod
-  ALIAS G9 gateOpened
-  ALIAS G10 phraseVal
-  ALIAS G11 phraseLengthPlusOffset
-  ALIAS G12 velocity
+  ALIAS G4A isChannel
 
   # assign local
   ASS clockNum = 0
@@ -80,6 +82,17 @@ IF LOAD
   ALIAS L0 tempVar1
   ALIAS L1 tempVar2
   # END TEST
+END
+
+# before anything is read, we need to ensure that the local array matches with the global array, if the global array is currently controlling
+IF currentChannel == 0
+  # TODO IF keypressed here? can that prevent extra work?
+  ASS J0 = G0 G1 G2 G3 G4 G5 G6 G7 G8 G9 GA GB GC GD GE GF
+  ASS J10 = G10 G11 G12 G13 G14 G15 G16 G17 G18 G19 G1A G1B G1C G1D G1E G1F
+  ASS J20 = G20 G21 G22 G23 G24 G25 G26 G27 G28 G29 G2A G2B G2C G2D G2E G2F
+  ASS J30 = G30 G31 G32 G33 G34 G35 G36 G37 G38 G39 G3A G3B G3C G3D G3E G3F
+  ASS J40 = G40 G41 G42 G43 G44 G45 G46 G47 G48 G49 G4A G4B G4C G4D G4E G4F
+  ASS J50 = G50 G51 G52 G53 G54 G55 G56 G57 G58 G59
 END
 
 # SEND F0 C4 MC G0 F7 +F
@@ -99,6 +112,33 @@ END
 
 # NOTE above should not matter without latch, since clock is only considered when channel is this file's channel
 
+# Reset channel when init sysex received
+IF M0 == F0 01 1C 00 00 F7
+  ASS J0 = 00 # currentChannel
+  ASS J1 = 00 # numPressed
+  ASS J2 = 00 # arpPhraseToggle
+  ASS J3 = 00 # arpPhraseOnOffToggle
+  ASS J4 = 00 # tempoModeMod
+  ASS J5 = 24 # tempoPulse
+  ASS J6 = 00 # gateModeMod
+  ASS J7 = 00 # gate
+  ASS J8 = 00 # arpValueModeMod
+  ASS J9 = 00 # setPhrase
+  ASS JA = 00 # waveguideToggle
+  ASS JB = 0E # drumParams (Part 1)
+  ASS JC = 0F # drumParams (Part 2)
+  ASS JD = 10 # drumParams (Part 1+2)
+  ASS JE = 67 # drumParams (wg send) (103)
+  ASS JF = 00 # gateOpened
+  ASS J10 = 00 # phraseVal
+  ASS J11 = 2A # phraseLengthPlusOffset
+  ASS J12 = 64 # velocity
+  ASS J13 = 2A # phraseindex
+  ASS J20 = 00 00 00 00 00 00 00 00 00 00 # arp values (G10 G11 G12 G13 G14 G15 G16 G17 G18 G19)
+  ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (G2A G2B G2C G2D G2E G2F G30 G31 G32 G33 G34 G35 G36 G37 G38 G39 ETC.)
+  ASS J4A = 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # channel booleans
+END
+
 # check currentChannel first, channelOne based off that
 # if currentChannel is 1 and channelOne is true - draw globally
 # if currentChannel is not 1 and channelOne is true - draw locally
@@ -107,8 +147,9 @@ END
 # store note on values and send note off for all when latch is turned off
 # when channel is switched, first save global values into local values
 
-# if channel is this channel (one)
-IF currentChannel == 0
+# if this channel is currently allowing input
+# TODO review ordering here - could possibly be rearranged
+IF isChannel == 1
   # if message is clock
   IF M0 == F8
     # if gate is open (numPressed is greater than zero)

@@ -3,8 +3,6 @@
 
 # global array key
 
-# TODO will need to reset global array using one service - possibly this one
-
 # global array will be set in the following way
 # G0 - currentChannel
 # G1 - numPressed
@@ -12,7 +10,7 @@
 # G3 - arpPhraseOnOffToggle
 # G4 - tempoModeMod
 # G5 - tempoPulse
-# G6 - gateModeMod # change so adjacent to tempoModeMod and gate
+# G6 - gateModeMod
 # G7 - gate
 # G8 - arpValueModeMod
 # G9 - setPhrase

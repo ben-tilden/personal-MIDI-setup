@@ -195,16 +195,8 @@ IF LOAD
 END
 
 IF MT == B0
-  IF M1 == 6B 7F # TODO two buttons at once? triple tap?
-    # on init, this should init the global array to something basic
-    # NOTE init here? make it a possibility, but don't make it basic functionality
-    # consider making init file, where one sysex inits just the global array, the other all channels are cleared
-    # channelmanage file? this would break with the one midi device to each SB instance
-    # can also possibly save instances from multiple sessions using another StreamByter and +P
-
-    # NOTE we could filter so that these messages only get sent to channels
-    # this would depend on how much data an SB file could interpret at once, with keys and everything being passed through as well
-
+  IF M1 == 6B 7F
+    # TODO two buttons at once? triple tap? on release?
     # NOTE depending on routing, we may just need to send one message
     # receiving a message that does not match the channel triggers an auto save (this may require some timer, since this might be a race condition)
     # signal previous channel file to save
@@ -225,9 +217,6 @@ IF MT == B0
 
     # assign global variables
     ASS G0 = MC
-
-    # NOTE only necessary for implementing latch functionality
-    # load local arrays for channel
 
     # NOTE ensure to block specific sysex input so it isn't passed out
   END

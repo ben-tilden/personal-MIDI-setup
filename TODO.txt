@@ -10,8 +10,6 @@
 # knob 2 press restarts current lfo
 # knob 1 rate; knob 2 depth
 
-# TODO send lights off on reset
-# NOTE address global reset
 # TODO will need to handle sysex for lights reset
 # TODO will need to eventually handle knobs for drumparams - this might need to be global
 # TODO implement push control
