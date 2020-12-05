@@ -16,13 +16,6 @@
 # this will feed data into each channel file and will be toggled by xtouch
 # if phrase and arp are off, notes will be passed through as expected
 
-# TODO:
-# NEXT STEPS need to test, and then organize in terms of multiple channels
-# NOTE: this will definitely run into issues with single note arp, since the note off can possibly come after multiple clock sent
-# Possibly investigate timing - being late on initial downbeat might not be preventing the second note from playing in order
-# This is actually likely due to the order in which the keys are initially pressed - the first button pressed might be what is sent, then when the array is sorted it may be sorted into the second spot
-# sort each time clock is sent via some process similar to selection sort? this could prevent the timing issue above
-
 SUBROUTINE INSERTION_SORT isOrder length
   ALIAS I10 i
   ALIAS I11 j
@@ -37,8 +30,37 @@ SUBROUTINE INSERTION_SORT isOrder length
   IF isOrder == 1
     ASS i = 21
     WHILE i < lengthOffset
+      ASS keyVal = II10
+      ASS keyBool = JI10
+      MATH j = i - 1
+      MATH jPlusOne = j + 1
+      ASS isSetSort = 0
+      IF j >= 20
+        IF II11 < keyVal
+          ASS isSetSort = 1
+        END
+      END
+      WHILE isSetSort == 1
+        ASS II12 = II11
+        ASS JI12 = JI11
+        MATH j = j - 1
+        MATH jPlusOne = j + 1
+        ASS isSetSort = 0
+        IF j >= 20
+          IF II11 < keyVal
+            ASS isSetSort = 1
+          END
+        END
+      END
+      ASS II12 = keyVal
+      ASS JI12 = keyBool
+      MATH i = i + 1
+    END
+  ELSE
+    ASS i = 21
+    WHILE i < lengthOffset
       ASS keyVal = JI10
-      ASS keyBool = GI10
+      ASS keyBool = II10
       MATH j = i - 1
       MATH jPlusOne = j + 1
       ASS isSetSort = 0
@@ -49,7 +71,7 @@ SUBROUTINE INSERTION_SORT isOrder length
       END
       WHILE isSetSort == 1
         ASS JI12 = JI11
-        ASS GI12 = GI11
+        ASS II12 = II11
         MATH j = j - 1
         MATH jPlusOne = j + 1
         ASS isSetSort = 0
@@ -60,68 +82,43 @@ SUBROUTINE INSERTION_SORT isOrder length
         END
       END
       ASS JI12 = keyVal
-      ASS GI12 = keyBool
-      MATH i = i + 1
-    END
-  ELSE
-    ASS i = 21
-    WHILE i < lengthOffset
-      ASS keyVal = GI10
-      ASS keyBool = JI10
-      MATH j = i - 1
-      MATH jPlusOne = j + 1
-      ASS isSetSort = 0
-      IF j >= 20
-        IF GI11 < keyVal
-          ASS isSetSort = 1
-        END
-      END
-      WHILE isSetSort == 1
-        ASS GI12 = GI11
-        ASS JI12 = JI11
-        MATH j = j - 1
-        MATH jPlusOne = j + 1
-        ASS isSetSort = 0
-        IF j >= 20
-          IF GI11 < keyVal
-            ASS isSetSort = 1
-          END
-        END
-      END
-      ASS GI12 = keyVal
-      ASS JI12 = keyBool
+      ASS II12 = keyBool
       MATH i = i + 1
     END
   END
 END
 
+# J is the local storage array (database)
+# NOTE if it can be removed from here safely
+
 IF LOAD
 
   # setup init - comment out if there is a need to save global information between sessions
   # reset global array
-  ASS G0 = 00 # currentChannel
-  ASS G1 = 00 # numPressed
-  ASS G2 = 00 # arpPhraseToggle
-  ASS G3 = 00 # arpPhraseOnOffToggle
-  ASS G4 = 00 # tempoModeMod
-  ASS G5 = 24 # tempoPulse
-  ASS G6 = 00 # gateModeMod
-  ASS G7 = 00 # gate
-  ASS G8 = 00 # arpValueModeMod
-  ASS G9 = 00 # setPhrase
-  ASS GA = 00 # waveguideToggle
-  ASS GB = 0E # drumParams (Part 1)
-  ASS GC = 0F # drumParams (Part 2)
-  ASS GD = 10 # drumParams (Part 1+2)
-  ASS GE = 67 # drumParams (wg send) (103)
-  ASS GF = 00 # gateOpened
-  ASS G10 = 00 # phraseVal
-  ASS G11 = 2A # phraseLengthPlusOffset
-  ASS G12 = 64 # velocity
-  ASS G13 = 2A # phraseindex
-  ASS G20 = 00 00 00 00 00 00 00 00 00 00 # arp values (G10 G11 G12 G13 G14 G15 G16 G17 G18 G19)
-  ASS G2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (G2A G2B G2C G2D G2E G2F G30 G31 G32 G33 G34 G35 G36 G37 G38 G39 ETC.)
-  ASS G4A = 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # channel booleans
+  # TODO IF keypressed here? can that prevent extra work?
+
+  ASS J0 = 00 # currentChannel
+  ASS J1 = 00 # numPressed
+  ASS J2 = 00 # arpPhraseToggle
+  ASS J3 = 00 # arpPhraseOnOffToggle
+  ASS J4 = 00 # tempoModeMod
+  ASS J5 = 24 # tempoPulse
+  ASS J6 = 00 # gateModeMod
+  ASS J7 = 00 # gate
+  ASS J8 = 64 # velocity
+  ASS J9 = 00 # arpValueModeMod
+  ASS JA = 00 # setPhrase
+  ASS JB = 00 # phraseVal
+  ASS JC = 2A # phraseindex
+  ASS JD = 2A # phraseLengthPlusOffset
+  ASS JE = 00 # gateOpened
+  ASS JF = 00 # waveguideToggle
+  ASS J10 = 0E # drumParams (Part 1)
+  ASS J11 = 0F # drumParams (Part 2)
+  ASS J12 = 10 # drumParams (Part 1+2)
+  ASS J13 = 67 # drumParams (wg send) (103)
+  ASS J20 = 00 00 00 00 00 00 00 00 00 00 # arp values (J10 J11 J12 J13 J14 J15 J16 J17 J18 J19)
+  ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
   # TEST
   # ensure global array reset
   ASS IFF = 0
@@ -133,7 +130,7 @@ IF LOAD
   # END TEST
 
   # reset xtouch lighting
-  SEND F0 01 1F 00 00 F7
+  SEND F0 FF 00 00 0F F7
   # TEST
   # ensure xtouch lighting reset
   LOG LIGHTS_RESET
@@ -144,7 +141,7 @@ IF LOAD
   # NOTE possible issue here that latch info will likely not save between sessions - or if there is need to, it must be added in manually
   # NOTE this can likely be done by creating a whole other SB to act as a db
   # reset channel information
-  SEND F0 01 1C 00 00 F7
+  SEND F0 FF 00 00 0C F7
   # TEST
   # ensure channel information reset (will need to be done on individual files)
   # LOG CHANNELS_RESET
@@ -168,21 +165,23 @@ IF LOAD
   ALIAS I8 tempPhraseVal
   ALIAS I9 resetArp
   ALIAS IA resetPhrase
+  ALIAS I17 phraseTemp # TODO
+  # NOTE I10 - I16 taken by insertion sort above, I20 - I29 taken as numPressed order for arp
 
   # global
-  ALIAS G1 numPressed
-  ALIAS G2 arpPhraseToggle
-  ALIAS G3 arpPhraseOnOffToggle
-  ALIAS G8 arpValueModeMod
-  ALIAS G9 setPhrase
-  ALIAS GF gateOpened
-  ALIAS G10 phraseVal
-  ALIAS G11 phraseLengthPlusOffset
-  ALIAS G13 phraseIndex
+  ALIAS J1 numPressed
+  ALIAS J2 arpPhraseToggle
+  ALIAS J3 arpPhraseOnOffToggle
+  ALIAS J9 arpValueModeMod
+  ALIAS JA setPhrase
+  ALIAS JB phraseVal
+  ALIAS JC phraseIndex
+  ALIAS JD phraseLengthPlusOffset
+  ALIAS JE gateOpened
 
   # assign local
   # NOTE technically K does not need to be reset here, since only L is parsed - doing so as good practice
-  ASS J20 = 00 00 00 00 00 00 00 00 00 00
+  ASS I20 = 00 00 00 00 00 00 00 00 00 00
   ASS K1 = 00 00 00 00 00
   ASS L1 = 00 00 00 00 00
 
@@ -191,8 +190,82 @@ IF LOAD
   ASS tempPhraseVal = AAAA
   ASS resetArp = 0
   ASS resetPhrase = 0
-  
+
 END
+
+# sysex reception
+
+IF M0 = F0 01
+  ASS numPressed = M2
+  # TEST
+  # ensure launchkey receives numPressed
+  LOG numPressed_SYSEX_RECEIVED J1
+  # END TEST
+  BLOCK
+  EXIT
+END
+
+IF M0 = F0 02
+  ASS arpPhraseToggle = M2
+  # TEST
+  # ensure launchkey receives arpPhraseToggle
+  LOG arpPhraseToggle_SYSEX_RECEIVED J2
+  # END TEST
+  BLOCK
+  EXIT
+END
+
+IF M0 = F0 03
+  ASS arpPhraseOnOffToggle = M2
+  # TEST
+  # ensure launchkey receives arpPhraseOnOffToggle
+  LOG arpPhraseOnOffToggle_SYSEX_RECEIVED J3
+  # END TEST
+  BLOCK
+  EXIT
+END
+
+IF M0 = F0 09
+  ASS arpValueModeMod = M2
+  # TEST
+  # ensure launchkey receives arpValueModeMod
+  LOG arpValueModeMod_SYSEX_RECEIVED J9
+  # END TEST
+  BLOCK
+  EXIT
+END
+
+IF M0 = F0 0A
+  ASS setPhrase = M2
+  # TEST
+  # ensure launchkey receives setPhrase
+  LOG setPhrase_SYSEX_RECEIVED JA
+  # END TEST
+  IF setPhrase == 0
+    ASS phraseIndex = 2A
+    ASS tempPhraseVal = AAAA
+    FX = XX +B
+    # TEST
+    # ensure sysex resets phraseIndex when setPhrase is turned off
+    LOG phraseIndex phraseIndex
+    # END TEST
+  END
+  BLOCK
+  EXIT
+END
+
+IF M0 = F0 0C
+  ASS phraseIndex = M2
+  # TEST
+  # ensure launchkey receives phraseIndex
+  LOG phraseIndex_SYSEX_RECEIVED JC
+  # END TEST
+  BLOCK
+  EXIT
+END
+
+# end sysex reception
+
 
 IF MT == B0
   IF M1 == 6B 7F
@@ -208,15 +281,18 @@ IF MT == B0
     # this is fine (and expected) for live keyboard playing without latch, but will likely be an issue when using modstep
 
     # assign local variables
-    ASS J20 = 00 00 00 00 00 00 00 00 00 00
+    ASS I20 = 00 00 00 00 00 00 00 00 00 00
     ASS K1 = 00 00 00 00 00
     ASS L1 = 00 00 00 00 00
     ASS numPressedTotal = 0
     ASS tempPhraseVal = AAAA
     ASS phraseIndex = 2A
+    # SEND SYSEX
+    SEND F0 0C phraseIndex F7
+    # END SYSEX
 
     # assign global variables
-    ASS G0 = MC
+    ASS J0 = MC
 
     # NOTE ensure to block specific sysex input so it isn't passed out
   END
@@ -232,38 +308,34 @@ IF arpPhraseOnOffToggle == 1
       # if reset (key pressed limit exceeded), handle differently
       IF resetArp == 1
         MATH numPressed = numPressed + 1
+        # SEND SYSEX
+        SEND F0 01 numPressed F7
+        # END SYSEX
         BLOCK
         EXIT
       END
 
       # setting arbitrary limit on number of keys pressed at a time to 10 (using 10 as comparator here because numPressed has not yet been increased)
       IF numPressed == A
-        ASS G20 = 00 00 00 00 00 00 00 00 00 00
         ASS J20 = 00 00 00 00 00 00 00 00 00 00
+        # SEND SYSEX
+        SEND F0 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7
+        # END SYSEX
+        ASS I20 = 00 00 00 00 00 00 00 00 00 00
         ASS resetArp = 1
         ASS numPressedTotal = 0
         # necessary so that numPressed does not go past zero by mistake, as we have not yet incremented for this key press
         MATH numPressed = numPressed + 1
+        # SEND SYSEX
+        SEND F0 01 numPressed F7
+        # END SYSEX
         # TEST
-        # ensure G array contains correct key values pressed on reset (0)
-        # ensure J array contains correct order of keys pressed on reset (0)
+        # ensure J array contains correct key values pressed on reset (0)
+        # ensure I array contains correct order of keys pressed on reset (0)
         # ensure numPressed aligns with number of keys pressed on reset (0)
         # ensure numPressedTotal aligns with number of keys pressed total on reset (0)
         LOG isArp
-        LOG G19 G19 # should always be 0, unless globalkey is updated
-        LOG G20 G20 
-        LOG G21 G21
-        LOG G22 G22
-        LOG G23 G23
-        LOG G24 G24
-        LOG G25 G25
-        LOG G26 G26
-        LOG G27 G27
-        LOG G28 G28
-        LOG G29 G29
-        LOG G2A G2A # should always be first value of phrase
-        LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-        LOG J19 J19 # should always be 0
+        LOG J19 J19 # should always be 0, unless globalkey is updated
         LOG J20 J20
         LOG J21 J21
         LOG J22 J22
@@ -274,7 +346,20 @@ IF arpPhraseOnOffToggle == 1
         LOG J27 J27
         LOG J28 J28
         LOG J29 J29
-        LOG J2A J2A # should always be 0
+        LOG J2A J2A # should always be first value of phrase
+        LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+        LOG I19 I19 # should always be 0
+        LOG I20 I20
+        LOG I21 I21
+        LOG I22 I22
+        LOG I23 I23
+        LOG I24 I24
+        LOG I25 I25
+        LOG I26 I26
+        LOG I27 I27
+        LOG I28 I28
+        LOG I29 I29
+        LOG I2A I2A # should always be 0
         LOG ~~~~~~~~~~BREAK~~~~~~~~~~
         LOG numPressed numPressed
         LOG numPressedTotal numPressedTotal
@@ -288,23 +373,35 @@ IF arpPhraseOnOffToggle == 1
 
       # store note value in first open spot in array
       MATH arpIndex = arpIndexOffset + numPressed
-      ASS GI2 = M1
-      ASS JI2 = numPressedTotal
+      ASS JI2 = M1
+      ASS II2 = numPressedTotal
 
       # add one to current notes pressed
       # NOTE this is done before sorting to make sure proper length is parsed
       MATH numPressed = numPressed + 1
+      # SEND SYSEX
+      SEND F0 01 numPressed F7
+      # END SYSEX
 
       # sort array / hashmap according to ascending, descending, order pressed
       IF arpValueModeMod < 6
         INSERTION_SORT 0 numPressed
+        # SEND SYSEX
+        SEND F0 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7
+        # END SYSEX
       END
       IF arpValueModeMod > 8
         INSERTION_SORT 1 numPressed
+        # SEND SYSEX
+        SEND F0 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7
+        # END SYSEX
       END
 
       IF numPressed == 1
         ASS gateOpened = 1
+        # SEND SYSEX
+        SEND F0 0E gateOpened F7
+        # END SYSEX
       END
       # TEST TRY
       #IF numPressed > 1
@@ -312,26 +409,13 @@ IF arpPhraseOnOffToggle == 1
       #END
       # END TEST TRY
       # TEST
-      # ensure G array contains correct key values pressed on key press
-      # ensure J array contains correct order of keys pressed on key press
+      # ensure J array contains correct key values pressed on key press
+      # ensure I array contains correct order of keys pressed on key press
       # ensure numPressed aligns with number of keys pressed on key press
       # ensure numPressedTotal aligns with number of keys pressed total on key press
       # ensure gateOpened aligns with number of keys pressed total on key press
       LOG isArp
-      LOG G19 G19 # should always be 0, unless globalkey is updated
-      LOG G20 G20 
-      LOG G21 G21
-      LOG G22 G22
-      LOG G23 G23
-      LOG G24 G24
-      LOG G25 G25
-      LOG G26 G26
-      LOG G27 G27
-      LOG G28 G28
-      LOG G29 G29
-      LOG G2A G2A # should always be first value of phrase
-      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-      LOG J19 J19 # should always be 0
+      LOG J19 J19 # should always be 0, unless globalkey is updated
       LOG J20 J20
       LOG J21 J21
       LOG J22 J22
@@ -342,7 +426,20 @@ IF arpPhraseOnOffToggle == 1
       LOG J27 J27
       LOG J28 J28
       LOG J29 J29
-      LOG J2A J2A # should always be 0
+      LOG J2A J2A # should always be first value of phrase
+      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+      LOG I19 I19 # should always be 0
+      LOG I20 I20
+      LOG I21 I21
+      LOG I22 I22
+      LOG I23 I23
+      LOG I24 I24
+      LOG I25 I25
+      LOG I26 I26
+      LOG I27 I27
+      LOG I28 I28
+      LOG I29 I29
+      LOG I2A I2A # should always be 0
       LOG ~~~~~~~~~~BREAK~~~~~~~~~~
       LOG numPressed numPressed
       LOG numPressedTotal numPressedTotal
@@ -350,7 +447,7 @@ IF arpPhraseOnOffToggle == 1
       # END TEST
 
       NX = XX +B
-      
+
     END
 
     IF MT == 80
@@ -358,6 +455,9 @@ IF arpPhraseOnOffToggle == 1
       # if reset (key pressed limit exceeded), handle differently
       IF resetArp == 1
         MATH numPressed = numPressed - 1
+        # SEND SYSEX
+        SEND F0 01 numPressed F7
+        # END SYSEX
         IF numPressed == 0
           ASS resetArp = 0
         END
@@ -371,9 +471,9 @@ IF arpPhraseOnOffToggle == 1
       ASS isSet = 0
       WHILE isSet != 1
         # if iter is the note value, remove values
-        IF GI0 == M1
-          ASS GI0 = 0
+        IF JI0 == M1
           ASS JI0 = 0
+          ASS II0 = 0
           ASS isSet = 1
         END
         MATH iter = iter + 1
@@ -381,44 +481,43 @@ IF arpPhraseOnOffToggle == 1
           ASS isSet = 1
         END
       END
-      
+
       # sort array / hashmap according to ascending, descending, order pressed
       IF arpValueModeMod < 6
         INSERTION_SORT 0 numPressed
+        # SEND SYSEX
+        SEND F0 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7
+        # END SYSEX
       END
       IF arpValueModeMod > 8
         INSERTION_SORT 1 numPressed
+        # SEND SYSEX
+        SEND F0 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7
+        # END SYSEX
       END
-      
+
       # subract one from current notes pressed
       # NOTE this is done after sorting to make sure any removed values are pushed out
       MATH numPressed = numPressed - 1
+      # SEND SYSEX
+      SEND F0 01 numPressed F7
+      # END SYSEX
       IF numPressed == 0
-        ASS G20 = 00 00 00 00 00 00 00 00 00 00
         ASS J20 = 00 00 00 00 00 00 00 00 00 00
+        # SEND SYSEX
+        SEND F0 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7
+        # END SYSEX
+        ASS I20 = 00 00 00 00 00 00 00 00 00 00
         ASS numPressedTotal = 0
       END
       # TEST
-      # ensure G array contains correct key values pressed on key release
-      # ensure J array contains correct order of keys pressed on key release
+      # ensure J array contains correct key values pressed on key release
+      # ensure I array contains correct order of keys pressed on key release
       # ensure numPressed aligns with number of keys pressed on key release
       # ensure numPressedTotal aligns with number of keys pressed total on key release
       # ensure gateOpened aligns with number of keys pressed total on key release
       LOG isArp
-      LOG G19 G19 # should always be 0, unless globalkey is updated
-      LOG G20 G20 
-      LOG G21 G21
-      LOG G22 G22
-      LOG G23 G23
-      LOG G24 G24
-      LOG G25 G25
-      LOG G26 G26
-      LOG G27 G27
-      LOG G28 G28
-      LOG G29 G29
-      LOG G2A G2A # should always be first value of phrase
-      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-      LOG J19 J19 # should always be 0
+      LOG J19 J19 # should always be 0, unless globalkey is updated
       LOG J20 J20
       LOG J21 J21
       LOG J22 J22
@@ -429,26 +528,42 @@ IF arpPhraseOnOffToggle == 1
       LOG J27 J27
       LOG J28 J28
       LOG J29 J29
-      LOG J2A J2A # should always be 0
+      LOG J2A J2A # should always be first value of phrase
+      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+      LOG I19 I19 # should always be 0
+      LOG I20 I20
+      LOG I21 I21
+      LOG I22 I22
+      LOG I23 I23
+      LOG I24 I24
+      LOG I25 I25
+      LOG I26 I26
+      LOG I27 I27
+      LOG I28 I28
+      LOG I29 I29
+      LOG I2A I2A # should always be 0
       LOG ~~~~~~~~~~BREAK~~~~~~~~~~
       LOG numPressed numPressed
       LOG numPressedTotal numPressedTotal
       LOG gateOpened gateOpened
       # END TEST
-      
+
       NX = XX +B
-      
+
     END
   # else isPhrase
   ELSE
     # if key pressed
     IF MT == 90
-      
-      # ASS gateOpened = 1 # NOTE uncommenting this would restart phrase whenever key pressed
+
+      # ASS gateOpened = 1 # NOTE uncommenting this and adding sysex would restart phrase whenever key pressed
 
       # if reset (key pressed limit exceeded), handle differently
       IF resetPhrase == 1
         MATH numPressed = numPressed + 1
+        # SEND SYSEX
+        SEND F0 01 numPressed F7
+        # END SYSEX
         BLOCK
         EXIT
       END
@@ -460,6 +575,9 @@ IF arpPhraseOnOffToggle == 1
         ASS numPressedTotal = 0
         # necessary so that numPressed does not go past zero by mistake, as we have not yet incremented for this key press
         MATH numPressed = numPressed + 1
+        # SEND SYSEX
+        SEND F0 01 numPressed F7
+        # END SYSEX
         # TEST
         # ensure K array contains correct key values pressed on reset (0)
         # ensure L array contains correct order of keys pressed on reset (0)
@@ -488,14 +606,20 @@ IF arpPhraseOnOffToggle == 1
         BLOCK
         EXIT
       END
-      
+
       # set initial note to calculate offset
       ASS phraseVal = M1
-      
+      # SEND SYSEX
+      SEND F0 0B phraseVal F7
+      # END SYSEX
+
       # add to number of keys pressed
       MATH numPressed = numPressed + 1
+      # SEND SYSEX
+      SEND F0 01 numPressed F7
+      # END SYSEX
       MATH numPressedTotal = numPressedTotal + 1
-      
+
       # we need to have a while loop here to account for the user pressing and releasing keys in different orders
       # say user presses A, B, C, then lifts up B
       # this sets numPressed to 2, but when another key is pressed it will overwrite C if we continue linearly
@@ -514,6 +638,9 @@ IF arpPhraseOnOffToggle == 1
 
       IF numPressed == 1
         ASS gateOpened = 1
+        # SEND SYSEX
+        SEND F0 0E gateOpened F7
+        # END SYSEX
       END
       # TEST
       # ensure K array contains correct key values pressed on key press
@@ -543,7 +670,7 @@ IF arpPhraseOnOffToggle == 1
       LOG gateOpened gateOpened
       LOG phraseVal phraseVal
       # END TEST
-      
+
     END
 
     IF MT == 80
@@ -551,6 +678,9 @@ IF arpPhraseOnOffToggle == 1
       # if reset (key pressed limit exceeded), handle differently
       IF resetPhrase == 1
         MATH numPressed = numPressed - 1
+        # SEND SYSEX
+        SEND F0 01 numPressed F7
+        # END SYSEX
         IF numPressed == 0
           ASS resetPhrase = 0
         END
@@ -564,10 +694,10 @@ IF arpPhraseOnOffToggle == 1
         ASS L1 = 00 00 00 00 00
         ASS numPressedTotal = 0
       END
-      
+
       # find the max k value, or the most recent key pressed
       # if the j value, or note value of that max is M1, we need to change the phrase offset,
-      # so reset the g values, setting G1 to the second most recent key pressed
+      # so reset the g values, setting J1 to the second most recent key pressed
       # while we are iterating, we need to set the k value of whichever key is pressed to zero so we can reuse that index
       ASS max = 0
       ASS secondMax = 0
@@ -591,8 +721,11 @@ IF arpPhraseOnOffToggle == 1
       END
       IF KI5 == M1
         # set value equal to second most recent key pressed
-        # ASS gateOpened = 1 # NOTE uncommenting this would restart phrase whenever key lifted
+        # ASS gateOpened = 1 # NOTE uncommenting this and sending sysex would restart phrase whenever key lifted
         ASS phraseVal = KI7
+        # SEND SYSEX
+        SEND F0 0B phraseVal F7
+        # END SYSEX
       END
       # TEST
       # ensure K array contains correct key values pressed on key release
@@ -638,26 +771,52 @@ IF setPhrase == 1
     IF tempPhraseVal == AAAA
       ASS tempPhraseVal = M1
     END
-    MATH GG13 = M1 - tempPhraseVal
+    MATH JJC = M1 - tempPhraseVal
+    MATH phraseTemp = JJC / 100
+    # SEND SYSEX
+    SEND F0 phraseIndex phraseTemp JJC F7
+    # END SYSEX
     ASS phraseLengthPlusOffset = phraseIndex
+    # SEND SYSEX
+    SEND F0 0D phraseLengthPlusOffset F7
+    # END SYSEX
     MATH phraseIndex = phraseIndex + 1
+    # SEND SYSEX
+    SEND F0 0C phraseIndex F7
+    # END SYSEX
   END
   # if phraseRest is sent
-  IF M0 == F0 01 F1 2E 57 F7
+  IF M0 == F0 FF 2E 57 01 F7
     # assign value to 2E57, indicating a rest
-    ASS GG13 = 2E57
+    ASS JJC = 2E57
+    MATH phraseTemp = JJC / 100
+    # SEND SYSEX
+    SEND F0 phraseIndex JJC F7
+    # END SYSEX
     ASS phraseLengthPlusOffset = phraseIndex
+    # SEND SYSEX
+    SEND F0 0D phraseLengthPlusOffset F7
+    # END SYSEX
     MATH phraseIndex = phraseIndex + 1
+    # SEND SYSEX
+    SEND F0 0C phraseIndex F7
+    # END SYSEX
   END
   # if phrase is at max limit, end setPhrase
-  IF phraseIndex > 49
+  IF phraseIndex > 47
     ASS setPhrase = 0
+    # SEND SYSEX
+    SEND F0 0A setPhrase F7
+    # END SYSEX
     ASS phraseIndex = 2A
+    # SEND SYSEX
+    SEND F0 0C phraseIndex F7
+    # END SYSEX
     ASS tempPhraseVal = AAAA
     # NOTE since this message is for turning off the light, it only needs to be sent when the final note is not a rest
     # rest button handles this in xtouch
-    IF G49 != 2E57
-      SEND F0 02 1F F1 90 FF F7 +F
+    IF J47 != 2E57
+      SEND F0 0A setPhrase F7 +F
     END
   END
   FX = XX +B
@@ -673,56 +832,42 @@ IF setPhrase == 1
   # ensure tempPhraseVal is the previous value
   # ensure phraseIndex is the previous index plus one
   LOG setPhrase
-  LOG G2A G2A
-  LOG G2B G2B
-  LOG G2C G2C
-  LOG G2D G2D
-  LOG G2E G2E
-  LOG G2F G2F
-  LOG G30 G30
-  LOG G31 G31
-  LOG G32 G32
-  LOG G33 G33
-  LOG G34 G34
-  LOG G35 G35
-  LOG G36 G36
-  LOG G37 G37
-  LOG G38 G38
-  LOG G39 G39
-  LOG G3A G3A
-  LOG G3B G3B
-  LOG G3C G3C
-  LOG G3D G3D
-  LOG G3E G3E
-  LOG G3F G3F
-  LOG G40 G40
-  LOG G41 G41
-  LOG G42 G42
-  LOG G43 G43
-  LOG G44 G44
-  LOG G45 G45
-  LOG G46 G46
-  LOG G47 G47
-  LOG G48 G48
-  LOG G49 G49
+  LOG J2A J2A
+  LOG J2B J2B
+  LOG J2C J2C
+  LOG J2D J2D
+  LOG J2E J2E
+  LOG J2F J2F
+  LOG J30 J30
+  LOG J31 J31
+  LOG J32 J32
+  LOG J33 J33
+  LOG J34 J34
+  LOG J35 J35
+  LOG J36 J36
+  LOG J37 J37
+  LOG J38 J38
+  LOG J39 J39
+  LOG J3A J3A
+  LOG J3B J3B
+  LOG J3C J3C
+  LOG J3D J3D
+  LOG J3E J3E
+  LOG J3F J3F
+  LOG J40 J40
+  LOG J41 J41
+  LOG J42 J42
+  LOG J43 J43
+  LOG J44 J44
+  LOG J45 J45
+  LOG J46 J46
+  LOG J47 J47
   LOG ~~~~~~~~~~BREAK~~~~~~~~~~
   LOG setPhrase setPhrase
   LOG tempPhraseVal tempPhraseVal
   LOG phraseIndex phraseIndex
   LOG phraseLengthPlusOffset phraseLengthPlusOffset
   # END TEST
-ELSE
-  # ensure phraseIndex is reset when setPhrase is turned off from xtouch
-  IF M0 == F0 02 1F F1 90 FF F7
-    ASS phraseIndex = 2A
-    ASS tempPhraseVal = AAAA
-    FX = XX +B
-    # TEST
-    # ensure sysex resets phraseIndex when setPhrase is turned off
-    LOG phraseIndex phraseIndex
-    # END TEST
-  END
-  FX = XX +B
 END
 
 # NOTE could likely reorder everything here to be grouped in one if statement to make code more readable if desired

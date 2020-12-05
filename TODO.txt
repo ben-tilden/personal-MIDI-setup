@@ -1,5 +1,18 @@
 # TODO IDEAS
 
+send sysex of full array whenever input is processed
+full array sent to both of the other two and kept in a local array in each
+this prevents specific messages from having to be created, customized, and sent out
+slightly less space efficient, and even more slightly less speed efficient (like 1 or 2 extra calls, so nothing) but likely easier to maintain
+will see if performance issues occur
+also - if variables are updated as a result of a sysex, the app will crash - can likely prevent this by filtering sysex
+
+# launchkey notes
+# Possibly investigate timing - being late on initial downbeat might not be preventing the second note from playing in order
+# This is actually likely due to the order in which the keys are initially pressed - the first button pressed might be what is sent, then when the array is sorted it may be sorted into the second spot
+# sort each time clock is sent via some process similar to selection sort? this could prevent the timing issue above
+
+
 # phase 1: add latch functionality
 # all buttons available for latch
 # review possible filtering for clock (possible to add channel? send from filter as sysex?)

@@ -13,13 +13,6 @@
 
 # xtouch mini
 
-# UPDATE: Reviewing further, the plan will be for this to run as an 'xtouch service', completely separate and distinct from channel
-# this means, instead of attempting to store all channel data on here, there will be separate streambyter instances which will communicate with each other
-# when the channel is manually changed from launchpad - data will be sent here (via the global array) from an individual 'channel service', with its own storage
-# once this receives that data in the form of the global array, it can directly modify the global array
-# the channel service will only allow data to pass if the 'channel' of the global array is equal to that channel
-# the channel service will save its data in a local array once the channel is manually changed from launchpad
-
 # full explanation:
 # this file builds out the arpeggiator / drum roll for each channel
 # because tempo will be determined by ableton link midi clock, the first knob will determine which clock messages are heeded and which are ignored
@@ -46,7 +39,7 @@
 # 1/1 - 6
 # 2/3 - 4
 # 1/2 - 3
-# 
+#
 # 2. factor of two - any tempo that is a factor of 2 of a 4/4 beat
 # 16/1 - 96
 # 8/1 - 48
@@ -72,6 +65,8 @@
 # button 2 will toggle arp / phrase
 # button 10 will turn arp / phrase on or off
 
+# J is the local storage array (database)
+
 IF LOAD
 
   # local
@@ -82,26 +77,28 @@ IF LOAD
   ALIAS I4 gateFactor
   ALIAS I5 resetIndex
   ALIAS I6 resetIndexMinusOne
+  ALIAS I7 gateTemp # TODO
 
-  # global
-  ALIAS G0 channel
-  ALIAS G2 arpPhraseToggle
-  ALIAS G3 arpPhraseOnOffToggle
-  ALIAS G4 tempoModeMod
-  ALIAS G5 tempoPulse
-  ALIAS G6 gateModeMod
-  ALIAS G7 gate
-  ALIAS G8 arpValueModeMod
-  ALIAS G9 setPhrase
-  ALIAS GA waveguideToggle
-  ALIAS GB drumParams
-  ALIAS GF arpModeSwitched # NOTE gateOpened
-  ALIAS G12 velocity
-  ALIAS G13 phraseIndex
+  ALIAS J0 currentChannel
+  ALIAS J2 arpPhraseToggle
+  ALIAS J3 arpPhraseOnOffToggle
+  ALIAS J4 tempoModeMod
+  ALIAS J5 tempoPulse
+  ALIAS J6 gateModeMod
+  ALIAS J7 gate
+  ALIAS J8 velocity
+  ALIAS J9 arpValueModeMod
+  ALIAS JA setPhrase
+  ALIAS JC phraseIndex
+  ALIAS JE arpModeSwitched # NOTE gateOpened
+  ALIAS JF waveguideToggle
+  ALIAS J10 drumParams
 
   # assign local
   # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
   ASS tempoMode = 0
+  # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
+  ASS gateMode = 0
   # NOTE if this isn't reset on each 'install', then it's technically possible it could decrease/increase to the value min/max
   ASS arpValueMode = 8004
   # NOTE this is set to 'select' on initial load
@@ -111,8 +108,74 @@ IF LOAD
   # END TEST
 END
 
+# sysex reception
+
+IF M0 = F0 00
+  ASS currentChannel = M2
+  # TEST
+  # ensure xtouch receives currentChannel
+  LOG currentChannel_SYSEX_RECEIVED J0
+  # END TEST
+  BLOCK
+  EXIT
+END
+
+IF M0 = F0 02
+  ASS arpPhraseToggle = M2
+  # TEST
+  # ensure xtouch receives arpPhraseToggle
+  LOG arpPhraseToggle_SYSEX_RECEIVED J2
+  # END TEST
+  BLOCK
+  EXIT
+END
+
+IF M0 = F0 03
+  ASS arpPhraseOnOffToggle = M2
+  # TEST
+  # ensure xtouch receives arpPhraseOnOffToggle
+  LOG arpPhraseOnOffToggle_SYSEX_RECEIVED J3
+  # END TEST
+  BLOCK
+  EXIT
+END
+
+IF M0 = F0 0A
+  ASS setPhrase = M2
+  # TEST
+  # ensure xtouch receives setPhrase
+  LOG setPhrase_SYSEX_RECEIVED JA
+  # END TEST
+  # Turn off setPhrase light when sysex received
+  IF setPhrase == 0
+    SEND 90 00 00
+  END
+  BLOCK
+  EXIT
+END
+
+IF M0 = F0 0C
+  ASS phraseIndex = M2
+  # TEST
+  # ensure xtouch receives phraseIndex
+  LOG phraseIndex_SYSEX_RECEIVED JC
+  # END TEST
+  BLOCK
+  EXIT
+END
+
+IF M0 = F0 0E
+  ASS gateOpened = M2
+  # TEST
+  # ensure xtouch receives gateOpened
+  LOG gateOpened_SYSEX_RECEIVED JE
+  # END TEST
+  BLOCK
+  EXIT
+END
+
 # Turn off lights when init sysex received
-IF M0 == F0 01 1F 00 00 F7
+IF M0 == F0 FF 00 00 0F F7
   ASS resetIndex = 1
   # loop until this is done for all sixteen buttons
   WHILE restIndex < 11
@@ -128,15 +191,36 @@ IF M0 == F0 01 1F 00 00 F7
     SEND 90 resetIndexMinusOne 00
     MATH resetIndex = resetIndex + 1
   END
+  ASS J0 = 00 # currentChannel
+  ASS J1 = 00 # numPressed
+  ASS J2 = 00 # arpPhraseToggle
+  ASS J3 = 00 # arpPhraseOnOffToggle
+  ASS J4 = 00 # tempoModeMod
+  ASS J5 = 24 # tempoPulse
+  ASS J6 = 00 # gateModeMod
+  ASS J7 = 00 # gate
+  ASS J8 = 64 # velocity
+  ASS J9 = 00 # arpValueModeMod
+  ASS JA = 00 # setPhrase
+  ASS JB = 00 # phraseVal
+  ASS JC = 2A # phraseindex
+  ASS JD = 2A # phraseLengthPlusOffset
+  ASS JE = 00 # gateOpened
+  ASS JF = 00 # waveguideToggle
+  ASS J10 = 0E # drumParams (Part 1)
+  ASS J11 = 0F # drumParams (Part 2)
+  ASS J12 = 10 # drumParams (Part 1+2)
+  ASS J13 = 67 # drumParams (wg send) (103)
+  ASS J20 = 00 00 00 00 00 00 00 00 00 00 # arp values (J10 J11 J12 J13 J14 J15 J16 J17 J18 J19)
+  ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
+  # TEST
+  # ensure lights turn off on init
+  LOG LIGHTS_OFF_SYSEX_RECEIVED
+  LOG RESET_SYSEX_RECEIVED
+  # END TEST
 END
 
-# Turn off setPhrase light when sysex received
-IF M0 == F0 02 1F F1 90 FF F7
-  IF setPhrase == 0
-    SEND 90 00 00
-  END
-  FX = XX +B
-END
+# end sysex reception
 
 # if it is a button push
 IF MT == 90
@@ -148,20 +232,32 @@ IF MT == 90
     MATH tempoModeMod = tempoMode % 4
     IF tempoModeMod == 0
       ASS tempoPulse = $24
+      # SEND SYSEX
+      SEND F0 05 tempPulse F7
+      # END SYSEX
       SEND BA 01 $26
     END
     # set each tempoPulse to default value on switching
     # also send data to xtouch to reflect this
     IF tempoModeMod == 1
       ASS tempoPulse = $24
+      # SEND SYSEX
+      SEND F0 05 tempoPulse F7
+      # END SYSEX
       SEND BA 01 $00
     END
     IF tempoModeMod == 2
       ASS tempoPulse = $24
+      # SEND SYSEX
+      SEND F0 05 tempoPulse F7
+      # END SYSEX
       SEND BA 01 $48
     END
     IF tempoModeMod == 3
       ASS tempoPulse = $18
+      # SEND SYSEX
+      SEND F0 05 tempoPulse F7
+      # END SYSEX
       SEND BA 01 $48
     END
     # TEST
@@ -179,6 +275,10 @@ IF MT == 90
     MATH gateModeMod = gateMode % 6
     IF gateModeMod == 0
       ASS gate = 0
+      ASS gateTemp = 0
+      # SEND SYSEX
+      SEND F0 07 gateTemp gate F7
+      # END SYSEX
       ASS gateFactor = 1
       SEND BA 02 00
     END
@@ -216,15 +316,24 @@ IF MT == 90
       MATH arpValueMode = arpValueMode + 1
       # set value mode to variable modulo 12
       MATH arpValueModeMod = arpValueMode % C
-      # NOTE uncommenting this makes clockNum, isOctave, and arpIndex reset whenever the arpMode changes
+      # SEND SYSEX
+      SEND F0 09 arpValueModeMod F7
+      # END SYSEX
+      # NOTE uncommenting this and adding sysex makes clockNum, isOctave, and arpIndex reset whenever the arpMode changes
       # ASS arpModeSwitched = 1
     # if phrase then toggle setPhrase
     ELSE
       IF setPhrase == 0
         ASS setPhrase = 1
+        # SEND SYSEX
+        SEND F0 0A setPhrase F7
+        # END SYSEX
       ELSE
         ASS setPhrase = 0
-        SEND F0 02 1F F1 90 FF F7 +F
+        # SEND SYSEX
+        SEND F0 0A setPhrase F7
+        # END SYSEX
+        ASS phraseIndex = 2A # TODO monitor this
       END
     END
     # TEST
@@ -241,10 +350,13 @@ IF MT == 90
       MATH arpValueMode = arpValueMode - 1
       # set value mode to variable modulo 12
       MATH arpValueModeMod = arpValueMode % C
+      # SEND SYSEX
+      SEND F0 09 arpValueModeMod F7
+      # END SYSEX
     # if phrase then add rest to phrase sequence
     ELSE
       IF setPhrase == 1
-        SEND F0 01 F1 2E 57 F7 +F
+        SEND F0 FF 2E 57 01 F7 +F
         # NOTE not currently planning on handling this, but there may is likely a race condition between rest and note that could cause issues
         # TEST
         # ensure rest sent
@@ -262,11 +374,20 @@ IF MT == 90
   IF M1 == 09 7F
     IF arpPhraseToggle == 0
       ASS arpPhraseToggle = 1
+      # SEND SYSEX
+      SEND F0 02 arpPhraseToggle F7
+      # END SYSEX
     ELSE
       ASS arpPhraseToggle = 0
+      # SEND SYSEX
+      SEND F0 02 arpPhraseToggle F7
+      # END SYSEX
       IF setPhrase == 1
         ASS setPhrase = 0
-        SEND F0 02 1F F1 90 FF F7 +F
+        # SEND SYSEX
+        SEND F0 0A setPhrase F7
+        # END SYSEX
+        ASS phraseIndex = 2A # TODO monitor this
       END
     END
     # TEST
@@ -285,8 +406,14 @@ IF MT == 90
   IF M1 == 11 7F
     IF arpPhraseOnOffToggle == 0
       ASS arpPhraseOnOffToggle = 1
+      # SEND SYSEX
+      SEND F0 03 arpPhraseOnOffToggle F7
+      # END SYSEX
     ELSE
       ASS arpPhraseOnOffToggle = 0
+      # SEND SYSEX
+      SEND F0 03 arpPhraseOnOffToggle F7
+      # END SYSEX
     END
     # TEST
     # ensure arp/phrase module is turned off or on
@@ -438,7 +565,7 @@ IF MT == 80
   END
 
   IF M1 == 10 00
-    IF phraseIndex >= 49 # NOTE 49 because this is the last value for which phraseIndex records
+    IF phraseIndex >= 47 # NOTE 47 because this is the last value for which phraseIndex records
       SEND 90 00 00
     END
   END
@@ -490,56 +617,89 @@ IF MT == B0
       # if knob value is 0
       IF M2 == 0
         ASS tempoPulse = 48
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $0
       END
       # if knob value is 1
       IF M2 == 1
         ASS tempoPulse = 36
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $13
       END
       # if knob value is 2
       IF M2 == 2
         ASS tempoPulse = 24
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $26
       END
       # if knob value is 3
       IF M2 == 3
         ASS tempoPulse = 18
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $39
       END
       # if knob value is 4
       IF M2 == 4
         ASS tempoPulse = 12
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $52
       END
       # if knob value is 5
       IF M2 == 5
         ASS tempoPulse = 9
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $65
       END
       # if knob value is 6
       IF M2 == 6
         ASS tempoPulse = 6
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $78
       END
       # if knob value is 7
       IF M2 == 7
         ASS tempoPulse = 4
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $91
       END
       # if knob value is 8
       IF M2 == 8
         ASS tempoPulse = 3
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $104
       END
       # if knob value is 9
       IF M2 == 9
         ASS tempoPulse = 2
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $117
       END
       # if knob value is 10 or greater
       IF M2 >= 10
         ASS tempoPulse = 1
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $127
       END
     END
@@ -548,31 +708,49 @@ IF MT == B0
       # if knob value is 0
       IF M2 == 0
         ASS tempoPulse = 24
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $0
       END
       # if knob value is 1
       IF M2 == 1
         ASS tempoPulse = 12
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $24
       END
       # if knob value is 2
       IF M2 == 2
         ASS tempoPulse = 9
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $48
       END
       # if knob value is 3
       IF M2 == 3
         ASS tempoPulse = 6
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $72
       END
       # if knob value is 4
       IF M2 == 4
         ASS tempoPulse = 4
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $96
       END
       # if knob value is 5 or greater
       IF M2 >= 5
         ASS tempoPulse = 3
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $127
       END
     END
@@ -581,31 +759,49 @@ IF MT == B0
       # if knob value is 0
       IF M2 == 0
         ASS tempoPulse = 96
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $0
       END
       # if knob value is 1
       IF M2 == 1
         ASS tempoPulse = 48
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $24
       END
       # if knob value is 2
       IF M2 == 2
         ASS tempoPulse = 24
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $48
       END
       # if knob value is 3
       IF M2 == 3
         ASS tempoPulse = 12
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $72
       END
       # if knob value is 4
       IF M2 == 4
         ASS tempoPulse = 6
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $96
       END
       # if knob value is 5 or greater
       IF M2 >= 5
         ASS tempoPulse = 3
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $127
       END
     END
@@ -614,31 +810,49 @@ IF MT == B0
       # if knob value is 0
       IF M2 == 0
         ASS tempoPulse = 72
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $0
       END
       # if knob value is 1
       IF M2 == 1
         ASS tempoPulse = 36
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $24
       END
       # if knob value is 2
       IF M2 == 2
         ASS tempoPulse = 18
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $48
       END
       # if knob value is 3
       IF M2 == 3
         ASS tempoPulse = 9
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $72
       END
       # if knob value is 4
       IF M2 == 4
         ASS tempoPulse = 4
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $96
       END
       # if knob value is 5 or greater
       IF M2 >= 5
         ASS tempoPulse = 2
+        # SEND SYSEX
+        SEND F0 05 tempoPulse F7
+        # END SYSEX
         SEND BA 01 $127
       END
     END
@@ -653,6 +867,10 @@ IF MT == B0
   # overall: 0-127 (*2) (*5) (*10) (*20) (*40)
   IF M1 == 2
     MATH gate = M2 * gateFactor
+    MATH gateTemp = gate / 100
+    # SEND SYSEX
+    SEND F0 07 gateTemp gate F7
+    # END SYSEX
     # TEST
     # ensure gate aligns with gate
     # ensure gateFactor is correct
@@ -663,6 +881,9 @@ IF MT == B0
   # if knob is 3 (velocity)
   IF M1 == 3
     ASS velocity = M2
+    # SEND SYSEX
+    SEND F0 08 velocity F7
+    # END SYSEX
     # TEST
     # ensure velocity aligns with velocity
     LOG velocity velocity
@@ -671,341 +892,3 @@ IF MT == B0
 END
 
 NX = XX +B
-
-
-
-
-
-
-
-
-
-
-# SCRAPS: (some of this will necessarily be used)
-
-# if it is a channel notification (internal sysex)
-IF MT == F0
-#  # if channel sent in sysex does not align with global channel, change global channel
-#  IF M1 == 1
-#    IF G0 != 1
-#      ASS G0 = 1
-#    END
-#  END
-#  IF M1 == 2
-#    IF G0 != 2
-#      ASS G0 = 2
-#    END
-#  END
-#  IF M1 == 3
-#    IF G0 != 3
-#      ASS G0 = 3
-#    END
-#  END
-#  IF M1 == 4
-#    IF G0 != 4
-#      ASS G0 = 4
-#    END
-#  END
-#  IF M1 == 5
-#    IF G0 != 5
-#      ASS G0 = 5
-#    END
-#  END
-#  IF M1 == 6
-#    IF G0 != 6
-#      ASS G0 = 6
-#    END
-#  END
-#  IF M1 == 7
-#    IF G0 != 7
-#      ASS G0 = 7
-#    END
-#  END
-#  IF M1 == 8
-#    IF G0 != 8
-#      ASS G0 = 8
-#    END
-#  END
-#  IF M1 == 9
-#    IF G0 != 9
-#      ASS G0 = 9
-#    END
-#  END
-#  IF M1 == A
-#    IF G0 != A
-#      ASS G0 = A
-#    END
-#  END
-#  IF M1 == B
-#    IF G0 != B
-#      ASS G0 = B
-#    END
-#  END
-#  IF M1 == C
-#    IF G0 != C
-#      ASS G0 = C
-#    END
-#  END
-#  # choose local array based on what G0 is
-#  # each local array will have sequences of 100
-#  IF G0 == 1
-#    ASS currentChannelArray = channelOne
-#  END
-#  IF G0 == 2
-#    ASS currentChannelArray = channelTwo
-#  END
-#  IF G0 == 3
-#    ASS currentChannelArray = channelThree
-#  END
-#  IF G0 == 4
-#    ASS currentChannelArray = channelFour
-#  END
-#  IF G0 == 5
-#    ASS currentChannelArray = channelFive
-#  END
-#  IF G0 == 6
-#    ASS currentChannelArray = channelSix
-#  END
-#  IF G0 == 7
-#    ASS currentChannelArray = channelSeven
-#  END
-#  IF G0 == 8
-#    ASS currentChannelArray = channelEight
-#  END
-#  IF G0 == 9
-#    ASS currentChannelArray = channelNine
-#  END
-#  IF G0 == A
-#    ASS currentChannelArray = channelTen
-#  END
-#  IF G0 == B
-#    ASS currentChannelArray = channelEleven
-#  END
-#  IF G0 == C
-#    ASS currentChannelArray = channelTwelve
-#  END
-END
-
-
-  # default local array will be the following
-  # did not make this perfectly align with G because the array itself won't perfectly align with its 100 offset
-  # add current length as Y0, and offset the rest +1
-  # Y0 - arpPhraseToggle
-  # Y1 - arpPhraseOnOffToggle
-  # Y2 - tempoMode
-  # Y3 - tempoModeMod
-  # Y4 - tempoPulse
-  # Y5 - gate
-  # Y6 - arpValueMode
-  # Y7 - arpValueModeMod
-  # Y8 - setPhrase
-  # Y9 - waveguideToggle
-  # YA - drumParams (Part 1)
-  # YB - drumParams (Part 2)
-  # YC - drumParams (Part 1+2)
-  # YD - phrase sequence
-
-  # we will use W, since it's the wide array, with 2048 slots over 256
-  # NOTE unsure if only using one array will have any noticeable 'access' slowness - should be constant, so don't think it'll be an issue
-
-  # currentChannelArray
-
-#  # channelOne
-#  ALIAS W0 channelOne
-#  # channelTwo
-#  ALIAS W$100 channelTwo
-#  # channelThree
-#  ALIAS W$200 channelThree
-#  # channelFour
-#  ALIAS W$300 channelFour
-#  # channelFive
-#  ALIAS W$400 channelFive
-#  # channelSix
-#  ALIAS W$500 channelSix
-#  # channelSeven
-#  ALIAS W$600 channelSeven
-#  # channelEight
-#  ALIAS W$700 channelEight
-#  # channelNine
-#  ALIAS W$800 channelNine
-#  # channelTen
-#  ALIAS W$900 channelTen
-#  # channelEleven
-#  ALIAS W$1000 channelEleven
-#  # channelTwelve
-#  ALIAS W$1100 channelTwelve
-
-#    # if tempo mode is 0
-#    IF tempoModeMod == 0
-#      # if knob value is 0-11
-#      IF M2 < $12
-#        ASS tempoPulse = $48
-#      END
-#      # if knob value is 12-22
-#      IF M2 >= $12
-#        IF M2 < $23
-#          ASS tempoPulse = $36
-#        END
-#      END
-#      # if knob value is 23-33
-#      IF M2 >= $23
-#        IF M2 < $34
-#          ASS tempoPulse = $24
-#        END
-#      END
-#      # if knob value is 34-45
-#      IF M2 >= $34
-#        IF M2 < $46
-#          ASS tempoPulse = $18
-#        END
-#      END
-#      # if knob value is 46-57
-#      IF M2 >= $46
-#        IF M2 < $58
-#          ASS tempoPulse = $12
-#        END
-#      END
-#      # if knob value is 58-69
-#      IF M2 >= $58
-#        IF M2 < $70
-#          ASS tempoPulse = $9
-#        END
-#      END
-#      # if knob value is 70-81
-#      IF M2 >= $70
-#        IF M2 < $82
-#          ASS tempoPulse = $6
-#        END
-#      END
-#      # if knob value is 82-93
-#      IF M2 >= $82
-#        IF M2 < $94
-#          ASS tempoPulse = $4
-#        END
-#      END
-#      # if knob value is 94-104
-#      IF M2 >= $94
-#        IF M2 < $105
-#          ASS tempoPulse = $3
-#        END
-#      END
-#      # if knob value is 105-115
-#      IF M2 >= $105
-#        IF M2 < $116
-#          ASS tempoPulse = $2
-#        END
-#      END
-#      # if knob value is 116-127
-#      IF M2 >= $116
-#        ASS tempoPulse = $1
-#      END
-#    END
-#    # if tempo mode is 1
-#    IF tempoModeMod == 1
-#      # if knob value is 0-21
-#      IF M2 < $22
-#        ASS tempoPulse = $24
-#      END
-#      # if knob value is 22-42
-#      IF M2 >= $22
-#        IF M2 < $43
-#          ASS tempoPulse = $12
-#        END
-#      END
-#      # if knob value is 43-63
-#      IF M2 >= $43
-#        IF M2 < $64
-#          ASS tempoPulse = $9
-#        END
-#      END
-#      # if knob value is 64-84
-#      IF M2 >= $64
-#        IF M2 < $85
-#          ASS tempoPulse = $6
-#        END
-#      END
-#      # if knob value is 85-105
-#      IF M2 >= $85
-#        IF M2 < $106
-#          ASS tempoPulse = $4
-#        END
-#      END
-#      # if knob value is 106-127
-#      IF M2 >= $106
-#        ASS tempoPulse = $3
-#      END
-#    END
-#    # if tempo mode is 2
-#    IF tempoModeMod == 2
-#      # if knob value is 0-21
-#      IF M2 < $22
-#        ASS tempoPulse = $96
-#      END
-#      # if knob value is 22-42
-#      IF M2 >= $22
-#        IF M2 < $43
-#          ASS tempoPulse = $48
-#        END
-#      END
-#      # if knob value is 43-63
-#      IF M2 >= $43
-#        IF M2 < $64
-#          ASS tempoPulse = $24
-#        END
-#      END
-#      # if knob value is 64-84
-#      IF M2 >= $64
-#        IF M2 < $85
-#          ASS tempoPulse = $12
-#        END
-#      END
-#      # if knob value is 85-105
-#      IF M2 >= $85
-#        IF M2 < $106
-#          ASS tempoPulse = $6
-#        END
-#      END
-#      # if knob value is 106-127
-#      IF M2 >= $106
-#        ASS tempoPulse = $3
-#      END
-#    END
-#    # if tempo mode is 3
-#    IF tempoModeMod == 3
-#      # if knob value is 0-21
-#      IF M2 < $22
-#        ASS tempoPulse = $72
-#      END
-#      # if knob value is 22-42
-#      IF M2 >= $22
-#        IF M2 < $43
-#          ASS tempoPulse = $36
-#        END
-#      END
-#      # if knob value is 43-63
-#      IF M2 >= $43
-#        IF M2 < $64
-#          ASS tempoPulse = $18
-#        END
-#      END
-#      # if knob value is 64-84
-#      IF M2 >= $64
-#        IF M2 < $85
-#          ASS tempoPulse = $9
-#        END
-#      END
-#      # if knob value is 85-105
-#      IF M2 >= $85
-#        IF M2 < $106
-#          ASS tempoPulse = $4
-#        END
-#      END
-#      # if knob value is 106-127
-#      IF M2 >= $106
-#        ASS tempoPulse = $2
-#      END
-#    END
-#    # TEST
-#    # ensure tempoPulse aligns with tempoMode
-#    LOG tempoPulse tempoPulse
-#    # END TEST
