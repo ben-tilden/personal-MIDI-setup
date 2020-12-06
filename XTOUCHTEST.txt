@@ -236,7 +236,7 @@ IF MT == 90
     IF tempoModeMod == 0
       ASS tempoPulse = $24
       # SEND SYSEX
-      SEND F0 05 tempoPulse F7 +F
+      SEND F0 05 tempoPulse 0C F7 +F
       # END SYSEX
       SEND BA 01 $26
     END
@@ -245,21 +245,21 @@ IF MT == 90
     IF tempoModeMod == 1
       ASS tempoPulse = $24
       # SEND SYSEX
-      SEND F0 05 tempoPulse F7
+      SEND F0 05 tempoPulse 0C F7
       # END SYSEX
       SEND BA 01 $00
     END
     IF tempoModeMod == 2
       ASS tempoPulse = $24
       # SEND SYSEX
-      SEND F0 05 tempoPulse F7
+      SEND F0 05 tempoPulse 0C F7
       # END SYSEX
       SEND BA 01 $48
     END
     IF tempoModeMod == 3
       ASS tempoPulse = $18
       # SEND SYSEX
-      SEND F0 05 tempoPulse F7
+      SEND F0 05 tempoPulse 0C F7
       # END SYSEX
       SEND BA 01 $48
     END
@@ -280,7 +280,7 @@ IF MT == 90
       ASS gate = 0
       ASS gateTemp = 0
       # SEND SYSEX
-      SEND F0 07 gateTemp gate F7
+      SEND F0 07 gateTemp gate 0C F7
       # END SYSEX
       ASS gateFactor = 1
       SEND BA 02 00
@@ -320,7 +320,7 @@ IF MT == 90
       # set value mode to variable modulo 12
       MATH arpValueModeMod = arpValueMode % C
       # SEND SYSEX
-      SEND F0 09 arpValueModeMod F7
+      SEND F0 09 arpValueModeMod 1C F7
       # END SYSEX
       # NOTE uncommenting this and adding sysex makes clockNum, isOctave, and arpIndex reset whenever the arpMode changes
       # ASS arpModeSwitched = 1
@@ -329,12 +329,12 @@ IF MT == 90
       IF setPhrase == 0
         ASS setPhrase = 1
         # SEND SYSEX
-        SEND F0 0A setPhrase F7
+        SEND F0 0A setPhrase 01 F7
         # END SYSEX
       ELSE
         ASS setPhrase = 0
         # SEND SYSEX
-        SEND F0 0A setPhrase F7
+        SEND F0 0A setPhrase 01 F7
         # END SYSEX
         ASS phraseIndex = 2A # TODO monitor this
       END
@@ -354,7 +354,7 @@ IF MT == 90
       # set value mode to variable modulo 12
       MATH arpValueModeMod = arpValueMode % C
       # SEND SYSEX
-      SEND F0 09 arpValueModeMod F7
+      SEND F0 09 arpValueModeMod 1C F7
       # END SYSEX
     # if phrase then add rest to phrase sequence
     ELSE
@@ -378,17 +378,17 @@ IF MT == 90
     IF arpPhraseToggle == 0
       ASS arpPhraseToggle = 1
       # SEND SYSEX
-      SEND F0 02 arpPhraseToggle F7
+      SEND F0 02 arpPhraseToggle 1C F7
       # END SYSEX
     ELSE
       ASS arpPhraseToggle = 0
       # SEND SYSEX
-      SEND F0 02 arpPhraseToggle F7
+      SEND F0 02 arpPhraseToggle 1C F7
       # END SYSEX
       IF setPhrase == 1
         ASS setPhrase = 0
         # SEND SYSEX
-        SEND F0 0A setPhrase F7
+        SEND F0 0A setPhrase 01 F7
         # END SYSEX
         ASS phraseIndex = 2A # TODO monitor this
       END
@@ -410,12 +410,12 @@ IF MT == 90
     IF arpPhraseOnOffToggle == 0
       ASS arpPhraseOnOffToggle = 1
       # SEND SYSEX
-      SEND F0 03 arpPhraseOnOffToggle F7
+      SEND F0 03 arpPhraseOnOffToggle 1C F7
       # END SYSEX
     ELSE
       ASS arpPhraseOnOffToggle = 0
       # SEND SYSEX
-      SEND F0 03 arpPhraseOnOffToggle F7
+      SEND F0 03 arpPhraseOnOffToggle 1C F7
       # END SYSEX
     END
     # TEST
@@ -621,7 +621,7 @@ IF MT == B0
       IF M2 == 0
         ASS tempoPulse = 48
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $0
       END
@@ -629,7 +629,7 @@ IF MT == B0
       IF M2 == 1
         ASS tempoPulse = 36
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $13
       END
@@ -637,7 +637,7 @@ IF MT == B0
       IF M2 == 2
         ASS tempoPulse = 24
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $26
       END
@@ -645,7 +645,7 @@ IF MT == B0
       IF M2 == 3
         ASS tempoPulse = 18
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $39
       END
@@ -653,7 +653,7 @@ IF MT == B0
       IF M2 == 4
         ASS tempoPulse = 12
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $52
       END
@@ -661,7 +661,7 @@ IF MT == B0
       IF M2 == 5
         ASS tempoPulse = 9
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $65
       END
@@ -669,7 +669,7 @@ IF MT == B0
       IF M2 == 6
         ASS tempoPulse = 6
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $78
       END
@@ -677,7 +677,7 @@ IF MT == B0
       IF M2 == 7
         ASS tempoPulse = 4
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $91
       END
@@ -685,7 +685,7 @@ IF MT == B0
       IF M2 == 8
         ASS tempoPulse = 3
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $104
       END
@@ -693,7 +693,7 @@ IF MT == B0
       IF M2 == 9
         ASS tempoPulse = 2
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $117
       END
@@ -701,7 +701,7 @@ IF MT == B0
       IF M2 >= 10
         ASS tempoPulse = 1
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $127
       END
@@ -712,7 +712,7 @@ IF MT == B0
       IF M2 == 0
         ASS tempoPulse = 24
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $0
       END
@@ -720,7 +720,7 @@ IF MT == B0
       IF M2 == 1
         ASS tempoPulse = 12
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $24
       END
@@ -728,7 +728,7 @@ IF MT == B0
       IF M2 == 2
         ASS tempoPulse = 9
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $48
       END
@@ -736,7 +736,7 @@ IF MT == B0
       IF M2 == 3
         ASS tempoPulse = 6
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $72
       END
@@ -744,7 +744,7 @@ IF MT == B0
       IF M2 == 4
         ASS tempoPulse = 4
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $96
       END
@@ -752,7 +752,7 @@ IF MT == B0
       IF M2 >= 5
         ASS tempoPulse = 3
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $127
       END
@@ -763,7 +763,7 @@ IF MT == B0
       IF M2 == 0
         ASS tempoPulse = 96
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $0
       END
@@ -771,7 +771,7 @@ IF MT == B0
       IF M2 == 1
         ASS tempoPulse = 48
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $24
       END
@@ -779,7 +779,7 @@ IF MT == B0
       IF M2 == 2
         ASS tempoPulse = 24
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $48
       END
@@ -787,7 +787,7 @@ IF MT == B0
       IF M2 == 3
         ASS tempoPulse = 12
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $72
       END
@@ -795,7 +795,7 @@ IF MT == B0
       IF M2 == 4
         ASS tempoPulse = 6
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $96
       END
@@ -803,7 +803,7 @@ IF MT == B0
       IF M2 >= 5
         ASS tempoPulse = 3
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $127
       END
@@ -814,7 +814,7 @@ IF MT == B0
       IF M2 == 0
         ASS tempoPulse = 72
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $0
       END
@@ -822,7 +822,7 @@ IF MT == B0
       IF M2 == 1
         ASS tempoPulse = 36
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $24
       END
@@ -830,7 +830,7 @@ IF MT == B0
       IF M2 == 2
         ASS tempoPulse = 18
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $48
       END
@@ -838,7 +838,7 @@ IF MT == B0
       IF M2 == 3
         ASS tempoPulse = 9
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $72
       END
@@ -846,7 +846,7 @@ IF MT == B0
       IF M2 == 4
         ASS tempoPulse = 4
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $96
       END
@@ -854,7 +854,7 @@ IF MT == B0
       IF M2 >= 5
         ASS tempoPulse = 2
         # SEND SYSEX
-        SEND F0 05 tempoPulse F7
+        SEND F0 05 tempoPulse 0C F7
         # END SYSEX
         SEND BA 01 $127
       END
@@ -872,7 +872,7 @@ IF MT == B0
     MATH gate = M2 * gateFactor
     MATH gateTemp = gate / 100
     # SEND SYSEX
-    SEND F0 07 gateTemp gate F7
+    SEND F0 07 gateTemp gate 0C F7
     # END SYSEX
     # TEST
     # ensure gate aligns with gate
@@ -885,7 +885,7 @@ IF MT == B0
   IF M1 == 3
     ASS velocity = M2
     # SEND SYSEX
-    SEND F0 08 velocity F7
+    SEND F0 08 velocity 0C F7
     # END SYSEX
     # TEST
     # ensure velocity aligns with velocity
