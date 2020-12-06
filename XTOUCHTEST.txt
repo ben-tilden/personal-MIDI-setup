@@ -110,7 +110,9 @@ END
 
 # sysex reception
 
-IF M0 = F0 00
+# TODO separate out M0 comparisons
+
+IF M0 == F0 00
   ASS currentChannel = M2
   # TEST
   # ensure xtouch receives currentChannel
@@ -120,7 +122,7 @@ IF M0 = F0 00
   EXIT
 END
 
-IF M0 = F0 02
+IF M0 == F0 02
   ASS arpPhraseToggle = M2
   # TEST
   # ensure xtouch receives arpPhraseToggle
@@ -130,7 +132,7 @@ IF M0 = F0 02
   EXIT
 END
 
-IF M0 = F0 03
+IF M0 == F0 03
   ASS arpPhraseOnOffToggle = M2
   # TEST
   # ensure xtouch receives arpPhraseOnOffToggle
@@ -140,7 +142,7 @@ IF M0 = F0 03
   EXIT
 END
 
-IF M0 = F0 0A
+IF M0 == F0 0A
   ASS setPhrase = M2
   # TEST
   # ensure xtouch receives setPhrase
@@ -154,7 +156,7 @@ IF M0 = F0 0A
   EXIT
 END
 
-IF M0 = F0 0C
+IF M0 == F0 0C
   ASS phraseIndex = M2
   # TEST
   # ensure xtouch receives phraseIndex
@@ -164,8 +166,8 @@ IF M0 = F0 0C
   EXIT
 END
 
-IF M0 = F0 0E
-  ASS gateOpened = M2
+IF M0 == F0 0E
+  ASS arpModeSwitched = M2
   # TEST
   # ensure xtouch receives gateOpened
   LOG gateOpened_SYSEX_RECEIVED JE
@@ -175,13 +177,14 @@ IF M0 = F0 0E
 END
 
 # Turn off lights when init sysex received
-IF M0 == F0 FF 00 00 0F F7
+# NOTE M1 used due to SB limiting comparisons to four indices
+IF M1 == FF 00 00 0F
   ASS resetIndex = 1
   # loop until this is done for all sixteen buttons
-  WHILE restIndex < 11
-    MATH restIndexMinusOne = restIndex - 1
+  WHILE resetIndex < 11
+    MATH resetIndexMinusOne = resetIndex - 1
     # these should only go up to eight
-    IF restIndex < 9
+    IF resetIndex < 9
       # reset lighting on knobs
       SEND BA resetIndex 00
       # set lighting to 'pan'
@@ -233,7 +236,7 @@ IF MT == 90
     IF tempoModeMod == 0
       ASS tempoPulse = $24
       # SEND SYSEX
-      SEND F0 05 tempPulse F7
+      SEND F0 05 tempoPulse F7 +F
       # END SYSEX
       SEND BA 01 $26
     END
@@ -427,7 +430,7 @@ IF MT == 90
   END
 
   # if it is channel 1-6
-  IF channel < 6
+  IF currentChannel < 6
     IF M1 == 07 7F
       IF waveguideToggle == 0
         ASS waveguideToggle = 1
@@ -571,7 +574,7 @@ IF MT == 80
   END
 
   # if it is channel 1-6
-  IF channel < 6
+  IF currentChannel < 6
     IF M1 == 0C 00
       SEND 90 04 01
       ASS previousDrumVal = 04

@@ -87,7 +87,7 @@ END
 
 # sysex reception
 
-IF M0 = F0 01
+IF M0 == F0 01
   ASS numPressed = M2
   # TEST
   # ensure channel receives numPressed
@@ -97,7 +97,7 @@ IF M0 = F0 01
   EXIT
 END
 
-IF M0 = F0 02
+IF M0 == F0 02
   ASS arpPhraseToggle = M2
   # TEST
   # ensure channel receives arpPhraseToggle
@@ -107,7 +107,7 @@ IF M0 = F0 02
   EXIT
 END
 
-IF M0 = F0 03
+IF M0 == F0 03
   ASS arpPhraseOnOffToggle = M2
   # TEST
   # ensure channel receives arpPhraseOnOffToggle
@@ -117,7 +117,7 @@ IF M0 = F0 03
   EXIT
 END
 
-IF M0 = F0 05
+IF M0 == F0 05
   ASS tempoPulse = M2
   # TEST
   # ensure channel receives tempoPulse
@@ -127,7 +127,7 @@ IF M0 = F0 05
   EXIT
 END
 
-IF M0 = F0 07
+IF M0 == F0 07
   MATH gateTemp = M2 * 100
   MATH gateTemp = gateTemp + M3
   ASS gate = gateTemp
@@ -139,7 +139,7 @@ IF M0 = F0 07
   EXIT
 END
 
-IF M0 = F0 08
+IF M0 == F0 08
   ASS velocity = M2
   # TEST
   # ensure channel receives velocity
@@ -149,7 +149,7 @@ IF M0 = F0 08
   EXIT
 END
 
-IF M0 = F0 09
+IF M0 == F0 09
   ASS arpValueModeMod = M2
   # TEST
   # ensure channel receives arpValueModeMod
@@ -159,7 +159,7 @@ IF M0 = F0 09
   EXIT
 END
 
-IF M0 = F0 0B
+IF M0 == F0 0B
   ASS phraseVal = M2
   # TEST
   # ensure channel receives phraseVal
@@ -169,7 +169,7 @@ IF M0 = F0 0B
   EXIT
 END
 
-IF M0 = F0 0D
+IF M0 == F0 0D
   ASS phraseLengthPlusOffset = M2
   # TEST
   # ensure channel receives phraseLengthPlusOffset
@@ -179,7 +179,7 @@ IF M0 = F0 0D
   EXIT
 END
 
-IF M0 = F0 0E
+IF M0 == F0 0E
   ASS gateOpened = M2
   # TEST
   # ensure channel receives gateOpened
@@ -189,7 +189,7 @@ IF M0 = F0 0E
   EXIT
 END
 
-IF M0 = F0 20
+IF M0 == F0 20
   ASS J20 = M2 M3 M4 M5 M6 M7 M8 M9 MA MB
   # TEST
   # ensure channel receives arpValues
@@ -209,7 +209,7 @@ IF M0 = F0 20
   EXIT
 END
 
-IF M0 = F0
+IF M0 == F0
   IF M1 > 29
     MATH phraseTemp = M2 * 100
     MATH phraseTemp = phraseTemp + M3
@@ -254,7 +254,8 @@ IF M0 = F0
 END
 
 # Reset channel when init sysex received
-IF M0 == F0 FF 00 00 0C F7
+# NOTE M1 used due to SB limiting comparisons to four indices
+IF M1 == FF 00 00 0C
   ASS J0 = 00 # currentChannel
   ASS J1 = 00 # numPressed
   ASS J2 = 00 # arpPhraseToggle
@@ -285,8 +286,8 @@ END
 # end sysex reception
 
 # if this channel is currently allowing input
-# TODO review ordering here - could possibly be rearranged
-IF isChannel == 1
+# TODO review ordering here - could possibly be rearranged - will need to be if channels are split up as expected
+IF currentChannel == 0
   # if message is clock
   IF M0 == F8
     # if gate is open (numPressed is greater than zero)
