@@ -87,132 +87,133 @@ END
 
 # sysex reception
 
-IF M0 == F0 01
-  ASS numPressed = M2
-  # TEST
-  # ensure channel receives numPressed
-  LOG numPressed_SYSEX_RECEIVED J1
-  # END TEST
-  BLOCK
-  EXIT
-END
-
-IF M0 == F0 02
-  ASS arpPhraseToggle = M2
-  # TEST
-  # ensure channel receives arpPhraseToggle
-  LOG arpPhraseToggle_SYSEX_RECEIVED J2
-  # END TEST
-  BLOCK
-  EXIT
-END
-
-IF M0 == F0 03
-  ASS arpPhraseOnOffToggle = M2
-  # TEST
-  # ensure channel receives arpPhraseOnOffToggle
-  LOG arpPhraseOnOffToggle_SYSEX_RECEIVED J3
-  # END TEST
-  BLOCK
-  EXIT
-END
-
-IF M0 == F0 05
-  ASS tempoPulse = M2
-  # TEST
-  # ensure channel receives tempoPulse
-  LOG tempoPulse_SYSEX_RECEIVED J5
-  # END TEST
-  BLOCK
-  EXIT
-END
-
-IF M0 == F0 07
-  MATH gateTemp = M2 * 100
-  MATH gateTemp = gateTemp + M3
-  ASS gate = gateTemp
-  # TEST
-  # ensure channel receives gate
-  LOG gate_SYSEX_RECEIVED J7
-  # END TEST
-  BLOCK
-  EXIT
-END
-
-IF M0 == F0 08
-  ASS velocity = M2
-  # TEST
-  # ensure channel receives velocity
-  LOG velocity_SYSEX_RECEIVED J8
-  # END TEST
-  BLOCK
-  EXIT
-END
-
-IF M0 == F0 09
-  ASS arpValueModeMod = M2
-  # TEST
-  # ensure channel receives arpValueModeMod
-  LOG arpValueModeMod_SYSEX_RECEIVED J9
-  # END TEST
-  BLOCK
-  EXIT
-END
-
-IF M0 == F0 0B
-  ASS phraseVal = M2
-  # TEST
-  # ensure channel receives phraseVal
-  LOG phraseVal_SYSEX_RECEIVED JB
-  # END TEST
-  BLOCK
-  EXIT
-END
-
-IF M0 == F0 0D
-  ASS phraseLengthPlusOffset = M2
-  # TEST
-  # ensure channel receives phraseLengthPlusOffset
-  LOG phraseLengthPlusOffset_SYSEX_RECEIVED JD
-  # END TEST
-  BLOCK
-  EXIT
-END
-
-IF M0 == F0 0E
-  ASS gateOpened = M2
-  # TEST
-  # ensure channel receives gateOpened
-  LOG gateOpened_SYSEX_RECEIVED JE
-  # END TEST
-  BLOCK
-  EXIT
-END
-
-IF M0 == F0 20
-  ASS J20 = M2 M3 M4 M5 M6 M7 M8 M9 MA MB
-  # TEST
-  # ensure channel receives arpValues
-  LOG arpValues_SYSEX_RECEIVED
-  LOG J20 J20
-  LOG J21 J21
-  LOG J22 J22
-  LOG J23 J23
-  LOG J24 J24
-  LOG J25 J25
-  LOG J26 J26
-  LOG J27 J27
-  LOG J28 J28
-  LOG J29 J29
-  # END TEST
-  BLOCK
-  EXIT
-END
-
 IF M0 == F0
-  IF M1 > 29
-    MATH phraseTemp = M2 * 100
-    MATH phraseTemp = phraseTemp + M3
+
+  IF M2 == 01
+    ASS numPressed = M3
+    # TEST
+    # ensure channel receives numPressed
+    LOG numPressed_SYSEX_RECEIVED J1
+    # END TEST
+    BLOCK
+    EXIT
+  END
+
+  IF M2 == 02
+    ASS arpPhraseToggle = M3
+    # TEST
+    # ensure channel receives arpPhraseToggle
+    LOG arpPhraseToggle_SYSEX_RECEIVED J2
+    # END TEST
+    BLOCK
+    EXIT
+  END
+
+  IF M2 == 03
+    ASS arpPhraseOnOffToggle = M3
+    # TEST
+    # ensure channel receives arpPhraseOnOffToggle
+    LOG arpPhraseOnOffToggle_SYSEX_RECEIVED J3
+    # END TEST
+    BLOCK
+    EXIT
+  END
+
+  IF M2 == 05
+    ASS tempoPulse = M3
+    # TEST
+    # ensure channel receives tempoPulse
+    LOG tempoPulse_SYSEX_RECEIVED J5
+    # END TEST
+    BLOCK
+    EXIT
+  END
+
+  IF M2 == 07
+    MATH gateTemp = M3 * 100
+    MATH gateTemp = gateTemp + M4
+    ASS gate = gateTemp
+    # TEST
+    # ensure channel receives gate
+    LOG gate_SYSEX_RECEIVED J7
+    # END TEST
+    BLOCK
+    EXIT
+  END
+
+  IF M2 == 08
+    ASS velocity = M3
+    # TEST
+    # ensure channel receives velocity
+    LOG velocity_SYSEX_RECEIVED J8
+    # END TEST
+    BLOCK
+    EXIT
+  END
+
+  IF M2 == 09
+    ASS arpValueModeMod = M3
+    # TEST
+    # ensure channel receives arpValueModeMod
+    LOG arpValueModeMod_SYSEX_RECEIVED J9
+    # END TEST
+    BLOCK
+    EXIT
+  END
+
+  IF M2 == 0B
+    ASS phraseVal = M3
+    # TEST
+    # ensure channel receives phraseVal
+    LOG phraseVal_SYSEX_RECEIVED JB
+    # END TEST
+    BLOCK
+    EXIT
+  END
+
+  IF M2 == 0D
+    ASS phraseLengthPlusOffset = M3
+    # TEST
+    # ensure channel receives phraseLengthPlusOffset
+    LOG phraseLengthPlusOffset_SYSEX_RECEIVED JD
+    # END TEST
+    BLOCK
+    EXIT
+  END
+
+  IF M2 == 0E
+    ASS gateOpened = M3
+    # TEST
+    # ensure channel receives gateOpened
+    LOG gateOpened_SYSEX_RECEIVED JE
+    # END TEST
+    BLOCK
+    EXIT
+  END
+
+  IF M2 == 20
+    ASS J20 = M3 M4 M5 M6 M7 M8 M9 MA MB MC
+    # TEST
+    # ensure channel receives arpValues
+    LOG arpValues_SYSEX_RECEIVED
+    LOG J20 J20
+    LOG J21 J21
+    LOG J22 J22
+    LOG J23 J23
+    LOG J24 J24
+    LOG J25 J25
+    LOG J26 J26
+    LOG J27 J27
+    LOG J28 J28
+    LOG J29 J29
+    # END TEST
+    BLOCK
+    EXIT
+  END
+
+  IF M2 > 29
+    MATH phraseTemp = M3 * 100
+    MATH phraseTemp = phraseTemp + M4
     ASS JM1 = phraseTemp
     # TEST
     # ensure channel receives phraseValues
@@ -251,36 +252,36 @@ IF M0 == F0
     BLOCK
     EXIT
   END
-END
 
-# Reset channel when init sysex received
-# NOTE M1 used due to SB limiting comparisons to four indices
-IF M1 == FF 00 00 0C
-  ASS J0 = 00 # currentChannel
-  ASS J1 = 00 # numPressed
-  ASS J2 = 00 # arpPhraseToggle
-  ASS J3 = 00 # arpPhraseOnOffToggle
-  ASS J4 = 00 # tempoModeMod
-  ASS J5 = 24 # tempoPulse
-  ASS J6 = 00 # gateModeMod
-  ASS J7 = 00 # gate
-  ASS J8 = 64 # velocity
-  ASS J9 = 00 # arpValueModeMod
-  ASS JA = 00 # setPhrase
-  ASS JB = 00 # phraseVal
-  ASS JC = 2A # phraseindex
-  ASS JD = 2A # phraseLengthPlusOffset
-  ASS JE = 00 # gateOpened
-  ASS JF = 00 # waveguideToggle
-  ASS J10 = 0E # drumParams (Part 1)
-  ASS J11 = 0F # drumParams (Part 2)
-  ASS J12 = 10 # drumParams (Part 1+2)
-  ASS J13 = 67 # drumParams (wg send) (103)
-  ASS J20 = 00 00 00 00 00 00 00 00 00 00 # arp values (J10 J11 J12 J13 J14 J15 J16 J17 J18 J19)
-  ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
-  # TEST
-  LOG RESET_SYSEX_RECEIVED
-  # END TEST
+  # Reset channel when init sysex received
+  # NOTE M1 used due to SB limiting comparisons to four indices
+  IF M1 == 0C FF 00 00
+    ASS J0 = 00 # currentChannel
+    ASS J1 = 00 # numPressed
+    ASS J2 = 00 # arpPhraseToggle
+    ASS J3 = 00 # arpPhraseOnOffToggle
+    ASS J4 = 00 # tempoModeMod
+    ASS J5 = 24 # tempoPulse
+    ASS J6 = 00 # gateModeMod
+    ASS J7 = 00 # gate
+    ASS J8 = 64 # velocity
+    ASS J9 = 00 # arpValueModeMod
+    ASS JA = 00 # setPhrase
+    ASS JB = 00 # phraseVal
+    ASS JC = 2A # phraseindex
+    ASS JD = 2A # phraseLengthPlusOffset
+    ASS JE = 00 # gateOpened
+    ASS JF = 00 # waveguideToggle
+    ASS J10 = 0E # drumParams (Part 1)
+    ASS J11 = 0F # drumParams (Part 2)
+    ASS J12 = 10 # drumParams (Part 1+2)
+    ASS J13 = 67 # drumParams (wg send) (103)
+    ASS J20 = 00 00 00 00 00 00 00 00 00 00 # arp values (J10 J11 J12 J13 J14 J15 J16 J17 J18 J19)
+    ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
+    # TEST
+    LOG RESET_SYSEX_RECEIVED
+    # END TEST
+  END
 END
 
 # end sysex reception

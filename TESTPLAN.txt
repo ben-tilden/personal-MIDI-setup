@@ -6,8 +6,6 @@
 ###
 
 # ensure xtouch receives currentChannel
-# ensure xtouch receives arpPhraseToggle
-# ensure xtouch receives arpPhraseOnOffToggle
 # ensure xtouch receives setPhrase
 # ensure xtouch receives phraseIndex
 # ensure xtouch receives gateOpened

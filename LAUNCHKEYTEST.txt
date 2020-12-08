@@ -130,7 +130,7 @@ IF LOAD
   # END TEST
 
   # reset xtouch lighting
-  SEND F0 FF 00 00 0F F7 +F
+  SEND F0 FF FF 00 00 F7 +F
   # TEST
   # ensure xtouch lighting reset
   LOG LIGHTS_RESET
@@ -141,7 +141,7 @@ IF LOAD
   # NOTE possible issue here that latch info will likely not save between sessions - or if there is need to, it must be added in manually
   # NOTE this can likely be done by creating a whole other SB to act as a db
   # reset channel information
-  SEND F0 FF 00 00 0C F7 +F
+  SEND F0 CC FF 00 00 F7 +F
   # TEST
   # ensure channel information reset (will need to be done on individual files)
   # LOG CHANNELS_RESET
@@ -195,78 +195,81 @@ END
 
 # sysex reception
 
-IF M0 == F0 01
-  ASS numPressed = M2
-  # TEST
-  # ensure launchkey receives numPressed
-  LOG numPressed_SYSEX_RECEIVED J1
-  # END TEST
-  BLOCK
-  EXIT
-END
+IF M0 == F0
 
-IF M0 == F0 02
-  ASS arpPhraseToggle = M2
-  # TEST
-  # ensure launchkey receives arpPhraseToggle
-  LOG arpPhraseToggle_SYSEX_RECEIVED J2
-  # END TEST
-  BLOCK
-  EXIT
-END
-
-IF M0 == F0 03
-  ASS arpPhraseOnOffToggle = M2
-  # TEST
-  # ensure launchkey receives arpPhraseOnOffToggle
-  LOG arpPhraseOnOffToggle_SYSEX_RECEIVED J3
-  # END TEST
-  BLOCK
-  EXIT
-END
-
-IF M0 == F0 09
-  ASS arpValueModeMod = M2
-  # TEST
-  # ensure launchkey receives arpValueModeMod
-  LOG arpValueModeMod_SYSEX_RECEIVED J9
-  # END TEST
-  BLOCK
-  EXIT
-END
-
-IF M0 == F0 0A
-  ASS setPhrase = M2
-  # TEST
-  # ensure launchkey receives setPhrase
-  LOG setPhrase_SYSEX_RECEIVED JA
-  # END TEST
-  IF setPhrase == 0
-    ASS phraseIndex = 2A
-    ASS tempPhraseVal = AAAA
-    FX = XX +B
+  IF M2 == 01
+    ASS numPressed = M3
     # TEST
-    # ensure sysex resets phraseIndex when setPhrase is turned off
-    LOG phraseIndex phraseIndex
+    # ensure launchkey receives numPressed
+    LOG numPressed_SYSEX_RECEIVED J1
     # END TEST
+    BLOCK
+    EXIT
   END
-  BLOCK
-  EXIT
-END
 
-IF M0 == F0 0C
-  ASS phraseIndex = M2
-  # TEST
-  # ensure launchkey receives phraseIndex
-  LOG phraseIndex_SYSEX_RECEIVED JC
-  # END TEST
-  BLOCK
-  EXIT
+  IF M2 == 02
+    ASS arpPhraseToggle = M3
+    # TEST
+    # ensure launchkey receives arpPhraseToggle
+    LOG arpPhraseToggle_SYSEX_RECEIVED J2
+    # END TEST
+    BLOCK
+    EXIT
+  END
+
+  IF M2 == 03
+    ASS arpPhraseOnOffToggle = M3
+    # TEST
+    # ensure launchkey receives arpPhraseOnOffToggle
+    LOG arpPhraseOnOffToggle_SYSEX_RECEIVED J3
+    # END TEST
+    BLOCK
+    EXIT
+  END
+
+  IF M2 == 09
+    ASS arpValueModeMod = M3
+    # TEST
+    # ensure launchkey receives arpValueModeMod
+    LOG arpValueModeMod_SYSEX_RECEIVED J9
+    # END TEST
+    BLOCK
+    EXIT
+  END
+
+  IF M2 == 0A
+    ASS setPhrase = M3
+    # TEST
+    # ensure launchkey receives setPhrase
+    LOG setPhrase_SYSEX_RECEIVED JA
+    # END TEST
+    IF setPhrase == 0
+      ASS phraseIndex = 2A
+      ASS tempPhraseVal = AAAA
+      FX = XX +B
+      # TEST
+      # ensure sysex resets phraseIndex when setPhrase is turned off
+      LOG phraseIndex phraseIndex
+      # END TEST
+    END
+    BLOCK
+    EXIT
+  END
+
+  IF M2 == 0C
+    ASS phraseIndex = M3
+    # TEST
+    # ensure launchkey receives phraseIndex
+    LOG phraseIndex_SYSEX_RECEIVED JC
+    # END TEST
+    BLOCK
+    EXIT
+  END
 END
 
 # end sysex reception
 
-
+# TODO not currently functional
 IF MT == B0
   IF M1 == 6B 7F
     # TODO two buttons at once? triple tap? on release?
@@ -288,7 +291,7 @@ IF MT == B0
     ASS tempPhraseVal = AAAA
     ASS phraseIndex = 2A
     # SEND SYSEX
-    SEND F0 0C phraseIndex 0F F7 +F
+    SEND F0 FF 0C phraseIndex F7 +F
     # END SYSEX
 
     # assign global variables
@@ -309,7 +312,7 @@ IF arpPhraseOnOffToggle == 1
       IF resetArp == 1
         MATH numPressed = numPressed + 1
         # SEND SYSEX
-        SEND F0 01 numPressed 0C F7 +F
+        SEND F0 CC 01 numPressed F7 +F
         # END SYSEX
         BLOCK
         EXIT
@@ -319,7 +322,7 @@ IF arpPhraseOnOffToggle == 1
       IF numPressed == A
         ASS J20 = 00 00 00 00 00 00 00 00 00 00
         # SEND SYSEX
-        SEND F0 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 0C F7
+        SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7
         # END SYSEX
         ASS I20 = 00 00 00 00 00 00 00 00 00 00
         ASS resetArp = 1
@@ -327,7 +330,7 @@ IF arpPhraseOnOffToggle == 1
         # necessary so that numPressed does not go past zero by mistake, as we have not yet incremented for this key press
         MATH numPressed = numPressed + 1
         # SEND SYSEX
-        SEND F0 01 numPressed 0C F7 +F
+        SEND F0 CC 01 numPressed F7 +F
         # END SYSEX
         # TEST
         # ensure J array contains correct key values pressed on reset (0)
@@ -380,27 +383,27 @@ IF arpPhraseOnOffToggle == 1
       # NOTE this is done before sorting to make sure proper length is parsed
       MATH numPressed = numPressed + 1
       # SEND SYSEX
-      SEND F0 01 numPressed 0C F7 +F
+      SEND F0 CC 01 numPressed F7 +F
       # END SYSEX
 
       # sort array / hashmap according to ascending, descending, order pressed
       IF arpValueModeMod < 6
         INSERTION_SORT 0 numPressed
         # SEND SYSEX
-        SEND F0 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 0C F7 +F
+        SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
         # END SYSEX
       END
       IF arpValueModeMod > 8
         INSERTION_SORT 1 numPressed
         # SEND SYSEX
-        SEND F0 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 0C F7 +F
+        SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
         # END SYSEX
       END
 
       IF numPressed == 1
         ASS gateOpened = 1
         # SEND SYSEX
-        SEND F0 0E gateOpened 0C F7 +F
+        SEND F0 CC 0E gateOpened F7 +F
         # END SYSEX
       END
       # TEST TRY
@@ -456,7 +459,7 @@ IF arpPhraseOnOffToggle == 1
       IF resetArp == 1
         MATH numPressed = numPressed - 1
         # SEND SYSEX
-        SEND F0 01 numPressed 0C F7 +F
+        SEND F0 CC 01 numPressed F7 +F
         # END SYSEX
         IF numPressed == 0
           ASS resetArp = 0
@@ -486,13 +489,13 @@ IF arpPhraseOnOffToggle == 1
       IF arpValueModeMod < 6
         INSERTION_SORT 0 numPressed
         # SEND SYSEX
-        SEND F0 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 0C F7 +F
+        SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
         # END SYSEX
       END
       IF arpValueModeMod > 8
         INSERTION_SORT 1 numPressed
         # SEND SYSEX
-        SEND F0 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 0C F7 +F
+        SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
         # END SYSEX
       END
 
@@ -500,12 +503,12 @@ IF arpPhraseOnOffToggle == 1
       # NOTE this is done after sorting to make sure any removed values are pushed out
       MATH numPressed = numPressed - 1
       # SEND SYSEX
-      SEND F0 01 numPressed 0C F7 +F
+      SEND F0 CC 01 numPressed F7 +F
       # END SYSEX
       IF numPressed == 0
         ASS J20 = 00 00 00 00 00 00 00 00 00 00
         # SEND SYSEX
-        SEND F0 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 0C F7 +F
+        SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
         # END SYSEX
         ASS I20 = 00 00 00 00 00 00 00 00 00 00
         ASS numPressedTotal = 0
@@ -562,7 +565,7 @@ IF arpPhraseOnOffToggle == 1
       IF resetPhrase == 1
         MATH numPressed = numPressed + 1
         # SEND SYSEX
-        SEND F0 01 numPressed 0C F7 +F
+        SEND F0 CC 01 numPressed F7 +F
         # END SYSEX
         BLOCK
         EXIT
@@ -576,7 +579,7 @@ IF arpPhraseOnOffToggle == 1
         # necessary so that numPressed does not go past zero by mistake, as we have not yet incremented for this key press
         MATH numPressed = numPressed + 1
         # SEND SYSEX
-        SEND F0 01 numPressed 0C F7 +F
+        SEND F0 CC 01 numPressed F7 +F
         # END SYSEX
         # TEST
         # ensure K array contains correct key values pressed on reset (0)
@@ -610,13 +613,13 @@ IF arpPhraseOnOffToggle == 1
       # set initial note to calculate offset
       ASS phraseVal = M1
       # SEND SYSEX
-      SEND F0 0B phraseVal 0C F7 +F
+      SEND F0 CC 0B phraseVal F7 +F
       # END SYSEX
 
       # add to number of keys pressed
       MATH numPressed = numPressed + 1
       # SEND SYSEX
-      SEND F0 01 numPressed 0C F7 +F
+      SEND F0 CC 01 numPressed F7 +F
       # END SYSEX
       MATH numPressedTotal = numPressedTotal + 1
 
@@ -639,7 +642,7 @@ IF arpPhraseOnOffToggle == 1
       IF numPressed == 1
         ASS gateOpened = 1
         # SEND SYSEX
-        SEND F0 0E gateOpened 0C F7 +F
+        SEND F0 CC 0E gateOpened F7 +F
         # END SYSEX
       END
       # TEST
@@ -679,7 +682,7 @@ IF arpPhraseOnOffToggle == 1
       IF resetPhrase == 1
         MATH numPressed = numPressed - 1
         # SEND SYSEX
-        SEND F0 01 numPressed 0C F7 +F
+        SEND F0 CC 01 numPressed F7 +F
         # END SYSEX
         IF numPressed == 0
           ASS resetPhrase = 0
@@ -724,7 +727,7 @@ IF arpPhraseOnOffToggle == 1
         # ASS gateOpened = 1 # NOTE uncommenting this and sending sysex would restart phrase whenever key lifted
         ASS phraseVal = KI7
         # SEND SYSEX
-        SEND F0 0B phraseVal 0C F7 +F
+        SEND F0 CC 0B phraseVal F7 +F
         # END SYSEX
       END
       # TEST
@@ -774,51 +777,51 @@ IF setPhrase == 1
     MATH JJC = M1 - tempPhraseVal
     MATH phraseTemp = JJC / 100
     # SEND SYSEX
-    SEND F0 phraseIndex phraseTemp JJC 0C F7 +F
+    SEND F0 CC phraseIndex phraseTemp JJC F7 +F
     # END SYSEX
     ASS phraseLengthPlusOffset = phraseIndex
     # SEND SYSEX
-    SEND F0 0D phraseLengthPlusOffset 0C F7 +F
+    SEND F0 CC 0D phraseLengthPlusOffset F7 +F
     # END SYSEX
     MATH phraseIndex = phraseIndex + 1
     # SEND SYSEX
-    SEND F0 0C phraseIndex 0F F7 +F
+    SEND F0 FF 0C phraseIndex F7 +F
     # END SYSEX
   END
   # if phraseRest is sent
   # NOTE M1 used due to SB limiting comparisons to four indices
-  IF M1 == FF 2E 57 01
+  IF M1 == 01 FF 2E 57
     # assign value to 2E57, indicating a rest
     ASS JJC = 2E57
     # NOTE could remove math and hard code in 2E57
     MATH phraseTemp = JJC / 100
     # SEND SYSEX
-    SEND F0 phraseIndex phraseTemp JJC 0C F7 +F
+    SEND F0 CC phraseIndex phraseTemp JJC F7 +F
     # END SYSEX
     ASS phraseLengthPlusOffset = phraseIndex
     # SEND SYSEX
-    SEND F0 0D phraseLengthPlusOffset 0C F7 +F
+    SEND F0 CC 0D phraseLengthPlusOffset F7 +F
     # END SYSEX
     MATH phraseIndex = phraseIndex + 1
     # SEND SYSEX
-    SEND F0 0C phraseIndex 0F F7 +F
+    SEND F0 FF 0C phraseIndex F7 +F
     # END SYSEX
   END
   # if phrase is at max limit, end setPhrase
   IF phraseIndex > 47
     ASS setPhrase = 0
     # SEND SYSEX
-    SEND F0 0A setPhrase 0F F7 +F
+    SEND F0 FF 0A setPhrase F7 +F
     # END SYSEX
     ASS phraseIndex = 2A
     # SEND SYSEX
-    SEND F0 0C phraseIndex 0F F7 +F
+    SEND F0 FF 0C phraseIndex F7 +F
     # END SYSEX
     ASS tempPhraseVal = AAAA
     # NOTE since this message is for turning off the light, it only needs to be sent when the final note is not a rest
     # rest button handles this in xtouch
     IF J47 != 2E57
-      SEND F0 0A setPhrase F7 +F +F
+      SEND F0 FF 0A setPhrase F7 +F
     END
   END
   FX = XX +B

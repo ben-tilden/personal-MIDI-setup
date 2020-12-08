@@ -1,0 +1,8 @@
+# xtouch to launchkey filter
+
+# filter messages that don't have 11 or C1 as their routing (CC)
+
+IF M1 > C1
+  BLOCK
+  EXIT
+END

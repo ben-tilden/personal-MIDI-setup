@@ -1,0 +1,8 @@
+# launchkey to channel filter
+
+# filter messages that don't have CC or FC as their routing (FF)
+
+IF M1 > FC
+  BLOCK
+  EXIT
+END

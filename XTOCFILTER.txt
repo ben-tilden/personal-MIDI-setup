@@ -1,0 +1,8 @@
+# xtouch to channel filter
+
+# filter messages that don't have CC or C1 as their routing (11)
+
+IF M1 < C1
+  BLOCK
+  EXIT
+END

@@ -1,0 +1,8 @@
+# launchkey to xtouch filter
+
+# filter messages that don't have FF or FC as their routing (CC)
+
+IF M1 < FC
+  BLOCK
+  EXIT
+END
