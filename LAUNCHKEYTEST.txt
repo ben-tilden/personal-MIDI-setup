@@ -117,6 +117,7 @@ IF LOAD
   ASS J11 = 0F # drumParams (Part 2)
   ASS J12 = 10 # drumParams (Part 1+2)
   ASS J13 = 67 # drumParams (wg send) (103)
+  ASS J14 = 00 # isLatch
   ASS J20 = 00 00 00 00 00 00 00 00 00 00 # arp values (J10 J11 J12 J13 J14 J15 J16 J17 J18 J19)
   ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
   # TEST
@@ -179,6 +180,7 @@ IF LOAD
   ALIAS JC phraseIndex
   ALIAS JD phraseLengthPlusOffset
   ALIAS JE gateOpened
+  ALIAS J14 isLatch
 
   # assign local
   # NOTE technically K does not need to be reset here, since only L is parsed - doing so as good practice
@@ -270,6 +272,16 @@ IF M0 == F0
     # TEST
     # ensure launchkey receives phraseIndex
     LOG phraseIndex_SYSEX_RECEIVED JC
+    # END TEST
+    BLOCK
+    EXIT
+  END
+
+  IF M2 == 14
+    ASS isLatch = M3
+    # TEST
+    # ensure launchkey receives phraseIndex
+    LOG isLatch_SYSEX_RECEIVED J14
     # END TEST
     BLOCK
     EXIT

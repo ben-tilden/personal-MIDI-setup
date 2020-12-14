@@ -93,6 +93,7 @@ IF LOAD
   ALIAS JE arpModeSwitched # NOTE gateOpened
   ALIAS JF waveguideToggle
   ALIAS J10 drumParams
+  ALIAS J13 isLatch
 
   # assign local
   # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
@@ -209,6 +210,7 @@ IF M0 == F0
     ASS J11 = 0F # drumParams (Part 2)
     ASS J12 = 10 # drumParams (Part 1+2)
     ASS J13 = 67 # drumParams (wg send) (103)
+    ASS J14 = 00 # isLatch
     ASS J20 = 00 00 00 00 00 00 00 00 00 00 # arp values (J10 J11 J12 J13 J14 J15 J16 J17 J18 J19)
     ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
     # send init tempo lighting
@@ -424,6 +426,30 @@ IF MT == 90
     END
     IF arpPhraseOnOffToggle == 1
       LOG MODULE_ON
+    END
+    # END TEST
+  END
+
+  # if it is a button 3 push toggle latch
+  IF M1 == 0A 7F
+    IF isLatch == 0
+      ASS isLatch = 1
+      # SEND SYSEX
+      SEND F0 11 14 isLatch F7 +F
+      # END SYSEX
+    ELSE
+      ASS isLatch = 0
+      # SEND SYSEX
+      SEND F0 11 14 isLatch F7 +F
+      # END SYSEX
+    END
+    # TEST
+    # ensure latch is toggling
+    IF isLatch == 0
+      LOG LATCH_OFF
+    END
+    IF isLatch == 1
+      LOG LATCH_ON
     END
     # END TEST
   END

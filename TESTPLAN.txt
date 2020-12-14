@@ -25,6 +25,8 @@
 
 # ensure arp/phrase module is turned off or on
 
+# ensure latch is toggling
+
 # ensure waveguide is toggled properly
 
 # ensure drumparams are assigned according to correct buttons
@@ -46,6 +48,7 @@
 # ensure launchkey receives arpValueModeMod
 # ensure launchkey receives setPhrase
 # ensure launchkey receives phraseIndex
+# ensure launchkey receives isLatch
 
 # ensure global array reset
 # ensure xtouch lighting reset

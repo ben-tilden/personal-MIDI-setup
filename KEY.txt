@@ -52,6 +52,7 @@ drumParams(Part1)         | F0 00    10    val  F7      | (0-127)    | (1-7F)   
 drumParams(Part2)         | F0 00    11    val  F7      | (0-127)    | (1-7F)      | 0F      | CHANGE      | -           | -
 drumParams(Part1+2)       | F0 00    12    val  F7      | (0-127)    | (1-7F)      | 10      | CHANGE      | -           | -
 drumParams(waveguidesend) | F0 00    13    val  F7      | (0-127)    | (1-7F)      | 67      | CHANGE      | -           | -
+isLatch                   | F0 11    14    val  F7      | (0-1)      | (0-1)       | 00      | VIEW CHANGE | VIEW        | -       | #TODO
 phraseVal                 | F0 CC    index val1 val2 F7 | (-127-127) | (1-7F)      | 00 00   | -           | VIEW CHANGE | VIEW
 
 arpValues | F0 CC 20 val1 val2 val3 val4 val5 val6 val7 val8 val9 val10 F7 | (0-127) | (1-7F) | 00 00 00 00 00 00 00 00 00 00 | - | VIEW CHANGE | VIEW
@@ -71,3 +72,12 @@ CC and note messages to iConnectMIDI
 
 channel
 note messages to iConnectMIDI
+
+
+when adding new passable value:
+1. add key entry
+2. add sysex reception
+3. add ALIAS
+4. add init set
+5. add testing
+
