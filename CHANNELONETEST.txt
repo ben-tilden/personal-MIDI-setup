@@ -3,7 +3,12 @@
 # TEST NOTES
 # NOTE the order in which these notes will be played is up in the air - currently the array is reset without regard to arpIndex, but in the future it may be preferred to reset the array only once all elements in the current array are iterated through (arpIndex = length of array + arpOffset)
 # see TEST TRY here and in channel one for more information
-# review pressing two keys at once - may need to change arpOffse / gateOpened interaction if there are issues - likely will not
+# TODO review pressing two keys at once for arp - may need to change arpOffset / gateOpened interaction if there are issues - likely will not
+# see clockNum NOTE for more possible impact
+
+# Possibly investigate timing - being late on initial downbeat might not be preventing the second note from playing in order
+# This is actually likely due to the order in which the keys are initially pressed - the first button pressed might be what is sent, then when the array is sorted it may be sorted into the second spot
+# sort each time clock is sent via some process similar to selection sort? this could prevent the timing issue above
 
 
 

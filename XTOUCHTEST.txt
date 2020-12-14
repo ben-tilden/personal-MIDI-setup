@@ -335,7 +335,7 @@ IF MT == 90
         # SEND SYSEX
         SEND F0 11 0A setPhrase F7 +F
         # END SYSEX
-        ASS phraseIndex = 2A # TODO monitor this
+        ASS phraseIndex = 2A
       END
     END
     # TEST
@@ -389,7 +389,7 @@ IF MT == 90
         # SEND SYSEX
         SEND F0 11 0A setPhrase F7 +F
         # END SYSEX
-        ASS phraseIndex = 2A # TODO monitor this
+        ASS phraseIndex = 2A
       END
     END
     # TEST

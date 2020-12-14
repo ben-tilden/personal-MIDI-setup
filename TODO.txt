@@ -3,38 +3,28 @@
 # ensure xtouch receives currentChannel # pending implementation completion
 # ensure channel information reset on init (will need to be done on individual files) # pending implementation completion
 
-send sysex of full array whenever input is processed
-full array sent to both of the other two and kept in a local array in each
-this prevents specific messages from having to be created, customized, and sent out
-slightly less space efficient, and even more slightly less speed efficient (like 1 or 2 extra calls, so nothing) but likely easier to maintain
-will see if performance issues occur
-also - if variables are updated as a result of a sysex, the app will crash - can likely prevent this by filtering sysex
-
-# launchkey notes
-# Possibly investigate timing - being late on initial downbeat might not be preventing the second note from playing in order
-# This is actually likely due to the order in which the keys are initially pressed - the first button pressed might be what is sent, then when the array is sorted it may be sorted into the second spot
-# sort each time clock is sent via some process similar to selection sort? this could prevent the timing issue above
-
-
 # phase 1: add latch functionality
-# all buttons available for latch
-# review possible filtering for clock (possible to add channel? send from filter as sysex?)
-# create local storage array on channel file
+# on latch
+# have launchkey ignore note off (store)
+# on next note, send note off for stored note
+# implement timer of .2 seconds to check for other notes on each press - include those notes in store
 
-# lfo params
+# TODO lfo params
 # knob 1 press alternates lfo control
 # knob 2 press restarts current lfo
 # knob 1 rate; knob 2 depth
 
-# TODO will need to handle sysex for lights reset
-# TODO will need to eventually handle knobs for drumparams - this might need to be global
+# TODO will need to eventually handle knobs for drumparams
+
 # TODO implement push control
 # push control will be set such that when the knob is pushed, knobPush is set to true, and the current value is saved
 # if knobPush is set to true and knobTurned is set to true, the original value will be sent back to the parameter and the knob lighting
 # on knob release, knobPush will be set to false and the settings will change if knobTurned is set to false
 # cons: this may make it more difficult in a live setting, since pushing and not turning by accident could cause issues
 # pros: it's more intuitive, prevents two hands from being used at the same time, and allows for more mapping on xtouch
-# this way we could save knobs by combining the waveguide send and one of the other waveguide knobs
+# will likely need knobVal parameter to store what knob it is - more scalable
+
+# TODO we could save knobs by combining the waveguide send and one of the other waveguide knobs
 # tempo gate velocity lfoDepth lfoSpeed decay body tune send
 # single knob press - switch to send
 # double knob press - switch waveguide model
@@ -44,10 +34,6 @@ also - if variables are updated as a result of a sysex, the app will crash - can
 # app crashes when order / phrase used at a very high tempo
 # can put red tape to indicate
 
-# test with local setup to see if expanding is practical
-# could easily change 90 to 90 + channel to make channel one more general
-
-# have init send lighting
 # knob to change channel instead of launchkey button
 
 # lfo's
@@ -66,10 +52,6 @@ also - if variables are updated as a result of a sysex, the app will crash - can
 
 Best based on channel - 1-8, 10-12 (layer A)
 ----------------------------------
-ARP/PHRASE on (button)
-ARP/PHRASE tempo (knob)
-ARP/PHRASE toggle (button)
-
 LFO on (button)
 LFO tempo (knob)
 LFO type (button)
@@ -102,16 +84,3 @@ Midifire can remain open in front of modstep, but modstep will be doing most of 
 Fugue Machine can be used to reverse, invert, bounce phrase
 
 Micron and MicroBrute will be incorporated eventually
-
-Completed:
-----------
-
-# make knobs infinite - so +1 instead of 0-127
-# NOTE this will be unnecessary since we're implementing something similar by storing values
-# make knobs control tempo - 1-10 1x Ableton link tempo, 11 1.1, 12 = 1.2, ... , 20 - 29 2x Ableton link tempo
-# DONE
-
-# arp add rest?
-# DONE
-# randomizer in terms of value
-# DONE
