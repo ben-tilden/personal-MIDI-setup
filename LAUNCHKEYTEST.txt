@@ -89,7 +89,7 @@ SUBROUTINE INSERTION_SORT isOrder length
 END
 
 # J is the local storage array (database)
-# NOTE if it can be removed from here safely
+# TODO implement button reset
 
 IF LOAD
 
@@ -135,8 +135,6 @@ IF LOAD
   # ensure xtouch reset
   LOG XTOUCH_RESET
   # END TEST
-
-  # TEST BOOKMARK
 
   # full setup init - comment out if there is a need to save channel information between sessions
   # reset channel information
@@ -685,16 +683,18 @@ IF arpPhraseOnOffToggle == 1
       END
 
       # stop if no keys pressed
-      MAT numPressed = numPressed - 1
+      MATH numPressed = numPressed - 1
+      # SEND SYSEX
+      SEND F0 CC 01 numPressed F7 +F
+      # END SYSEX
       IF numPressed < 1
         ASS L1 = 00 00 00 00 00
         ASS numPressedTotal = 0
       END
 
-      # find the max k value, or the most recent key pressed
-      # if the j value, or note value of that max is M1, we need to change the phrase offset,
-      # so reset the g values, setting J1 to the second most recent key pressed
-      # while we are iterating, we need to set the k value of whichever key is pressed to zero so we can reuse that index
+      # find the max l value, or the most recent key pressed
+      # if the k value, or note value of that max is M1, we need to change the phrase offset
+      # while we are iterating, we need to set the l value of whichever key is released to zero so we can reuse that index
       ASS max = 0
       ASS secondMax = 0
       ASS iter = 1

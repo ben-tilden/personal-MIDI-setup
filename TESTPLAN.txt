@@ -49,7 +49,7 @@
 
 # ensure global array reset
 # ensure xtouch lighting reset
-# ensure channel information reset (will need to be done on individual files)
+# ensure channel information reset (will need to be done on individual files) # pending implementation completion
 
 # ensure J array contains correct key values pressed on reset (0)
 # ensure I array contains correct order of keys pressed on reset (0)
