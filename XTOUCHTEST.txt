@@ -586,6 +586,12 @@ IF MT == 80
     END
   END
 
+  IF M1 == 0A 00
+    IF isLatch == 1
+      SEND 90 02 01
+    END
+  END
+
   IF M1 == 11 00
     IF arpPhraseOnOffToggle == 1
       SEND 90 09 01

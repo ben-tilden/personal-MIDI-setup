@@ -153,6 +153,8 @@ IF LOAD
   # constant
 
   ALIAS 20 arpIndexOffset
+  ALIAS 30 latchIndexOffset
+  ALIAS 64 latchInterval
 
   # local
   ALIAS I0 iter
@@ -167,8 +169,10 @@ IF LOAD
   ALIAS I9 resetArp
   ALIAS IA resetPhrase
   ALIAS I17 phraseTemp # TODO
-  ALIAS I18 isFirst
-  # NOTE I10 - I16 taken by insertion sort above, I20 - I29 taken as numPressed order for arp
+  ALIAS I18 isFirst # TODO
+  ALIAS I19 latchTiming # TODO
+  ALIAS I1A latchIndex
+  # NOTE I10 - I16 taken by insertion sort above, I20 - I29 taken as numPressed order for arp, I30 - I39 taken as latch values
 
   # global
   ALIAS J1 numPressed
@@ -280,7 +284,7 @@ IF M0 == F0
   IF M2 == 14
     ASS isLatch = M3
     # TEST
-    # ensure launchkey receives phraseIndex
+    # ensure launchkey receives isLatch
     LOG isLatch_SYSEX_RECEIVED J14
     # END TEST
     BLOCK
@@ -303,6 +307,57 @@ IF MT == B0
     NX = XX +B
   END
 END
+
+IF isLatch == 1
+  IF MT == 90
+    ASS latchTiming = T0
+    IF latchTiming > latchInterval
+      ASS iter = 30
+      WHILE iter <= latchLength
+        # send note release - injected because this is the only file that would process the note release
+        SEND 80 II0 00 +I
+        # remove from latchValues
+        ASS II0 = 00
+        MATH iter = iter + 1
+      END
+      ASS latchLength = 0
+      ASS T0 = 0 # reset timer
+    END
+    ASS latchIndex = latchIndexOffset + latchLength
+    ASS II1A = M1
+    # TEST
+    # ensure latchValues are storing correctly on note press
+    # ensure latchValues are reset if timing between notes is >=.1 second
+    # ensure latchValues are added to if timing between notes <.1 second
+    LOG latchIndex latchIndex
+    LOG latchValues
+    LOG I30 I30
+    LOG I31 I31
+    LOG I32 I32
+    LOG I33 I33
+    LOG I34 I34
+    LOG I35 I35
+    LOG I36 I36
+    LOG I37 I37
+    LOG I38 I38
+    LOG I39 I39
+    # END TEST
+    MATH latchLength = latchLength + 1
+    # TEST
+    LOG latchLength latchLength
+    # END TEST
+  END
+  IF MT == 80
+    # TEST
+    # ensure note releases are blocked if latch is on
+    LOG NOTE_RELEASE_BLOCKED
+    # END TEST
+    BLOCK
+    EXIT
+  END
+END
+
+# NOTE will need to set latchLength to 0 and latchValues to 0 on latch off
 
 # if arp / phrase is on
 IF arpPhraseOnOffToggle == 1
