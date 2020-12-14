@@ -118,34 +118,36 @@ IF LOAD
   ASS J12 = 10 # drumParams (Part 1+2)
   ASS J13 = 67 # drumParams (wg send) (103)
   ASS J20 = 00 00 00 00 00 00 00 00 00 00 # arp values (J10 J11 J12 J13 J14 J15 J16 J17 J18 J19)
-  ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
+  ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
   # TEST
   # ensure global array reset
-  ASS IFF = 0
-  WHILE IFF < 5A
-    LOG G_INDEX IFF
-    LOG IFF GIFF
-    MATH IFF = IFF + 1
+  ASS LFF = 0
+  WHILE LFF < 48
+    LOG J_INDEX LFF
+    LOG LFF JLFF
+    MATH LFF = LFF + 1
   END
   # END TEST
 
-  # reset xtouch lighting
+  # reset xtouch lighting and params
   SEND F0 FF FF 00 00 F7 +F
   # TEST
-  # ensure xtouch lighting reset
-  LOG LIGHTS_RESET
+  # ensure xtouch reset
+  LOG XTOUCH_RESET
   # END TEST
 
+  # TEST BOOKMARK
+
   # full setup init - comment out if there is a need to save channel information between sessions
-  # TODO create command that will log all channel session information
-  # NOTE possible issue here that latch info will likely not save between sessions - or if there is need to, it must be added in manually
-  # NOTE this can likely be done by creating a whole other SB to act as a db
   # reset channel information
   SEND F0 CC FF 00 00 F7 +F
   # TEST
   # ensure channel information reset (will need to be done on individual files)
-  # LOG CHANNELS_RESET
+  LOG CHANNELS_RESET
   # END TEST
+
+  # global variable
+  ALIAS G0 currentChannel
 
   # end init
 
@@ -166,6 +168,7 @@ IF LOAD
   ALIAS I9 resetArp
   ALIAS IA resetPhrase
   ALIAS I17 phraseTemp # TODO
+  ALIAS I18 isFirst
   # NOTE I10 - I16 taken by insertion sort above, I20 - I29 taken as numPressed order for arp
 
   # global
@@ -190,7 +193,15 @@ IF LOAD
   ASS tempPhraseVal = AAAA
   ASS resetArp = 0
   ASS resetPhrase = 0
+  ASS isFirst = 0
 
+END
+
+# TODO fix this - can't make it global because then it can't be recorded - or would need to save channel when recording somehow
+# filter xtouch into modstep?
+IF isFirst == 0
+  ASS currentChannel = MC
+  ASS isFirst = 1
 END
 
 # sysex reception
@@ -271,33 +282,15 @@ END
 
 # TODO not currently functional
 IF MT == B0
-  IF M1 == 6B 7F
-    # TODO two buttons at once? triple tap? on release?
-    # NOTE depending on routing, we may just need to send one message
-    # receiving a message that does not match the channel triggers an auto save (this may require some timer, since this might be a race condition)
-    # signal previous channel file to save
-    # signal next channel file to load
-    # SEND F0 C4 MC G0 F7 +F
+  IF M1 == 6B 00
+    # TODO two buttons at once? triple tap? on release
 
     # NOTE will need to send lighting to xtouch for sure, but setting the global channel should be enough to change routing
-    # NOTE need to review routing, because if only one channel can route through launchkeymini, only one channel can use these features at a time
-    # this is fine (and expected) for live keyboard playing without latch, but will likely be an issue when using modstep
+    # SEND sysex here
 
-    # assign local variables
-    ASS I20 = 00 00 00 00 00 00 00 00 00 00
-    ASS K1 = 00 00 00 00 00
-    ASS L1 = 00 00 00 00 00
-    ASS numPressedTotal = 0
-    ASS tempPhraseVal = AAAA
-    ASS phraseIndex = 2A
-    # SEND SYSEX
-    SEND F0 FF 0C phraseIndex F7 +F
-    # END SYSEX
+    ASS currentChannel = MC
 
-    # assign global variables
-    ASS J0 = MC
-
-    # NOTE ensure to block specific sysex input so it isn't passed out
+    NX = XX +B
   END
 END
 
@@ -322,7 +315,7 @@ IF arpPhraseOnOffToggle == 1
       IF numPressed == A
         ASS J20 = 00 00 00 00 00 00 00 00 00 00
         # SEND SYSEX
-        SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7
+        SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
         # END SYSEX
         ASS I20 = 00 00 00 00 00 00 00 00 00 00
         ASS resetArp = 1
@@ -784,13 +777,10 @@ IF setPhrase == 1
     SEND F0 CC 0D phraseLengthPlusOffset F7 +F
     # END SYSEX
     MATH phraseIndex = phraseIndex + 1
-    # SEND SYSEX
-    SEND F0 FF 0C phraseIndex F7 +F
-    # END SYSEX
   END
   # if phraseRest is sent
   # NOTE M1 used due to SB limiting comparisons to four indices
-  IF M1 == 01 FF 2E 57
+  IF M2 == FF 2E 57
     # assign value to 2E57, indicating a rest
     ASS JJC = 2E57
     # NOTE could remove math and hard code in 2E57
@@ -803,9 +793,6 @@ IF setPhrase == 1
     SEND F0 CC 0D phraseLengthPlusOffset F7 +F
     # END SYSEX
     MATH phraseIndex = phraseIndex + 1
-    # SEND SYSEX
-    SEND F0 FF 0C phraseIndex F7 +F
-    # END SYSEX
   END
   # if phrase is at max limit, end setPhrase
   IF phraseIndex > 47
@@ -814,9 +801,6 @@ IF setPhrase == 1
     SEND F0 FF 0A setPhrase F7 +F
     # END SYSEX
     ASS phraseIndex = 2A
-    # SEND SYSEX
-    SEND F0 FF 0C phraseIndex F7 +F
-    # END SYSEX
     ASS tempPhraseVal = AAAA
     # NOTE since this message is for turning off the light, it only needs to be sent when the final note is not a rest
     # rest button handles this in xtouch

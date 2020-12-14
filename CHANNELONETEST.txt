@@ -212,50 +212,58 @@ IF M0 == F0
   END
 
   IF M2 > 29
-    MATH phraseTemp = M3 * 100
-    MATH phraseTemp = phraseTemp + M4
-    ASS JM1 = phraseTemp
-    # TEST
-    # ensure channel receives phraseValues
-    LOG phraseValues_SYSEX_RECEIVED JM1
-    LOG J2A J2A
-    LOG J2B J2B
-    LOG J2C J2C
-    LOG J2D J2D
-    LOG J2E J2E
-    LOG J2F J2F
-    LOG J30 J30
-    LOG J31 J31
-    LOG J32 J32
-    LOG J33 J33
-    LOG J34 J34
-    LOG J35 J35
-    LOG J36 J36
-    LOG J37 J37
-    LOG J38 J38
-    LOG J39 J39
-    LOG J3A J3A
-    LOG J3B J3B
-    LOG J3C J3C
-    LOG J3D J3D
-    LOG J3E J3E
-    LOG J3F J3F
-    LOG J40 J40
-    LOG J41 J41
-    LOG J42 J42
-    LOG J43 J43
-    LOG J44 J44
-    LOG J45 J45
-    LOG J46 J46
-    LOG J47 J47
-    # END TEST
-    BLOCK
-    EXIT
+    # FF > 29, but also implies signal message so need to add logic for that
+    # might need to be revised at some point in the future
+    IF M2 != FF
+      MATH phraseTemp = M3 * 100
+      MATH phraseTemp = phraseTemp + M4
+      ASS JM2 = phraseTemp
+      # TEST
+      # ensure channel receives phraseValues
+      LOG phraseValues_SYSEX_RECEIVED JM2
+      LOG J2A J2A
+      LOG J2B J2B
+      LOG J2C J2C
+      LOG J2D J2D
+      LOG J2E J2E
+      LOG J2F J2F
+      LOG J30 J30
+      LOG J31 J31
+      LOG J32 J32
+      LOG J33 J33
+      LOG J34 J34
+      LOG J35 J35
+      LOG J36 J36
+      LOG J37 J37
+      LOG J38 J38
+      LOG J39 J39
+      LOG J3A J3A
+      LOG J3B J3B
+      LOG J3C J3C
+      LOG J3D J3D
+      LOG J3E J3E
+      LOG J3F J3F
+      LOG J40 J40
+      LOG J41 J41
+      LOG J42 J42
+      LOG J43 J43
+      LOG J44 J44
+      LOG J45 J45
+      LOG J46 J46
+      LOG J47 J47
+      # END TEST
+      BLOCK
+      EXIT
+    END
   END
 
   # Reset channel when init sysex received
   # NOTE M1 used due to SB limiting comparisons to four indices
-  IF M1 == 0C FF 00 00
+  IF M1 == CC FF 00 00
+    # reset necessary local variables
+    ASS clockNum = 0
+    ASS isOctave = 0
+
     ASS J0 = 00 # currentChannel
     ASS J1 = 00 # numPressed
     ASS J2 = 00 # arpPhraseToggle
@@ -277,10 +285,12 @@ IF M0 == F0
     ASS J12 = 10 # drumParams (Part 1+2)
     ASS J13 = 67 # drumParams (wg send) (103)
     ASS J20 = 00 00 00 00 00 00 00 00 00 00 # arp values (J10 J11 J12 J13 J14 J15 J16 J17 J18 J19)
-    ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
+    ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
     # TEST
     LOG RESET_SYSEX_RECEIVED
     # END TEST
+    BLOCK
+    EXIT
   END
 END
 

@@ -5,14 +5,15 @@
 # x touch
 ###
 
-# ensure xtouch receives currentChannel
+# ensure xtouch receives currentChannel # pending implementation completion
 # ensure xtouch receives setPhrase
-# ensure xtouch receives phraseIndex
-# ensure xtouch receives gateOpened
+# ensure xtouch receives gateOpened # optional implementation not exercised yet
 
 # ensure lights turn off on init
 
 # ensure tempoModeMod changes accordingly and tempoPulse correlates
+
+# ensure tempo lighting functions as expected
 
 # ensure gateModeMod changes accordingly and gate correlates
 
@@ -39,7 +40,7 @@
 # launchkey mini
 ###
 
-# ensure launchkey receives numPressed
+# ensure launchkey receives numPressed # not implemented
 # ensure launchkey receives arpPhraseToggle
 # ensure launchkey receives arpPhraseOnOffToggle
 # ensure launchkey receives arpValueModeMod

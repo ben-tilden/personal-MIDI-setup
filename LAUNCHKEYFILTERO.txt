@@ -1,0 +1,5 @@
+# launchkey filter (output)
+
+# filter to ensure that sysex is not routed back to output
+
+FX = XX +B

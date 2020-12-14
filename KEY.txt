@@ -49,7 +49,7 @@ setPhrase                 | F0 FF/11 0A    val  F7      | (0-1)      | (0-1)    
 phraseVal                 | F0 CC    0B    val  F7      | (0-127)    | (1-7F)      | 00      | -           | CHANGE      | VIEW
 phraseIndex               | F0 FF    0C    val  F7      | (42-73)    | (2A-49)     | 2A      | VIEW        | VIEW CHANGE | -
 phraseLengthPlusOffset    | F0 CC    0D    val  F7      | (42-73)    | (2A-49)     | 2A      | -           | CHANGE      | VIEW
-gateOpened                | F0 CC    0E    val  F7      | (0-1)      | (0-1)       | 00      | CHANGE OPT  | CHANGE      | VIEW
+gateOpened                | F0 CC/FF 0E    val  F7      | (0-1)      | (0-1)       | 00      | CHANGE OPT  | CHANGE      | VIEW
 waveguideToggle           | F0 00    0F    val  F7      | (0-1)      | (0-1)       | 00      | VIEW CHANGE | -           | -
 drumParams(Part1)         | F0 00    10    val  F7      | (0-127)    | (1-7F)      | 0E      | CHANGE      | -           | -
 drumParams(Part2)         | F0 00    11    val  F7      | (0-127)    | (1-7F)      | 0F      | CHANGE      | -           | -
@@ -716,6 +716,43 @@ END
 # once this receives that data in the form of the global array, it can directly modify the global array
 # the channel service will only allow data to pass if the 'channel' of the global array is equal to that channel
 # the channel service will save its data in a local array once the channel is manually changed from launchpad
+
+IF LOAD
+  ALIAS I0 resetIndex
+  ALIAS I1 resetIndexMinusOne
+  ASS resetIndex = 1
+  WHILE resetIndex < 11
+    MATH resetIndexMinusOne = resetIndex - 1
+    # these should only go up to eight
+    IF resetIndex < 9
+      # reset lighting on knobs
+      SEND BA resetIndex 00
+      # set lighting to 'pan'
+      SEND B0 resetIndexMinusOne 02
+    END
+    # reset button lighting
+    SEND 90 resetIndexMinusOne 00
+    MATH resetIndex = resetIndex + 1
+  END
+END
+
+IF LOAD
+  ALIAS I0 resetIndex
+  ALIAS I1 resetIndexMinusOne
+  ASS resetIndex = 1
+  WHILE resetIndex < 11
+    MATH resetIndexMinusOne = resetIndex - 1
+    # these should only go up to eight
+    IF resetIndex < 9
+      # reset lighting on knobs
+      SEND BA resetIndex 7F
+    END
+    # reset button lighting
+    SEND 90 resetIndexMinusOne 01
+    MATH resetIndex = resetIndex + 1
+  END
+END
+
 
 deleted lines from launchkey
 

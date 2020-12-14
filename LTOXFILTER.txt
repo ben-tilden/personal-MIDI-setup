@@ -6,3 +6,6 @@ IF M1 < FC
   BLOCK
   EXIT
 END
+
+N0-F = XX +B
+B0-F = XX +B
