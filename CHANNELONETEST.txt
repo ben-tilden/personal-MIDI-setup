@@ -3,6 +3,7 @@
 # TEST NOTES
 # NOTE the order in which these notes will be played is up in the air - currently the array is reset without regard to arpIndex, but in the future it may be preferred to reset the array only once all elements in the current array are iterated through (arpIndex = length of array + arpOffset)
 # see TEST TRY here and in channel one for more information
+# review pressing two keys at once - may need to change arpOffse / gateOpened interaction if there are issues - likely will not
 
 
 
@@ -45,7 +46,8 @@
 IF LOAD
 
   # constant
-  ALIAS FF60 maxValClockNum
+  ALIAS F078 maxValClockNumNorm
+  ALIAS FF78 maxValClockNumEdge
   ALIAS 00 thisChannel
   ALIAS 20 arpOffset
 
@@ -62,6 +64,7 @@ IF LOAD
   ALIAS I8 numPressedOffset
   ALIAS I9 phraseTemp # TODO
   ALIAS IA gateTemp # TODO
+  ALIAS IB maxValClockNum # TODO
 
   ALIAS J0 currentChannel
   ALIAS J1 numPressed
@@ -78,6 +81,7 @@ IF LOAD
   # assign local
   ASS clockNum = 0
   ASS isOctave = 0
+  ASS maxValClockNum = maxValClockNumNorm
 
   # TEST
   ALIAS L0 tempVar1
@@ -121,6 +125,11 @@ IF M0 == F0
 
   IF M2 == 05
     ASS tempoPulse = M3
+    IF tempoPulse == 96
+      ASS maxValClockNum = maxValClockNumEdge
+    ELSE
+      ASS maxValClockNum = maxValClockNumNorm
+    END
     # TEST
     # ensure channel receives tempoPulse
     LOG tempoPulse_SYSEX_RECEIVED J5
@@ -263,6 +272,7 @@ IF M0 == F0
     # reset necessary local variables
     ASS clockNum = 0
     ASS isOctave = 0
+    ASS maxValClockNum = maxValClockNumNorm
 
     ASS J0 = 00 # currentChannel
     ASS J1 = 00 # numPressed
@@ -327,7 +337,8 @@ IF currentChannel == 0
           ASS clockNum = 0 # NOTE might need to be reconfigured if clock signal is too fast for processing, as this may reset clock inadvertantly
           # TEST
           # uncomment to check that maxValClockNum is set correctly
-          # ASS clockNum = FF48
+          # ASS clockNum = F070
+          # ASS clockNum = FEE2 # for 150 edge case
           # END TEST
           # TEST
           # ensure gateOpened resets clockNum
@@ -832,10 +843,10 @@ IF currentChannel == 0
             END
             # if phrase offset is not a rest
             IF JI7 != 2E57
-              MATH phraseValSend = phraseVal + GI7
+              MATH phraseValSend = phraseVal + JI7
               # TEST
               # ensure correct offset is sending
-              LOG phraseVal_OFFSET GI7
+              LOG phraseVal_OFFSET JI7
               # END TEST
               SEND 90 phraseValSend velocity
               SEND 80 phraseValSend velocity +DG7

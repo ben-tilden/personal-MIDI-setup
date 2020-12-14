@@ -1,5 +1,8 @@
 # TODO IDEAS
 
+# ensure xtouch receives currentChannel # pending implementation completion
+# ensure channel information reset on init (will need to be done on individual files) # pending implementation completion
+
 send sysex of full array whenever input is processed
 full array sent to both of the other two and kept in a local array in each
 this prevents specific messages from having to be created, customized, and sent out
