@@ -3,12 +3,6 @@
 # ensure xtouch receives currentChannel # pending implementation completion
 # ensure channel information reset on init (will need to be done on individual files) # pending implementation completion
 
-# phase 1: add latch functionality
-# on latch
-# have launchkey ignore note off (store)
-# on next note, send note off for stored note
-# implement timer of .2 seconds to check for other notes on each press - include those notes in store
-
 # TODO lfo params
 # knob 1 press alternates lfo control
 # knob 2 press restarts current lfo

@@ -54,6 +54,12 @@
 # ensure xtouch lighting reset
 # ensure channel information reset (will need to be done on individual files) # pending implementation completion
 
+# ensure latchValues are storing correctly on note press
+# ensure latchValues are reset if timing between notes is >=.1 second
+# ensure latchValues are added to if timing between notes <.1 second
+
+# ensure note releases are blocked if latch is on
+
 # ensure J array contains correct key values pressed on reset (0)
 # ensure I array contains correct order of keys pressed on reset (0)
 # ensure numPressed aligns with number of keys pressed on reset (0)

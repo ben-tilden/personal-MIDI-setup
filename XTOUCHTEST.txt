@@ -93,7 +93,7 @@ IF LOAD
   ALIAS JE arpModeSwitched # NOTE gateOpened
   ALIAS JF waveguideToggle
   ALIAS J10 drumParams
-  ALIAS J13 isLatch
+  ALIAS J14 isLatch
 
   # assign local
   # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max

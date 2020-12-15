@@ -1,7 +1,14 @@
 # launchkey mini test code
 
 # TEST NOTES
-
+# TODO latch is sending a note off that arp (and likely phrase) never actually had on in the first place
+# can we send the note again once we press arp / phrase?
+# phrase would only need to receive the first value in the array, since multiple keys don't matter
+# incorrect - note release would still impact num pressed
+# issue here is that it would be most recent key pressed, not first key pressed
+# could possibly use latchLengthOffset - 1 to reverse sending
+#
+# can we switch between arpPhraseToggle without issue?
 
 
 
@@ -154,7 +161,7 @@ IF LOAD
 
   ALIAS 20 arpIndexOffset
   ALIAS 30 latchIndexOffset
-  ALIAS 64 latchInterval
+  ALIAS C8 latchInterval
 
   # local
   ALIAS I0 iter
@@ -171,7 +178,11 @@ IF LOAD
   ALIAS I17 phraseTemp # TODO
   ALIAS I18 isFirst # TODO
   ALIAS I19 latchTiming # TODO
-  ALIAS I1A latchIndex
+  ALIAS I1B latchLengthPlusOffset # TODO
+  ALIAS I1C initLatch # TODO
+  # NOTE need a different iter because while phrase and arp are mutually exclusive, latch is not
+  # might not be necessary but it's safer
+  ALIAS I1D latchIter # TODO
   # NOTE I10 - I16 taken by insertion sort above, I20 - I29 taken as numPressed order for arp, I30 - I39 taken as latch values
 
   # global
@@ -189,6 +200,7 @@ IF LOAD
   # assign local
   # NOTE technically K does not need to be reset here, since only L is parsed - doing so as good practice
   ASS I20 = 00 00 00 00 00 00 00 00 00 00
+  ASS I30 = 00 00 00 00 00 00 00 00 00 00
   ASS K1 = 00 00 00 00 00
   ASS L1 = 00 00 00 00 00
 
@@ -198,6 +210,8 @@ IF LOAD
   ASS resetArp = 0
   ASS resetPhrase = 0
   ASS isFirst = 0
+  ASS latchLengthPlusOffset = 30
+  ASS initLatch = 1
 
 END
 
@@ -234,6 +248,24 @@ IF M0 == F0
 
   IF M2 == 03
     ASS arpPhraseOnOffToggle = M3
+    # inject keypresses if latch is on
+    IF isLatch == 1
+      # isArp
+      IF arpPhraseToggle == 0
+        ASS latchIter = 30
+        WHILE latchIter < latchLengthPlusOffset
+          # send note release - injected because this is the only file that would process the note release
+          SEND F0 11 FF 1A II1D F7 +I +F
+          # remove from latchValues # NOTE probably unnecessary
+          ASS II1D = 00
+          MATH latchIter = latchIter + 1
+        END
+        ASS latchLengthPlusOffset = 30
+      # isPhrase
+      ELSE
+
+      END
+    END
     # TEST
     # ensure launchkey receives arpPhraseOnOffToggle
     LOG arpPhraseOnOffToggle_SYSEX_RECEIVED J3
@@ -281,8 +313,22 @@ IF M0 == F0
     EXIT
   END
 
+  # TODO pressing keys at the same time as pressing latch will likely cause problems, since launchkey doesn't block note release when isLatch == 0
+  # worst case scenario, however, is that some keys are unintentionally released if they are part of latch and currently pressed
   IF M2 == 14
     ASS isLatch = M3
+    IF isLatch == 0
+      ASS latchIter = 30
+      WHILE latchIter < latchLengthPlusOffset
+        # send note release - injected because this is the only file that would process the note release
+        SEND F0 11 FF 1A II1D F7 +I +F
+        # remove from latchValues # NOTE probably unnecessary
+        ASS II1D = 00
+        MATH latchIter = latchIter + 1
+      END
+      ASS latchLengthPlusOffset = 30
+      ASS initLatch = 1
+    END
     # TEST
     # ensure launchkey receives isLatch
     LOG isLatch_SYSEX_RECEIVED J14
@@ -308,28 +354,36 @@ IF MT == B0
   END
 END
 
+# TODO latch messes with numPressed and arp
 IF isLatch == 1
   IF MT == 90
     ASS latchTiming = T0
-    IF latchTiming > latchInterval
-      ASS iter = 30
-      WHILE iter <= latchLength
-        # send note release - injected because this is the only file that would process the note release
-        SEND 80 II0 00 +I
-        # remove from latchValues
-        ASS II0 = 00
-        MATH iter = iter + 1
+    # TEST
+    LOG latchTiming latchTiming
+    LOG latchInterval latchInterval
+    # END TEST
+    # initLatch essentially performs timer reset, since timer is only reset on scene load
+    # it prevents the overly large timer from being relevant on first set
+    IF initLatch == 0
+      IF latchTiming > latchInterval
+        ASS latchIter = 30
+        WHILE latchIter < latchLengthPlusOffset
+          # send note release - injected because this is the only file that would process the note release
+          SEND F0 11 FF 1A II1D F7 +I +F
+          # remove from latchValues # NOTE probably unnecessary
+          ASS II1D = 00
+          MATH latchIter = latchIter + 1
+        END
+        ASS latchLengthPlusOffset = 30
       END
-      ASS latchLength = 0
-      ASS T0 = 0 # reset timer
+    ELSE
+      ASS initLatch = 0
     END
-    ASS latchIndex = latchIndexOffset + latchLength
-    ASS II1A = M1
+    ASS II1B = M1
     # TEST
     # ensure latchValues are storing correctly on note press
-    # ensure latchValues are reset if timing between notes is >=.1 second
-    # ensure latchValues are added to if timing between notes <.1 second
-    LOG latchIndex latchIndex
+    # ensure latchValues are reset if timing between notes is >=.2 second
+    # ensure latchValues are added to if timing between notes <.2 second
     LOG latchValues
     LOG I30 I30
     LOG I31 I31
@@ -342,9 +396,9 @@ IF isLatch == 1
     LOG I38 I38
     LOG I39 I39
     # END TEST
-    MATH latchLength = latchLength + 1
+    MATH latchLengthPlusOffset = latchLengthPlusOffset + 1
     # TEST
-    LOG latchLength latchLength
+    LOG latchLengthPlusOffset latchLengthPlusOffset
     # END TEST
   END
   IF MT == 80
@@ -353,11 +407,12 @@ IF isLatch == 1
     LOG NOTE_RELEASE_BLOCKED
     # END TEST
     BLOCK
-    EXIT
+  END
+  # using sysex as a trojan horse to sneak in note release
+  IF M0 == F0 11 FF 1A
+    ASS M0 = 80 M4 00 00 00 00
   END
 END
-
-# NOTE will need to set latchLength to 0 and latchValues to 0 on latch off
 
 # if arp / phrase is on
 IF arpPhraseOnOffToggle == 1
