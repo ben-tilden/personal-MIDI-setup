@@ -37,29 +37,29 @@ SUBROUTINE INSERTION_SORT isOrder length
   IF isOrder == 1
     ASS i = 21
     WHILE i < lengthOffset
-      ASS keyVal = II10
+      ASS keyVal = KI10
       ASS keyBool = JI10
       MATH j = i - 1
       MATH jPlusOne = j + 1
       ASS isSetSort = 0
       IF j >= 20
-        IF II11 < keyVal
+        IF KI11 < keyVal
           ASS isSetSort = 1
         END
       END
       WHILE isSetSort == 1
-        ASS II12 = II11
+        ASS KI12 = KI11
         ASS JI12 = JI11
         MATH j = j - 1
         MATH jPlusOne = j + 1
         ASS isSetSort = 0
         IF j >= 20
-          IF II11 < keyVal
+          IF KI11 < keyVal
             ASS isSetSort = 1
           END
         END
       END
-      ASS II12 = keyVal
+      ASS KI12 = keyVal
       ASS JI12 = keyBool
       MATH i = i + 1
     END
@@ -67,7 +67,7 @@ SUBROUTINE INSERTION_SORT isOrder length
     ASS i = 21
     WHILE i < lengthOffset
       ASS keyVal = JI10
-      ASS keyBool = II10
+      ASS keyBool = KI10
       MATH j = i - 1
       MATH jPlusOne = j + 1
       ASS isSetSort = 0
@@ -78,7 +78,7 @@ SUBROUTINE INSERTION_SORT isOrder length
       END
       WHILE isSetSort == 1
         ASS JI12 = JI11
-        ASS II12 = II11
+        ASS KI12 = KI11
         MATH j = j - 1
         MATH jPlusOne = j + 1
         ASS isSetSort = 0
@@ -89,7 +89,7 @@ SUBROUTINE INSERTION_SORT isOrder length
         END
       END
       ASS JI12 = keyVal
-      ASS II12 = keyBool
+      ASS KI12 = keyBool
       MATH i = i + 1
     END
   END
@@ -160,7 +160,6 @@ IF LOAD
   # constant
 
   ALIAS 20 arpIndexOffset
-  ALIAS 30 latchIndexOffset
   ALIAS C8 latchInterval
 
   # local
@@ -178,12 +177,8 @@ IF LOAD
   ALIAS I17 phraseTemp # TODO
   ALIAS I18 isFirst # TODO
   ALIAS I19 latchTiming # TODO
-  ALIAS I1B latchLengthPlusOffset # TODO
   ALIAS I1C initLatch # TODO
-  # NOTE need a different iter because while phrase and arp are mutually exclusive, latch is not
-  # might not be necessary but it's safer
-  ALIAS I1D latchIter # TODO
-  # NOTE I10 - I16 taken by insertion sort above, I20 - I29 taken as numPressed order for arp, I30 - I39 taken as latch values
+  # NOTE I10 - I16 taken by insertion sort above
 
   # global
   ALIAS J1 numPressed
@@ -198,19 +193,13 @@ IF LOAD
   ALIAS J14 isLatch
 
   # assign local
-  # NOTE technically K does not need to be reset here, since only L is parsed - doing so as good practice
-  ASS I20 = 00 00 00 00 00 00 00 00 00 00
-  ASS I30 = 00 00 00 00 00 00 00 00 00 00
-  ASS K1 = 00 00 00 00 00
-  ASS L1 = 00 00 00 00 00
+  ASS K20 = 00 00 00 00 00 00 00 00 00 00
 
   ASS numPressedTotal = 0
   # needs to be set to a value too far for both negatives and positives to reach
   ASS tempPhraseVal = AAAA
-  ASS resetArp = 0
-  ASS resetPhrase = 0
+  ASS overload = 0
   ASS isFirst = 0
-  ASS latchLengthPlusOffset = 30
   ASS initLatch = 1
 
 END
@@ -226,16 +215,6 @@ END
 
 IF M0 == F0
 
-  IF M2 == 01
-    ASS numPressed = M3
-    # TEST
-    # ensure launchkey receives numPressed
-    LOG numPressed_SYSEX_RECEIVED J1
-    # END TEST
-    BLOCK
-    EXIT
-  END
-
   IF M2 == 02
     ASS arpPhraseToggle = M3
     # TEST
@@ -248,19 +227,11 @@ IF M0 == F0
 
   IF M2 == 03
     ASS arpPhraseOnOffToggle = M3
-    # inject keypresses if latch is on
+    # TODO will need to send note release if latch is on
     IF isLatch == 1
       # isArp
       IF arpPhraseToggle == 0
-        ASS latchIter = 30
-        WHILE latchIter < latchLengthPlusOffset
-          # send note release - injected because this is the only file that would process the note release
-          SEND F0 11 FF 1A II1D F7 +I +F
-          # remove from latchValues # NOTE probably unnecessary
-          ASS II1D = 00
-          MATH latchIter = latchIter + 1
-        END
-        ASS latchLengthPlusOffset = 30
+
       # isPhrase
       ELSE
 
@@ -284,6 +255,7 @@ IF M0 == F0
     EXIT
   END
 
+  # TODO should setPhrase turn latch off?
   IF M2 == 0A
     ASS setPhrase = M3
     # TEST
@@ -313,21 +285,12 @@ IF M0 == F0
     EXIT
   END
 
-  # TODO pressing keys at the same time as pressing latch will likely cause problems, since launchkey doesn't block note release when isLatch == 0
-  # worst case scenario, however, is that some keys are unintentionally released if they are part of latch and currently pressed
+  # NOTE pressing keys at the same time as turning latch off will likely cause problems, since note releases will be sent regardless of whether the keys are currently pressed or not
+  # TODO send note releases / reset initLatch on latch reset (do this for above as well)
   IF M2 == 14
     ASS isLatch = M3
     IF isLatch == 0
-      ASS latchIter = 30
-      WHILE latchIter < latchLengthPlusOffset
-        # send note release - injected because this is the only file that would process the note release
-        SEND F0 11 FF 1A II1D F7 +I +F
-        # remove from latchValues # NOTE probably unnecessary
-        ASS II1D = 00
-        MATH latchIter = latchIter + 1
-      END
-      ASS latchLengthPlusOffset = 30
-      ASS initLatch = 1
+
     END
     # TEST
     # ensure launchkey receives isLatch
@@ -354,527 +317,331 @@ IF MT == B0
   END
 END
 
-# TODO latch messes with numPressed and arp
-IF isLatch == 1
-  IF MT == 90
+IF MT == 90
+
+  # RESET
+
+  # if reset (key pressed limit exceeded), handle differently
+  IF overload == 1
+    MATH numPressed = numPressed + 1
+    # SEND SYSEX
+    SEND F0 CC 01 numPressed F7 +F
+    # END SYSEX
+    BLOCK
+    EXIT
+  END
+
+  # setting arbitrary limit on number of keys pressed at a time to 10 (using 10 as comparator here because numPressed has not yet been increased)
+  IF numPressed == A
+    ASS J20 = 00 00 00 00 00 00 00 00 00 00
+    # SEND SYSEX
+    SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
+    # END SYSEX
+    ASS K20 = 00 00 00 00 00 00 00 00 00 00
+    ASS overload = 1
+    ASS numPressedTotal = 0
+    # necessary so that numPressed does not go past zero by mistake, as we have not yet incremented for this key press
+    MATH numPressed = numPressed + 1
+    # SEND SYSEX
+    SEND F0 CC 01 numPressed F7 +F
+    # END SYSEX
+
+    # TEST
+    # ensure J array contains correct key values pressed on reset (0)
+    # ensure K array contains correct order of keys pressed on reset (0)
+    # ensure numPressed aligns with number of keys pressed on reset (0)
+    # ensure numPressedTotal aligns with number of keys pressed total on reset (0)
+    LOG J19 J19 # should always be 0, unless globalkey is updated
+    LOG J20 J20
+    LOG J21 J21
+    LOG J22 J22
+    LOG J23 J23
+    LOG J24 J24
+    LOG J25 J25
+    LOG J26 J26
+    LOG J27 J27
+    LOG J28 J28
+    LOG J29 J29
+    LOG J2A J2A # should always be first value of phrase
+    LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+    LOG K19 K19 # should always be 0
+    LOG K20 K20
+    LOG K21 K21
+    LOG K22 K22
+    LOG K23 K23
+    LOG K24 K24
+    LOG K25 K25
+    LOG K26 K26
+    LOG K27 K27
+    LOG K28 K28
+    LOG K29 K29
+    LOG K2A K2A # should always be 0
+    LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+    LOG numPressed numPressed
+    LOG numPressedTotal numPressedTotal
+    # END TEST
+
+    BLOCK
+    EXIT
+  END
+
+  # LATCH
+
+  IF isLatch == 1
     ASS latchTiming = T0
     # TEST
     LOG latchTiming latchTiming
     LOG latchInterval latchInterval
     # END TEST
     # initLatch essentially performs timer reset, since timer is only reset on scene load
-    # it prevents the overly large timer from being relevant on first set
+    # it prevents the overly large timer from being relevant on first ASS
+    # if key press is NOT within time limit
     IF initLatch == 0
       IF latchTiming > latchInterval
-        ASS latchIter = 30
-        WHILE latchIter < latchLengthPlusOffset
-          # send note release - injected because this is the only file that would process the note release
-          SEND F0 11 FF 1A II1D F7 +I +F
-          # remove from latchValues # NOTE probably unnecessary
-          ASS II1D = 00
-          MATH latchIter = latchIter + 1
-        END
-        ASS latchLengthPlusOffset = 30
+        # reset arrays
+        ASS J20 = 00 00 00 00 00 00 00 00 00 00
+        ASS K20 = 00 00 00 00 00 00 00 00 00 00
+        ASS numPressed = 0
+        ASS numPressedTotal = 0
       END
     ELSE
       ASS initLatch = 0
     END
-    ASS II1B = M1
-    # TEST
-    # ensure latchValues are storing correctly on note press
-    # ensure latchValues are reset if timing between notes is >=.2 second
-    # ensure latchValues are added to if timing between notes <.2 second
-    LOG latchValues
-    LOG I30 I30
-    LOG I31 I31
-    LOG I32 I32
-    LOG I33 I33
-    LOG I34 I34
-    LOG I35 I35
-    LOG I36 I36
-    LOG I37 I37
-    LOG I38 I38
-    LOG I39 I39
-    # END TEST
-    MATH latchLengthPlusOffset = latchLengthPlusOffset + 1
-    # TEST
-    LOG latchLengthPlusOffset latchLengthPlusOffset
-    # END TEST
   END
-  IF MT == 80
+
+  # ALL
+
+  # store note value in first open spot in array
+  MATH arpIndex = arpIndexOffset + numPressed
+  ASS JI2 = M1
+  ASS KI2 = numPressedTotal
+
+  # PHRASE
+
+  # set initial note to calculate offset
+  ASS phraseVal = M1
+  # SEND SYSEX
+  SEND F0 CC 0B phraseVal F7 +F
+  # END SYSEX
+
+  # ALL
+
+  # add one to notes overall pressed
+  MATH numPressedTotal = numPressedTotal + 1
+
+  # add one to current notes pressed
+  # NOTE this is done before sorting to make sure proper length is parsed
+  MATH numPressed = numPressed + 1
+  # SEND SYSEX
+  SEND F0 CC 01 numPressed F7 +F
+  # END SYSEX
+
+  # ARP
+
+  # sort array / hashmap according to ascending, descending, order pressed
+  IF arpValueModeMod < 6
+    INSERTION_SORT 0 numPressed
+  END
+  IF arpValueModeMod > 8
+    INSERTION_SORT 1 numPressed
+  END
+  # SEND SYSEX
+  SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
+  # END SYSEX
+
+  # ALL
+
+  IF numPressed == 1
+    ASS gateOpened = 1
+    # SEND SYSEX
+    SEND F0 CC 0E gateOpened F7 +F
+    # END SYSEX
+  END
+  # TEST TRY
+  #IF numPressed > 1
+  #  ASS gateOpened = 2
+  #END
+  # END TEST TRY
+
+  # TEST
+  # ensure J array contains correct key values pressed on key press
+  # ensure K array contains correct order of keys pressed on key press
+  # ensure numPressed aligns with number of keys pressed on key press
+  # ensure numPressedTotal aligns with number of keys pressed total on key press
+  # ensure gateOpened aligns with number of keys pressed total on key press
+  LOG J19 J19 # should always be 0, unless globalkey is updated
+  LOG J20 J20
+  LOG J21 J21
+  LOG J22 J22
+  LOG J23 J23
+  LOG J24 J24
+  LOG J25 J25
+  LOG J26 J26
+  LOG J27 J27
+  LOG J28 J28
+  LOG J29 J29
+  LOG J2A J2A # should always be first value of phrase
+  LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+  LOG K19 K19 # should always be 0
+  LOG K20 K20
+  LOG K21 K21
+  LOG K22 K22
+  LOG K23 K23
+  LOG K24 K24
+  LOG K25 K25
+  LOG K26 K26
+  LOG K27 K27
+  LOG K28 K28
+  LOG K29 K29
+  LOG K2A K2A # should always be 0
+  LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+  LOG numPressed numPressed
+  LOG numPressedTotal numPressedTotal
+  LOG gateOpened gateOpened
+  LOG phraseVal phraseVal
+  # END TEST
+
+  IF arpPhraseOnOffToggle == 1
+    NX = XX +B
+  END
+
+END
+
+
+
+IF MT == 80
+
+  # if reset (key pressed limit exceeded), handle differently
+  IF overload == 1
+    MATH numPressed = numPressed - 1
+    # SEND SYSEX
+    SEND F0 CC 01 numPressed F7 +F
+    # END SYSEX
+    IF numPressed == 0
+      ASS overload = 0
+    END
+    BLOCK
+    EXIT
+  END
+
+  # LATCH
+
+  IF isLatch == 1
     # TEST
     # ensure note releases are blocked if latch is on
     LOG NOTE_RELEASE_BLOCKED
     # END TEST
     BLOCK
+    EXIT
   END
-  # using sysex as a trojan horse to sneak in note release
-  IF M0 == F0 11 FF 1A
-    ASS M0 = 80 M4 00 00 00 00
+
+  # ALL (max for PHRASE)
+
+  # find the max l value, or the most recent key pressed
+  # if the k value, or note value of that max is M1, we need to change the phrase offset
+  # while we are iterating, we need to set the l value of whichever key is released to zero so we can reuse that index
+  WHILE iter < length
+    IF KI0 > max
+      ASS secondMax = max
+      ASS max = KI0
+    ELSE
+      IF KI0 > secondMax
+        ASS secondMax = KI0
+      END
+    END
+    IF JI0 == M1
+      ASS JI0 = 0
+      ASS KI0 = 0
+    END
+    MATH iter = iter + 1
   END
+
+  # PHRASE
+
+  IF max == M1
+    # set value equal to second most recent key pressed
+    # ASS gateOpened = 1 # NOTE uncommenting this and sending sysex would restart phrase whenever key lifted
+    ASS phraseVal = secondMax
+    # SEND SYSEX
+    SEND F0 CC 0B phraseVal F7 +F
+    # END SYSEX
+  END
+
+  # ARP
+
+  # sort array / hashmap according to ascending, descending, order pressed
+  IF arpValueModeMod < 6
+    INSERTION_SORT 0 numPressed
+  END
+  IF arpValueModeMod > 8
+    INSERTION_SORT 1 numPressed
+  END
+  # SEND SYSEX
+  SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
+  # END SYSEX
+
+  # ALL
+
+  # subract one from current notes pressed
+  # NOTE this is done after sorting to make sure any removed values are pushed out
+  MATH numPressed = numPressed - 1
+  # SEND SYSEX
+  SEND F0 CC 01 numPressed F7 +F
+  # END SYSEX
+  IF numPressed == 0
+    ASS J20 = 00 00 00 00 00 00 00 00 00 00
+    ASS K20 = 00 00 00 00 00 00 00 00 00 00
+    # SEND SYSEX
+    SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
+    # END SYSEX
+    ASS numPressedTotal = 0
+  END
+
+  # TEST
+  # ensure J array contains correct key values pressed on key release
+  # ensure K array contains correct order of keys pressed on key release
+  # ensure numPressed aligns with number of keys pressed on key release
+  # ensure numPressedTotal aligns with number of keys pressed total on key release
+  # ensure gateOpened aligns with number of keys pressed total on key release
+  LOG J19 J19 # should always be 0, unless global key is updated
+  LOG J20 J20
+  LOG J21 J21
+  LOG J22 J22
+  LOG J23 J23
+  LOG J24 J24
+  LOG J25 J25
+  LOG J26 J26
+  LOG J27 J27
+  LOG J28 J28
+  LOG J29 J29
+  LOG J2A J2A # should always be first value of phrase
+  LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+  LOG K19 K19 # should always be 0
+  LOG K20 K20
+  LOG K21 K21
+  LOG K22 K22
+  LOG K23 K23
+  LOG K24 K24
+  LOG K25 K25
+  LOG K26 K26
+  LOG K27 K27
+  LOG K28 K28
+  LOG K29 K29
+  LOG K2A K2A # should always be 0
+  LOG ~~~~~~~~~~BREAK~~~~~~~~~~
+  LOG numPressed numPressed
+  LOG numPressedTotal numPressedTotal
+  LOG gateOpened gateOpened
+  LOG phraseVal phraseVal
+  # END TEST
+
+  IF arpPhraseOnOffToggle == 1
+    NX = XX +B
+  END
+
 END
 
-# if arp / phrase is on
-IF arpPhraseOnOffToggle == 1
-  # if arp / phrase is arp
-  IF arpPhraseToggle == 0
-    # if key is pressed
-    IF MT == 90
-
-      # if reset (key pressed limit exceeded), handle differently
-      IF resetArp == 1
-        MATH numPressed = numPressed + 1
-        # SEND SYSEX
-        SEND F0 CC 01 numPressed F7 +F
-        # END SYSEX
-        BLOCK
-        EXIT
-      END
-
-      # setting arbitrary limit on number of keys pressed at a time to 10 (using 10 as comparator here because numPressed has not yet been increased)
-      IF numPressed == A
-        ASS J20 = 00 00 00 00 00 00 00 00 00 00
-        # SEND SYSEX
-        SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
-        # END SYSEX
-        ASS I20 = 00 00 00 00 00 00 00 00 00 00
-        ASS resetArp = 1
-        ASS numPressedTotal = 0
-        # necessary so that numPressed does not go past zero by mistake, as we have not yet incremented for this key press
-        MATH numPressed = numPressed + 1
-        # SEND SYSEX
-        SEND F0 CC 01 numPressed F7 +F
-        # END SYSEX
-        # TEST
-        # ensure J array contains correct key values pressed on reset (0)
-        # ensure I array contains correct order of keys pressed on reset (0)
-        # ensure numPressed aligns with number of keys pressed on reset (0)
-        # ensure numPressedTotal aligns with number of keys pressed total on reset (0)
-        LOG isArp
-        LOG J19 J19 # should always be 0, unless globalkey is updated
-        LOG J20 J20
-        LOG J21 J21
-        LOG J22 J22
-        LOG J23 J23
-        LOG J24 J24
-        LOG J25 J25
-        LOG J26 J26
-        LOG J27 J27
-        LOG J28 J28
-        LOG J29 J29
-        LOG J2A J2A # should always be first value of phrase
-        LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-        LOG I19 I19 # should always be 0
-        LOG I20 I20
-        LOG I21 I21
-        LOG I22 I22
-        LOG I23 I23
-        LOG I24 I24
-        LOG I25 I25
-        LOG I26 I26
-        LOG I27 I27
-        LOG I28 I28
-        LOG I29 I29
-        LOG I2A I2A # should always be 0
-        LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-        LOG numPressed numPressed
-        LOG numPressedTotal numPressedTotal
-        # END TEST
-        BLOCK
-        EXIT
-      END
-
-      # add one to notes overall pressed
-      MATH numPressedTotal = numPressedTotal + 1
-
-      # store note value in first open spot in array
-      MATH arpIndex = arpIndexOffset + numPressed
-      ASS JI2 = M1
-      ASS II2 = numPressedTotal
-
-      # add one to current notes pressed
-      # NOTE this is done before sorting to make sure proper length is parsed
-      MATH numPressed = numPressed + 1
-      # SEND SYSEX
-      SEND F0 CC 01 numPressed F7 +F
-      # END SYSEX
-
-      # sort array / hashmap according to ascending, descending, order pressed
-      IF arpValueModeMod < 6
-        INSERTION_SORT 0 numPressed
-      END
-      IF arpValueModeMod > 8
-        INSERTION_SORT 1 numPressed
-      END
-      # SEND SYSEX
-      SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
-      # END SYSEX
-
-      IF numPressed == 1
-        ASS gateOpened = 1
-        # SEND SYSEX
-        SEND F0 CC 0E gateOpened F7 +F
-        # END SYSEX
-      END
-      # TEST TRY
-      #IF numPressed > 1
-      #  ASS gateOpened = 2
-      #END
-      # END TEST TRY
-      # TEST
-      # ensure J array contains correct key values pressed on key press
-      # ensure I array contains correct order of keys pressed on key press
-      # ensure numPressed aligns with number of keys pressed on key press
-      # ensure numPressedTotal aligns with number of keys pressed total on key press
-      # ensure gateOpened aligns with number of keys pressed total on key press
-      LOG isArp
-      LOG J19 J19 # should always be 0, unless globalkey is updated
-      LOG J20 J20
-      LOG J21 J21
-      LOG J22 J22
-      LOG J23 J23
-      LOG J24 J24
-      LOG J25 J25
-      LOG J26 J26
-      LOG J27 J27
-      LOG J28 J28
-      LOG J29 J29
-      LOG J2A J2A # should always be first value of phrase
-      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-      LOG I19 I19 # should always be 0
-      LOG I20 I20
-      LOG I21 I21
-      LOG I22 I22
-      LOG I23 I23
-      LOG I24 I24
-      LOG I25 I25
-      LOG I26 I26
-      LOG I27 I27
-      LOG I28 I28
-      LOG I29 I29
-      LOG I2A I2A # should always be 0
-      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-      LOG numPressed numPressed
-      LOG numPressedTotal numPressedTotal
-      LOG gateOpened gateOpened
-      # END TEST
-
-      NX = XX +B
-
-    END
-
-    IF MT == 80
-
-      # if reset (key pressed limit exceeded), handle differently
-      IF resetArp == 1
-        MATH numPressed = numPressed - 1
-        # SEND SYSEX
-        SEND F0 CC 01 numPressed F7 +F
-        # END SYSEX
-        IF numPressed == 0
-          ASS resetArp = 0
-        END
-        BLOCK
-        EXIT
-      END
-
-      # remove note value from array
-      # decrease number of notes that need to be iterated through
-      ASS iter = arpIndexOffset
-      ASS isSet = 0
-      WHILE isSet != 1
-        # if iter is the note value, remove values
-        IF JI0 == M1
-          ASS JI0 = 0
-          ASS II0 = 0
-          ASS isSet = 1
-        END
-        MATH iter = iter + 1
-        IF iter == numPressed
-          ASS isSet = 1
-        END
-      END
-
-      # sort array / hashmap according to ascending, descending, order pressed
-      IF arpValueModeMod < 6
-        INSERTION_SORT 0 numPressed
-      END
-      IF arpValueModeMod > 8
-        INSERTION_SORT 1 numPressed
-      END
-      # SEND SYSEX
-      SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
-      # END SYSEX
-
-      # subract one from current notes pressed
-      # NOTE this is done after sorting to make sure any removed values are pushed out
-      MATH numPressed = numPressed - 1
-      # SEND SYSEX
-      SEND F0 CC 01 numPressed F7 +F
-      # END SYSEX
-      IF numPressed == 0
-        ASS J20 = 00 00 00 00 00 00 00 00 00 00
-        # SEND SYSEX
-        SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
-        # END SYSEX
-        ASS I20 = 00 00 00 00 00 00 00 00 00 00
-        ASS numPressedTotal = 0
-      END
-      # TEST
-      # ensure J array contains correct key values pressed on key release
-      # ensure I array contains correct order of keys pressed on key release
-      # ensure numPressed aligns with number of keys pressed on key release
-      # ensure numPressedTotal aligns with number of keys pressed total on key release
-      # ensure gateOpened aligns with number of keys pressed total on key release
-      LOG isArp
-      LOG J19 J19 # should always be 0, unless globalkey is updated
-      LOG J20 J20
-      LOG J21 J21
-      LOG J22 J22
-      LOG J23 J23
-      LOG J24 J24
-      LOG J25 J25
-      LOG J26 J26
-      LOG J27 J27
-      LOG J28 J28
-      LOG J29 J29
-      LOG J2A J2A # should always be first value of phrase
-      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-      LOG I19 I19 # should always be 0
-      LOG I20 I20
-      LOG I21 I21
-      LOG I22 I22
-      LOG I23 I23
-      LOG I24 I24
-      LOG I25 I25
-      LOG I26 I26
-      LOG I27 I27
-      LOG I28 I28
-      LOG I29 I29
-      LOG I2A I2A # should always be 0
-      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-      LOG numPressed numPressed
-      LOG numPressedTotal numPressedTotal
-      LOG gateOpened gateOpened
-      # END TEST
-
-      NX = XX +B
-
-    END
-  # else isPhrase
-  ELSE
-    # if key pressed
-    IF MT == 90
-
-      # ASS gateOpened = 1 # NOTE uncommenting this and adding sysex would restart phrase whenever key pressed
-
-      # if reset (key pressed limit exceeded), handle differently
-      IF resetPhrase == 1
-        MATH numPressed = numPressed + 1
-        # SEND SYSEX
-        SEND F0 CC 01 numPressed F7 +F
-        # END SYSEX
-        BLOCK
-        EXIT
-      END
-
-      # setting arbitrary limit on number of keys pressed at a time to 5
-      IF numPressed == 5
-        ASS L1 = 00 00 00 00 00
-        ASS resetPhrase = 1
-        ASS numPressedTotal = 0
-        # necessary so that numPressed does not go past zero by mistake, as we have not yet incremented for this key press
-        MATH numPressed = numPressed + 1
-        # SEND SYSEX
-        SEND F0 CC 01 numPressed F7 +F
-        # END SYSEX
-        # TEST
-        # ensure K array contains correct key values pressed on reset (0)
-        # ensure L array contains correct order of keys pressed on reset (0)
-        # ensure numPressed aligns with number of keys pressed on reset (0)
-        # ensure numPressedTotal aligns with number of keys pressed total on reset (0)
-        LOG isPhrase
-        LOG K0 K0 should always be zero
-        LOG K1 K1
-        LOG K2 K2
-        LOG K3 K3
-        LOG K4 K4
-        LOG K5 K5
-        LOG K6 K6 # should always be zero
-        LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-        LOG L0 L0 # should always be zero
-        LOG L1 L1
-        LOG L2 L2
-        LOG L3 L3
-        LOG L4 L4
-        LOG L5 L5
-        LOG L6 L6 # should always be zero
-        LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-        LOG numPressed numPressed
-        LOG numPressedTotal numPressedTotal
-        # END TEST
-        BLOCK
-        EXIT
-      END
-
-      # set initial note to calculate offset
-      ASS phraseVal = M1
-      # SEND SYSEX
-      SEND F0 CC 0B phraseVal F7 +F
-      # END SYSEX
-
-      # add to number of keys pressed
-      MATH numPressed = numPressed + 1
-      # SEND SYSEX
-      SEND F0 CC 01 numPressed F7 +F
-      # END SYSEX
-      MATH numPressedTotal = numPressedTotal + 1
-
-      # we need to have a while loop here to account for the user pressing and releasing keys in different orders
-      # say user presses A, B, C, then lifts up B
-      # this sets numPressed to 2, but when another key is pressed it will overwrite C if we continue linearly
-      ASS iter = 1
-      ASS isSet = 0
-      WHILE isSet != 1
-        IF LI0 == 0
-          # add note value into K - this array's indices will all be >= 1
-          ASS KI0 = M1
-          # add note index in L to show it is pressed - this array's indices will all be >= 1
-          ASS LI0 = numPressedTotal
-          ASS isSet = 1
-        END
-        MATH iter = iter + 1
-      END
-
-      IF numPressed == 1
-        ASS gateOpened = 1
-        # SEND SYSEX
-        SEND F0 CC 0E gateOpened F7 +F
-        # END SYSEX
-      END
-      # TEST
-      # ensure K array contains correct key values pressed on key press
-      # ensure L array contains correct order of keys pressed on key press
-      # ensure numPressed aligns with number of keys pressed on key press
-      # ensure numPressedTotal aligns with number of keys pressed total on key press
-      # ensure gateOpened aligns with number of keys pressed total on key press
-      LOG isPhrase
-      LOG K0 K0 should always be zero
-      LOG K1 K1
-      LOG K2 K2
-      LOG K3 K3
-      LOG K4 K4
-      LOG K5 K5
-      LOG K6 K6 # should always be zero
-      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-      LOG L0 L0 # should always be zero
-      LOG L1 L1
-      LOG L2 L2
-      LOG L3 L3
-      LOG L4 L4
-      LOG L5 L5
-      LOG L6 L6 # should always be zero
-      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-      LOG numPressed numPressed
-      LOG numPressedTotal numPressedTotal
-      LOG gateOpened gateOpened
-      LOG phraseVal phraseVal
-      # END TEST
-
-    END
-
-    IF MT == 80
-
-      # if reset (key pressed limit exceeded), handle differently
-      IF resetPhrase == 1
-        MATH numPressed = numPressed - 1
-        # SEND SYSEX
-        SEND F0 CC 01 numPressed F7 +F
-        # END SYSEX
-        IF numPressed == 0
-          ASS resetPhrase = 0
-        END
-        BLOCK
-        EXIT
-      END
-
-      # stop if no keys pressed
-      MATH numPressed = numPressed - 1
-      # SEND SYSEX
-      SEND F0 CC 01 numPressed F7 +F
-      # END SYSEX
-      IF numPressed < 1
-        ASS L1 = 00 00 00 00 00
-        ASS numPressedTotal = 0
-      END
-
-      # find the max l value, or the most recent key pressed
-      # if the k value, or note value of that max is M1, we need to change the phrase offset
-      # while we are iterating, we need to set the l value of whichever key is released to zero so we can reuse that index
-      ASS max = 0
-      ASS secondMax = 0
-      ASS iter = 1
-      WHILE iter <= 5
-        IF LI0 > max
-          ASS secondMax = max
-          ASS max = LI0
-          ASS secondMaxIndex = maxIndex
-          ASS maxIndex = iter
-        ELSE
-          IF LI0 > secondMax
-            ASS secondMax = LI0
-            ASS secondMaxIndex = iter
-          END
-        END
-        IF KI0 == M1
-          ASS LI0 = 0
-        END
-        MATH iter = iter + 1
-      END
-      IF KI5 == M1
-        # set value equal to second most recent key pressed
-        # ASS gateOpened = 1 # NOTE uncommenting this and sending sysex would restart phrase whenever key lifted
-        ASS phraseVal = KI7
-        # SEND SYSEX
-        SEND F0 CC 0B phraseVal F7 +F
-        # END SYSEX
-      END
-      # TEST
-      # ensure K array contains correct key values pressed on key release
-      # ensure L array contains correct order of keys pressed on key release
-      # ensure numPressed aligns with number of keys pressed on key release
-      # ensure numPressedTotal aligns with number of keys pressed total on key release
-      # ensure gateOpened aligns with number of keys pressed total on key release
-      LOG isPhrase
-      LOG K0 K0 should always be zero
-      LOG K1 K1
-      LOG K2 K2
-      LOG K3 K3
-      LOG K4 K4
-      LOG K5 K5
-      LOG K6 K6 # should always be zero
-      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-      LOG L0 L0 # should always be zero
-      LOG L1 L1
-      LOG L2 L2
-      LOG L3 L3
-      LOG L4 L4
-      LOG L5 L5
-      LOG L6 L6 # should always be zero
-      LOG ~~~~~~~~~~BREAK~~~~~~~~~~
-      LOG numPressed numPressed
-      LOG numPressedTotal numPressedTotal
-      LOG gateOpened gateOpened
-      LOG phraseVal phraseVal
-      # END TEST
-    END
-    # only block notes if setPhrase is zero - if it's one, we need the next if statement to process the note
-    IF setPhrase == 0
-      NX = XX +B
-    END
-  END
-END
-
+# TODO add these if statements to if statements above
 IF setPhrase == 1
   IF MT == 90
     # because we're taking offset here, we need to record each step as the difference between it and the last step
