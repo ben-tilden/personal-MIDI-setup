@@ -229,6 +229,10 @@ IF M0 == F0
     # FF > 29, but also implies signal message so need to add logic for that
     # might need to be revised at some point in the future
     IF M2 != FF
+      # reset phraseValues if we're restarting
+      IF M2 == 2A
+        ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+      END
       MATH phraseTemp = M3 * 100
       MATH phraseTemp = phraseTemp + M4
       ASS JM2 = phraseTemp
@@ -290,7 +294,7 @@ IF M0 == F0
     ASS J8 = 64 # velocity
     ASS J9 = 00 # arpValueModeMod
     ASS JA = 00 # setPhrase
-    ASS JB = 00 # phraseVal
+    ASS JB = 3C # phraseVal
     ASS JC = 2A # phraseindex
     ASS JD = 2A # phraseLengthPlusOffset
     ASS JE = 00 # gateOpened

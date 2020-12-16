@@ -201,7 +201,7 @@ IF M0 == F0
     ASS J8 = 64 # velocity
     ASS J9 = 00 # arpValueModeMod
     ASS JA = 00 # setPhrase
-    ASS JB = 00 # phraseVal
+    ASS JB = 3C # phraseVal
     ASS JC = 2A # phraseindex
     ASS JD = 2A # phraseLengthPlusOffset
     ASS JE = 00 # gateOpened
@@ -215,6 +215,8 @@ IF M0 == F0
     ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
     # send init tempo lighting
     SEND BA 01 $26
+    # send init velocity lighting
+    SEND BA 03 $100
     # send init drum lighting
     SEND 90 04 01
     # TEST
@@ -1243,7 +1245,7 @@ IF MT == B0
   IF M1 == 3
     ASS velocity = M2
     # SEND SYSEX
-    SEND F0 CC 08 velocity F7 +F
+    SEND F0 C1 08 velocity F7 +F
     # END SYSEX
     # TEST
     # ensure velocity aligns with velocity

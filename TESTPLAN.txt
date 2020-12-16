@@ -42,57 +42,36 @@
 # launchkey mini
 ###
 
-# ensure launchkey receives numPressed # not implemented
 # ensure launchkey receives arpPhraseToggle
 # ensure launchkey receives arpPhraseOnOffToggle
+# ensure launchkey receives velocity
 # ensure launchkey receives arpValueModeMod
 # ensure launchkey receives setPhrase
-# ensure launchkey receives phraseIndex
 # ensure launchkey receives isLatch
 
 # ensure global array reset
-# ensure xtouch lighting reset
+# ensure xtouch reset
 # ensure channel information reset (will need to be done on individual files) # pending implementation completion
 
-# ensure latchValues are storing correctly on note press
-# ensure latchValues are reset if timing between notes is >=.1 second
-# ensure latchValues are added to if timing between notes <.1 second
-
-# ensure note releases are blocked if latch is on
-
 # ensure J array contains correct key values pressed on reset (0)
-# ensure I array contains correct order of keys pressed on reset (0)
+# ensure K array contains correct order of keys pressed on reset (0)
 # ensure numPressed aligns with number of keys pressed on reset (0)
 # ensure numPressedTotal aligns with number of keys pressed total on reset (0)
+# ensure phraseVal reset to 3C on reset
 
 # ensure J array contains correct key values pressed on key press
-# ensure I array contains correct order of keys pressed on key press
+# ensure K array contains correct order of keys pressed on key press
 # ensure numPressed aligns with number of keys pressed on key press
 # ensure numPressedTotal aligns with number of keys pressed total on key press
 # ensure gateOpened aligns with number of keys pressed total on key press
+# ensure phraseVal aligns with correct phraseVal on key press
 
 # ensure J array contains correct key values pressed on key release
-# ensure I array contains correct order of keys pressed on key release
+# ensure K array contains correct order of keys pressed on key release
 # ensure numPressed aligns with number of keys pressed on key release
 # ensure numPressedTotal aligns with number of keys pressed total on key release
 # ensure gateOpened aligns with number of keys pressed total on key release
-
-# ensure K array contains correct key values pressed on reset (0)
-# ensure L array contains correct order of keys pressed on reset (0)
-# ensure numPressed aligns with number of keys pressed on reset (0)
-# ensure numPressedTotal aligns with number of keys pressed total on reset (0)
-
-# ensure K array contains correct key values pressed on key press
-# ensure L array contains correct order of keys pressed on key press
-# ensure numPressed aligns with number of keys pressed on key press
-# ensure numPressedTotal aligns with number of keys pressed total on key press
-# ensure gateOpened aligns with number of keys pressed total on key press
-
-# ensure K array contains correct key values pressed on key release
-# ensure L array contains correct order of keys pressed on key release
-# ensure numPressed aligns with number of keys pressed on key release
-# ensure numPressedTotal aligns with number of keys pressed total on key release
-# ensure gateOpened aligns with number of keys pressed total on key release
+# ensure phraseVal aligns with correct phraseVal on key release
 
 # ensure phrase is being correctly set
 # ensure setPhrase is 0 if max limit reached, otherwise 1
@@ -100,6 +79,19 @@
 # ensure phraseIndex is the previous index plus one
 
 # ensure sysex resets phraseIndex when setPhrase is turned off
+
+# ensure latchValues are storing correctly on note press
+# ensure latchValues are reset if timing between notes is >=.1 second
+# ensure latchValues are added to if timing between notes <.1 second
+
+# ensure note releases are blocked if latch is on
+
+# ensure transition between arp and phrase is smooth if module is on
+# ensure note release properly sent when arp/phrase turned on
+# ensure general transition with latch on to arp/phrase on is smooth
+# ensure note press properly sent when arp/phrase turned off
+# ensure general transition with latch on to arp/phrase off is smooth
+# ensure note release properly sent when latch turned off
 
 ###
 # channel #

@@ -1,14 +1,7 @@
 # launchkey mini test code
 
 # TEST NOTES
-# TODO latch is sending a note off that arp (and likely phrase) never actually had on in the first place
-# can we send the note again once we press arp / phrase?
-# phrase would only need to receive the first value in the array, since multiple keys don't matter
-# incorrect - note release would still impact num pressed
-# issue here is that it would be most recent key pressed, not first key pressed
-# could possibly use latchLengthOffset - 1 to reverse sending
-#
-# can we switch between arpPhraseToggle without issue?
+
 
 
 
@@ -115,7 +108,7 @@ IF LOAD
   ASS J8 = 64 # velocity
   ASS J9 = 00 # arpValueModeMod
   ASS JA = 00 # setPhrase
-  ASS JB = 00 # phraseVal
+  ASS JB = 3C # phraseVal
   ASS JC = 2A # phraseindex
   ASS JD = 2A # phraseLengthPlusOffset
   ASS JE = 00 # gateOpened
@@ -164,16 +157,14 @@ IF LOAD
 
   # local
   ALIAS I0 iter
-  ALIAS I1 isSet
   ALIAS I2 arpIndex
   ALIAS I3 numPressedTotal
   ALIAS I4 max
-  ALIAS I5 maxIndex
+  ALIAS I5 valOfMax
   ALIAS I6 secondMax
-  ALIAS I7 secondMaxIndex
+  ALIAS I7 valOfSecondMax
   ALIAS I8 tempPhraseVal
-  ALIAS I9 resetArp
-  ALIAS IA resetPhrase
+  ALIAS I9 overload
   ALIAS I17 phraseTemp # TODO
   ALIAS I18 isFirst # TODO
   ALIAS I19 latchTiming # TODO
@@ -184,6 +175,7 @@ IF LOAD
   ALIAS J1 numPressed
   ALIAS J2 arpPhraseToggle
   ALIAS J3 arpPhraseOnOffToggle
+  ALIAS J8 velocity
   ALIAS J9 arpValueModeMod
   ALIAS JA setPhrase
   ALIAS JB phraseVal
@@ -196,6 +188,7 @@ IF LOAD
   ASS K20 = 00 00 00 00 00 00 00 00 00 00
 
   ASS numPressedTotal = 0
+  ASS arpIndex = arpIndexOffset
   # needs to be set to a value too far for both negatives and positives to reach
   ASS tempPhraseVal = AAAA
   ASS overload = 0
@@ -217,8 +210,17 @@ IF M0 == F0
 
   IF M2 == 02
     ASS arpPhraseToggle = M3
+    # if module is currently on
+    IF arpPhraseOnOffToggle == 1
+      # need to open gate so that there's a smooth transition here
+      ASS gateOpened = 1
+      # SEND SYSEX
+      SEND F0 CC 0E gateOpened F7 +F
+      # END SYSEX
+    END
     # TEST
     # ensure launchkey receives arpPhraseToggle
+    # ensure transition between arp and phrase is smooth if module is on
     LOG arpPhraseToggle_SYSEX_RECEIVED J2
     # END TEST
     BLOCK
@@ -227,19 +229,44 @@ IF M0 == F0
 
   IF M2 == 03
     ASS arpPhraseOnOffToggle = M3
-    # TODO will need to send note release if latch is on
+    # will need to send note release if latch is on
     IF isLatch == 1
-      # isArp
-      IF arpPhraseToggle == 0
-
-      # isPhrase
+      IF arpPhraseOnOffToggle == 1
+        ASS iter = arpIndexOffset
+        WHILE iter < arpIndex
+          SEND 80 JI0 00
+          MATH iter = iter + 1
+        END
+        # need to open gate so that there's a smooth transition here
+        ASS gateOpened = 1
+        # SEND SYSEX
+        SEND F0 CC 0E gateOpened F7 +F
+        # END SYSEX
       ELSE
-
+        ASS iter = arpIndexOffset
+        WHILE iter < arpIndex
+          SEND 90 JI0 velocity
+          MATH iter = iter + 1
+        END
       END
     END
     # TEST
     # ensure launchkey receives arpPhraseOnOffToggle
+    # ensure note release properly sent when arp/phrase turned on
+    # ensure general transition with latch on to arp/phrase on is smooth
+    # ensure note press properly sent when arp/phrase turned off
+    # ensure general transition with latch on to arp/phrase off is smooth
     LOG arpPhraseOnOffToggle_SYSEX_RECEIVED J3
+    # END TEST
+    BLOCK
+    EXIT
+  END
+
+  IF M2 == 08
+    ASS velocity = M3
+    # TEST
+    # ensure launchkey receives velocity
+    LOG velocity_SYSEX_RECEIVED J8
     # END TEST
     BLOCK
     EXIT
@@ -275,25 +302,23 @@ IF M0 == F0
     EXIT
   END
 
-  IF M2 == 0C
-    ASS phraseIndex = M3
-    # TEST
-    # ensure launchkey receives phraseIndex
-    LOG phraseIndex_SYSEX_RECEIVED JC
-    # END TEST
-    BLOCK
-    EXIT
-  END
-
-  # NOTE pressing keys at the same time as turning latch off will likely cause problems, since note releases will be sent regardless of whether the keys are currently pressed or not
-  # TODO send note releases / reset initLatch on latch reset (do this for above as well)
   IF M2 == 14
     ASS isLatch = M3
-    IF isLatch == 0
-
-    END
+      IF isLatch == 0
+        ASS iter = arpIndexOffset
+        WHILE iter < arpIndex
+          SEND 80 JI0 00
+          ASS JI0 = 0
+          ASS KI0 = 0
+          MATH iter = iter + 1
+        END
+        ASS numPressed = 0
+        ASS numPressedTotal = 0
+        ASS arpIndex = arpIndexOffset
+      END
     # TEST
     # ensure launchkey receives isLatch
+    # ensure note release properly sent when latch turned off
     LOG isLatch_SYSEX_RECEIVED J14
     # END TEST
     BLOCK
@@ -340,10 +365,15 @@ IF MT == 90
     ASS K20 = 00 00 00 00 00 00 00 00 00 00
     ASS overload = 1
     ASS numPressedTotal = 0
+    ASS arpIndex = arpIndexOffset
     # necessary so that numPressed does not go past zero by mistake, as we have not yet incremented for this key press
     MATH numPressed = numPressed + 1
     # SEND SYSEX
     SEND F0 CC 01 numPressed F7 +F
+    # END SYSEX
+    ASS phraseVal = 3C
+    # SEND SYSEX
+    SEND F0 CC 0B phraseVal F7 +F
     # END SYSEX
 
     # TEST
@@ -351,6 +381,7 @@ IF MT == 90
     # ensure K array contains correct order of keys pressed on reset (0)
     # ensure numPressed aligns with number of keys pressed on reset (0)
     # ensure numPressedTotal aligns with number of keys pressed total on reset (0)
+    # ensure phraseVal reset to 3C on reset
     LOG J19 J19 # should always be 0, unless globalkey is updated
     LOG J20 J20
     LOG J21 J21
@@ -379,6 +410,7 @@ IF MT == 90
     LOG ~~~~~~~~~~BREAK~~~~~~~~~~
     LOG numPressed numPressed
     LOG numPressedTotal numPressedTotal
+    LOG phraseVal phraseVal
     # END TEST
 
     BLOCK
@@ -390,6 +422,9 @@ IF MT == 90
   IF isLatch == 1
     ASS latchTiming = T0
     # TEST
+    # ensure latchValues are storing correctly on note press
+    # ensure latchValues are reset if timing between notes is >=.1 second
+    # ensure latchValues are added to if timing between notes <.1 second
     LOG latchTiming latchTiming
     LOG latchInterval latchInterval
     # END TEST
@@ -398,23 +433,32 @@ IF MT == 90
     # if key press is NOT within time limit
     IF initLatch == 0
       IF latchTiming > latchInterval
-        # reset arrays
-        ASS J20 = 00 00 00 00 00 00 00 00 00 00
-        ASS K20 = 00 00 00 00 00 00 00 00 00 00
+        # reset arrays and send note releases
+        ASS iter = arpIndexOffset
+        WHILE iter < arpIndex
+          # NOTE if the note value is the same as a value that has just been pressed, we need to resend the value, since that is what will be happening with any other overlapping values pressed
+          SEND 80 JI0 00
+          IF M1 == JI0
+            SEND 90 JI0 velocity
+          END
+          ASS JI0 = 0
+          ASS KI0 = 0
+          MATH iter = iter + 1
+        END
         ASS numPressed = 0
         ASS numPressedTotal = 0
+        ASS arpIndex = arpIndexOffset
+        # TEST
+        LOG TIMING_OFF_LATCH_RESET
+        # END TEST
       END
     ELSE
       ASS initLatch = 0
+      # TEST
+      LOG initLatch initLatch
+      # END TEST
     END
   END
-
-  # ALL
-
-  # store note value in first open spot in array
-  MATH arpIndex = arpIndexOffset + numPressed
-  ASS JI2 = M1
-  ASS KI2 = numPressedTotal
 
   # PHRASE
 
@@ -429,12 +473,22 @@ IF MT == 90
   # add one to notes overall pressed
   MATH numPressedTotal = numPressedTotal + 1
 
+  # store note value in first open spot in array
+  # NOTE this uses arpIndex, which should be set to arpIndexOffset before first key is pressed
+  # after first key is pressed, arpIndex will be increased by numPressed (see below)
+  ASS JI2 = M1
+  ASS KI2 = numPressedTotal
+
   # add one to current notes pressed
   # NOTE this is done before sorting to make sure proper length is parsed
+  # this is done after array assignment so that the alignment with arpIndex is accurate in setting
   MATH numPressed = numPressed + 1
   # SEND SYSEX
   SEND F0 CC 01 numPressed F7 +F
   # END SYSEX
+
+  # NOTE this could also be MATH arpIndex = arpIndexOffset + numPressed
+  MATH arpIndex = arpIndex + 1
 
   # ARP
 
@@ -469,6 +523,7 @@ IF MT == 90
   # ensure numPressed aligns with number of keys pressed on key press
   # ensure numPressedTotal aligns with number of keys pressed total on key press
   # ensure gateOpened aligns with number of keys pressed total on key press
+  # ensure phraseVal aligns with correct phraseVal on key press
   LOG J19 J19 # should always be 0, unless globalkey is updated
   LOG J20 J20
   LOG J21 J21
@@ -502,7 +557,10 @@ IF MT == 90
   # END TEST
 
   IF arpPhraseOnOffToggle == 1
-    NX = XX +B
+    # only block notes if setPhrase is zero - if it's one, we need the setPhrase if statement to process the note
+    IF setPhrase == 0
+      NX = XX +B
+    END
   END
 
 END
@@ -540,13 +598,21 @@ IF MT == 80
   # find the max l value, or the most recent key pressed
   # if the k value, or note value of that max is M1, we need to change the phrase offset
   # while we are iterating, we need to set the l value of whichever key is released to zero so we can reuse that index
-  WHILE iter < length
+  ASS max = 0
+  ASS valOfMax = 0
+  ASS secondMax = 0
+  ASS valOfSecondMax = 0
+  ASS iter = arpIndexOffset
+  WHILE iter < arpIndex
     IF KI0 > max
       ASS secondMax = max
+      ASS valOfSecondMax = valOfMax
       ASS max = KI0
+      ASS valOfMax = JI0
     ELSE
       IF KI0 > secondMax
         ASS secondMax = KI0
+        ASS valOfSecondMax = JI0
       END
     END
     IF JI0 == M1
@@ -558,10 +624,15 @@ IF MT == 80
 
   # PHRASE
 
-  IF max == M1
+  # TEST
+  LOG valOfMax valOfMax
+  LOG M1 M1
+  # END TEST
+
+  IF valOfMax == M1
     # set value equal to second most recent key pressed
     # ASS gateOpened = 1 # NOTE uncommenting this and sending sysex would restart phrase whenever key lifted
-    ASS phraseVal = secondMax
+    ASS phraseVal = valOfSecondMax
     # SEND SYSEX
     SEND F0 CC 0B phraseVal F7 +F
     # END SYSEX
@@ -588,13 +659,21 @@ IF MT == 80
   # SEND SYSEX
   SEND F0 CC 01 numPressed F7 +F
   # END SYSEX
+
+  MATH arpIndex = arpIndex - 1
+
   IF numPressed == 0
     ASS J20 = 00 00 00 00 00 00 00 00 00 00
-    ASS K20 = 00 00 00 00 00 00 00 00 00 00
     # SEND SYSEX
     SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
     # END SYSEX
+    ASS K20 = 00 00 00 00 00 00 00 00 00 00
     ASS numPressedTotal = 0
+    ASS arpIndex = arpIndexOffset
+    ASS phraseVal = 3C
+    # SEND SYSEX
+    SEND F0 CC 0B phraseVal F7 +F
+    # END SYSEX
   END
 
   # TEST
@@ -603,6 +682,7 @@ IF MT == 80
   # ensure numPressed aligns with number of keys pressed on key release
   # ensure numPressedTotal aligns with number of keys pressed total on key release
   # ensure gateOpened aligns with number of keys pressed total on key release
+  # ensure phraseVal aligns with correct phraseVal on key release
   LOG J19 J19 # should always be 0, unless global key is updated
   LOG J20 J20
   LOG J21 J21
@@ -641,12 +721,12 @@ IF MT == 80
 
 END
 
-# TODO add these if statements to if statements above
+# NOTE could add these if statements to if statements above - I think this is slightly more readable
 IF setPhrase == 1
   IF MT == 90
     # because we're taking offset here, we need to record each step as the difference between it and the last step
     # if tempPhraseVal has a previous value (i.e. is not the first key pressed in the phrase)
-    # NOTE max phrase length at this point is 32
+    # NOTE max phrase length at this point is 30
     IF tempPhraseVal == AAAA
       ASS tempPhraseVal = M1
     END
@@ -685,11 +765,6 @@ IF setPhrase == 1
     # END SYSEX
     ASS phraseIndex = 2A
     ASS tempPhraseVal = AAAA
-    # NOTE since this message is for turning off the light, it only needs to be sent when the final note is not a rest
-    # rest button handles this in xtouch
-    IF J47 != 2E57
-      SEND F0 FF 0A setPhrase F7 +F
-    END
   END
   FX = XX +B
   # block notes if phrase is on, since keypresses then should not make a noise
@@ -741,5 +816,3 @@ IF setPhrase == 1
   LOG phraseLengthPlusOffset phraseLengthPlusOffset
   # END TEST
 END
-
-# NOTE could likely reorder everything here to be grouped in one if statement to make code more readable if desired
