@@ -1,7 +1,7 @@
 # launchkey mini test code
 
 # TEST NOTES
-
+# NOTE phrase tested and passed all tests, but there may still be one unconfirmed bug where the notes are transposed downward incorrectly
 
 
 
