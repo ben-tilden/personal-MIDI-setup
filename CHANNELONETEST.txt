@@ -415,7 +415,7 @@ IF currentChannel == 0
               LOG arpIndex arpIndex
               # END TEST
               SEND 90 JI2 velocity
-              SEND 80 JI2 velocity +DG7
+              SEND 80 JI2 velocity +DJ7
             END
             # if value mode is 1 (asc 2)
             IF arpValueModeMod == 1
@@ -446,13 +446,13 @@ IF currentChannel == 0
                   MATH arpIndex = arpIndex - 1
                 END
                 SEND 90 JI2 velocity
-                SEND 80 JI2 velocity +DG7
+                SEND 80 JI2 velocity +DJ7
                 ASS isOctave = 1
               # if isOctave, add 12 semitones and send that instead
               ELSE
                 MATH arpOctaveValue = JI2 + $12 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
-                SEND 80 arpOctaveValue velocity +DG7
+                SEND 80 arpOctaveValue velocity +DJ7
                 ASS isOctave = 0
               END
             END
@@ -486,21 +486,21 @@ IF currentChannel == 0
                   MATH arpIndex = arpIndex - 1
                 END
                 SEND 90 JI2 velocity
-                SEND 80 JI2 velocity +DG7
+                SEND 80 JI2 velocity +DJ7
                 MATH isOctave = isOctave + 1
               END
               # if isOctaveMod is 1, add 12 semitones and send that instead
               IF isOctaveMod == 1
                 MATH arpOctaveValue = JI2 + $12 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
-                SEND 80 arpOctaveValue velocity +DG7
+                SEND 80 arpOctaveValue velocity +DJ7
                 MATH isOctave = isOctave + 1
               END
               # if isOctaveMod is 2, add 24 semitones and send that instead
               IF isOctaveMod == 2
                 MATH arpOctaveValue = JI2 + $24 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
-                SEND 80 arpOctaveValue velocity +DG7
+                SEND 80 arpOctaveValue velocity +DJ7
                 MATH isOctave = isOctave + 1
               END
             END
@@ -529,7 +529,7 @@ IF currentChannel == 0
                 MATH arpIndex = arpIndex + 1
               END
               SEND 90 JI2 velocity
-              SEND 80 JI2 velocity +DG7
+              SEND 80 JI2 velocity +DJ7
             END
             # if value mode is 4 (desc 2)
             IF arpValueModeMod == 4
@@ -561,13 +561,13 @@ IF currentChannel == 0
                   MATH arpIndex = arpIndex + 1
                 END
                 SEND 90 JI2 velocity
-                SEND 80 JI2 velocity +DG7
+                SEND 80 JI2 velocity +DJ7
                 ASS isOctave = 1
               # if isOctave, add 12 semitones and send that instead
               ELSE
                 MATH arpOctaveValue = JI2 + $12 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
-                SEND 80 arpOctaveValue velocity +DG7
+                SEND 80 arpOctaveValue velocity +DJ7
                 ASS isOctave = 0
               END
             END
@@ -602,21 +602,21 @@ IF currentChannel == 0
                   MATH arpIndex = arpIndex + 1
                 END
                 SEND 90 JI2 velocity
-                SEND 80 JI2 velocity +DG7
+                SEND 80 JI2 velocity +DJ7
                 ASS isOctave = 1
               END
               # if isOctaveMod is 1, add 12 semitones and send that instead
               IF isOctaveMod == 1
                 MATH arpOctaveValue = JI2 + $12 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
-                SEND 80 arpOctaveValue velocity +DG7
+                SEND 80 arpOctaveValue velocity +DJ7
                 MATH isOctave = isOctave + 1
               END
               # if isOctaveMod is 2, add 24 semitones and send that instead
               IF isOctaveMod == 2
                 MATH arpOctaveValue = JI2 + $24 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
-                SEND 80 arpOctaveValue velocity +DG7
+                SEND 80 arpOctaveValue velocity +DJ7
                 MATH isOctave = isOctave + 1
               END
               # NOTE could use if else here, have chosen not to because I think this is more readable
@@ -644,7 +644,7 @@ IF currentChannel == 0
               # END TEST
               MATH arpIndex = arpIndex + arpOffset
               SEND 90 JI2 velocity
-              SEND 80 JI2 velocity +DG7
+              SEND 80 JI2 velocity +DJ7
             END
             # if value mode is 7 (rand 2)
             IF arpValueModeMod == 7
@@ -672,12 +672,12 @@ IF currentChannel == 0
               # if not isOctaveMod, business as usual
               IF isOctaveMod == 0
                 SEND 90 JI2 velocity
-                SEND 80 JI2 velocity +DG7
+                SEND 80 JI2 velocity +DJ7
               # if isOctaveMod, add 12 semitones and send that instead
               ELSE
                 MATH arpOctaveValue = JI2 + $12 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
-                SEND 80 arpOctaveValue velocity +DG7
+                SEND 80 arpOctaveValue velocity +DJ7
               END
             END
             # if value mode is 8 (rand 3)
@@ -705,19 +705,19 @@ IF currentChannel == 0
               # if isOctaveMod is 0, business as usual
               IF isOctaveMod == 0
                 SEND 90 JI2 velocity
-                SEND 80 JI2 velocity +DG7
+                SEND 80 JI2 velocity +DJ7
               END
               # if isOctaveMod is 1, add 12 semitones and send that instead
               IF isOctaveMod == 1
                 MATH arpOctaveValue = JI2 + $12 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
-                SEND 80 arpOctaveValue velocity +DG7
+                SEND 80 arpOctaveValue velocity +DJ7
               END
               # if isOctaveMod is 2, add 24 semitones and send that instead
               IF isOctaveMod == 2
                 MATH arpOctaveValue = JI2 + $24 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
-                SEND 80 arpOctaveValue velocity +DG7
+                SEND 80 arpOctaveValue velocity +DJ7
               END
             END
             # NOTE this currently appears the same as the general asc - this is because the way they are sorted will be the same
@@ -744,7 +744,7 @@ IF currentChannel == 0
                 MATH arpIndex = arpIndex - 1
               END
               SEND 90 JI2 velocity
-              SEND 80 JI2 velocity +DG7
+              SEND 80 JI2 velocity +DJ7
             END
             # if value mode is 10 (order 2)
             IF arpValueModeMod == A
@@ -775,13 +775,13 @@ IF currentChannel == 0
                   MATH arpIndex = arpIndex - 1
                 END
                 SEND 90 JI2 velocity
-                SEND 80 JI2 velocity +DG7
+                SEND 80 JI2 velocity +DJ7
                 ASS isOctave = 1
               # if isOctave, add 12 semitones and send that instead
               ELSE
                 MATH arpOctaveValue = JI2 + $12 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
-                SEND 80 arpOctaveValue velocity +DG7
+                SEND 80 arpOctaveValue velocity +DJ7
                 ASS isOctave = 0
               END
             END
@@ -815,21 +815,21 @@ IF currentChannel == 0
                   MATH arpIndex = arpIndex - 1
                 END
                 SEND 90 JI2 velocity
-                SEND 80 JI2 velocity +DG7
+                SEND 80 JI2 velocity +DJ7
                 MATH isOctave = isOctave + 1
               END
               # if isOctaveMod is 1, add 12 semitones and send that instead
               IF isOctaveMod == 1
                 MATH arpOctaveValue = JI2 + $12 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
-                SEND 80 arpOctaveValue velocity +DG7
+                SEND 80 arpOctaveValue velocity +DJ7
                 MATH isOctave = isOctave + 1
               END
               # if isOctaveMod is 2, add 24 semitones and send that instead
               IF isOctaveMod == 2
                 MATH arpOctaveValue = JI2 + $24 # NOTE see if this should be -12 or +12
                 SEND 90 arpOctaveValue velocity
-                SEND 80 arpOctaveValue velocity +DG7
+                SEND 80 arpOctaveValue velocity +DJ7
                 MATH isOctave = isOctave + 1
               END
             END
@@ -859,7 +859,7 @@ IF currentChannel == 0
               LOG phraseVal_OFFSET JI7
               # END TEST
               SEND 90 phraseValSend velocity
-              SEND 80 phraseValSend velocity +DG7
+              SEND 80 phraseValSend velocity +DJ7
             END
             # TEST
             # ensure rest functionality is working

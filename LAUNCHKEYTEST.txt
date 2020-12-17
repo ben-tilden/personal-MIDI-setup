@@ -315,6 +315,12 @@ IF M0 == F0
         ASS numPressed = 0
         ASS numPressedTotal = 0
         ASS arpIndex = arpIndexOffset
+        # SEND SYSEX
+        SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
+        # END SYSEX
+        # SEND SYSEX
+        SEND F0 CC 01 numPressed F7 +F
+        # END SYSEX
       END
     # TEST
     # ensure launchkey receives isLatch

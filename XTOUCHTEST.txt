@@ -104,6 +104,8 @@ IF LOAD
   ASS arpValueMode = 8004
   # NOTE this is set to 'select' on initial load
   ASS previousDrumVal = 04
+  ASS gateFactor = 1
+
 END
 
 # sysex reception
