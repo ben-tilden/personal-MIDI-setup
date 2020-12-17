@@ -28,7 +28,7 @@
 # drumParams(Part1)
 # drumParams(Part2)
 # drumParams(Part1+2)
-# drumParams(waveguidesend)
+# drumParams(waveguidesend) # TODO remove this value from global array
 
 name                      | sysex                       | range      | range (hex) | default | xtouch      | launchkey   | channel
 ----                      | -----                       | -----      | ----------- | ------- | ------      | ---------   | -------
@@ -51,7 +51,7 @@ waveguideToggle           | F0 00    0F    val  F7      | (0-1)      | (0-1)    
 drumParams(Part1)         | F0 00    10    val  F7      | (0-127)    | (1-7F)      | 0E      | CHANGE      | -           | -
 drumParams(Part2)         | F0 00    11    val  F7      | (0-127)    | (1-7F)      | 0F      | CHANGE      | -           | -
 drumParams(Part1+2)       | F0 00    12    val  F7      | (0-127)    | (1-7F)      | 10      | CHANGE      | -           | -
-drumParams(waveguidesend) | F0 00    13    val  F7      | (0-127)    | (1-7F)      | 67      | CHANGE      | -           | -
+drumParams(waveguidesend) | F0 00    13    val  F7      | (0-127)    | (1-7F)      | 67      | CHANGE      | -           | -       | # TODO
 isLatch                   | F0 11    14    val  F7      | (0-1)      | (0-1)       | 00      | VIEW CHANGE | VIEW        | -       | # TODO
 phraseVal                 | F0 CC    index val1 val2 F7 | (-127-127) | (1-7F)      | 00 00   | -           | VIEW CHANGE | VIEW
 
@@ -74,6 +74,15 @@ CC and note messages to iConnectMIDI
 channel
 note messages to iConnectMIDI
 
+drumParams:
+select $14 $15 $16
+level $17 $18 $19
+attack $20 $21 $22
+release $23 $24 $25
+pitch $26 $27 $28
+modAmount $29 $30 $31
+modRate $46 $47 $48
+waveguide $117 $118 $119 ($103) # TODO remove this value from global array
 
 when adding new passable value:
 1. add key entry
@@ -81,19 +90,6 @@ when adding new passable value:
 3. add ALIAS
 4. add init set
 5. add testing
-
-
-notes on latch - switching between chords with overlapping note values
-
-currently, latch is set to rese
-          # NOTE don't send note release if current note - if this occurs, the note off sends after the note on and cancels it out
-          # unfortunately haven't figured out a way to ignore note off if replaying greater than one note
-          # could wait until certain time period was up, but that would add latency
-          # could feasibly add values to global array (/ send out sysex?) to a filter which would not allow the note out to send if reached in time, although this still seems like it may be more clunky than current state and there's no guarantee it would even work
-          # current state - note off, then immediate note on as the remaining chord values are pressed
-          # sometimes, if the note on comes too quickly (somehow), the note off does cancel out other notes
-          # the biggest drawback here is that we lose attack / release possibilities due to note off
-
 
 # SCRAPS
 

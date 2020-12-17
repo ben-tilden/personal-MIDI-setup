@@ -31,6 +31,17 @@
 
 # ensure drumparams are assigned according to correct buttons
 
+# ensure 'select' lighting sent to knobs
+# ensure 'level' lighting sent to knobs
+# ensure 'attack' lighting sent to knobs
+# ensure 'release' lighting sent to knobs
+# ensure 'pitch' lighting sent to knobs
+# ensure 'modAmount' lighting sent to knobs
+# ensure 'modRate' lighting sent to knobs
+# ensure 'waveguide' lighting sent to knobs
+
+# ensure correct drumParam sent on knob turn
+
 # ensure tempoPulse aligns with tempoMode
 
 # ensure gate aligns with gate

@@ -95,6 +95,31 @@ IF LOAD
   ALIAS J10 drumParams
   ALIAS J14 isLatch
 
+  ALIAS K0 select1
+  ALIAS K1 select2
+  ALIAS K2 selectBoth
+  ALIAS K3 level1
+  ALIAS K4 level2
+  ALIAS K5 levelBoth
+  ALIAS K6 attack1
+  ALIAS K7 attack2
+  ALIAS K8 attackBoth
+  ALIAS K9 release1
+  ALIAS KA release2
+  ALIAS KB releaseBoth
+  ALIAS KC pitch1
+  ALIAS KD pitch2
+  ALIAS KE pitchBoth
+  ALIAS KF modAmount1
+  ALIAS K10 modAmount2
+  ALIAS K11 modAmountBoth
+  ALIAS K12 modRate1
+  ALIAS K13 modRate2
+  ALIAS K14 modRateBoth
+  ALIAS K15 waveguideDecay
+  ALIAS K16 waveguideBody
+  ALIAS K17 waveguideTune
+
   # assign local
   # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
   ASS tempoMode = 0
@@ -105,6 +130,8 @@ IF LOAD
   # NOTE this is set to 'select' on initial load
   ASS previousDrumVal = 04
   ASS gateFactor = 1
+
+  ASS K0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
 END
 
@@ -483,8 +510,12 @@ IF MT == 90
       IF previousDrumVal != 04
         SEND 90 previousDrumVal 00
       END
+      SEND BA 06 select1
+      SEND BA 07 select2
+      SEND BA 08 selectBoth
       # TEST
       # ensure drumparams are assigned according to correct buttons
+      # ensure 'select' lighting sent to knobs
       LOG drumParams drumParams
       # END TEST
     END
@@ -494,8 +525,12 @@ IF MT == 90
       IF previousDrumVal != 05
         SEND 90 previousDrumVal 00
       END
+      SEND BA 06 level1
+      SEND BA 07 level2
+      SEND BA 08 levelBoth
       # TEST
       # ensure drumparams are assigned according to correct buttons
+      # ensure 'level' lighting sent to knobs
       LOG drumParams drumParams
       # END TEST
     END
@@ -505,8 +540,12 @@ IF MT == 90
       IF previousDrumVal != 06
         SEND 90 previousDrumVal 00
       END
+      SEND BA 06 attack1
+      SEND BA 07 attack2
+      SEND BA 08 attackBoth
       # TEST
       # ensure drumparams are assigned according to correct buttons
+      # ensure 'attack' lighting sent to knobs
       LOG drumParams drumParams
       # END TEST
     END
@@ -516,8 +555,12 @@ IF MT == 90
       IF previousDrumVal != 07
         SEND 90 previousDrumVal 00
       END
+      SEND BA 06 release1
+      SEND BA 07 release2
+      SEND BA 08 releaseBoth
       # TEST
       # ensure drumparams are assigned according to correct buttons
+      # ensure 'release' lighting sent to knobs
       LOG drumParams drumParams
       # END TEST
     END
@@ -527,8 +570,12 @@ IF MT == 90
       IF previousDrumVal != 0C
         SEND 90 previousDrumVal 00
       END
+      SEND BA 06 pitch1
+      SEND BA 07 pitch2
+      SEND BA 08 pitchBoth
       # TEST
       # ensure drumparams are assigned according to correct buttons
+      # ensure 'pitch' lighting sent to knobs
       LOG drumParams drumParams
       # END TEST
     END
@@ -538,8 +585,12 @@ IF MT == 90
       IF previousDrumVal != 0D
         SEND 90 previousDrumVal 00
       END
+      SEND BA 06 modAmount1
+      SEND BA 07 modAmount2
+      SEND BA 08 modAmountBoth
       # TEST
       # ensure drumparams are assigned according to correct buttons
+      # ensure 'modAmount' lighting sent to knobs
       LOG drumParams drumParams
       # END TEST
     END
@@ -549,20 +600,28 @@ IF MT == 90
       IF previousDrumVal != 0E
         SEND 90 previousDrumVal 00
       END
+      SEND BA 06 modRate1
+      SEND BA 07 modRate2
+      SEND BA 08 modRateBoth
       # TEST
       # ensure drumparams are assigned according to correct buttons
+      # ensure 'modRate' lighting sent to knobs
       LOG drumParams drumParams
       # END TEST
     END
     # order is decay, body, tune, send
     # if it is button 16 - knobs control 'waveguide'
     IF M1 == 17 7F
-      ASS drumParams = $117 $118 $119 $103
+      ASS drumParams = $117 $118 $119
       IF previousDrumVal != 0F
         SEND 90 previousDrumVal 00
       END
+      SEND BA 06 waveguideDecay
+      SEND BA 07 waveguideBody
+      SEND BA 08 waveguideSend
       # TEST
       # ensure drumparams are assigned according to correct buttons
+      # ensure 'waveguide' lighting sent to knobs
       LOG drumParams drumParams
       # END TEST
     END
@@ -1254,6 +1313,144 @@ IF MT == B0
     LOG velocity velocity
     # END TEST
   END
+  # if knob is 6 (drumParam 1)
+  IF M1 == 6
+    # if drumParams are 'select'
+    IF drumParams == $14 $15 $16
+      ASS M1 = $14
+      ASS select1 = M2
+    END
+    # if drumParams are 'level'
+    IF drumParams == $17 $18 $19
+      ASS M1 = $17
+      ASS level1 = M2
+    END
+    # if drumParams are 'attack'
+    IF drumParams == $20 $21 $22
+      ASS M1 = $20
+      ASS attack1 = M2
+    END
+    # if drumParams are 'release'
+    IF drumParams == $23 $24 $25
+      ASS M1 = $23
+      ASS release1 = M2
+    END
+    # if drumParams are 'pitch'
+    IF drumParams == $26 $27 $28
+      ASS M1 = $26
+      ASS pitch1 = M2
+    END
+    # if drumParams are 'modAmount'
+    IF drumParams == $29 $30 $31
+      ASS M1 = $29
+      ASS modAmount1 = M2
+    END
+    # if drumParams are 'modRate'
+    IF drumParams == $46 $47 $48
+      ASS M1 = $46
+      ASS modRate1 = M2
+    END
+    # if drumParams are 'waveguide'
+    IF drumParams == $117 $118 $119
+      ASS M1 = $117
+      ASS waveguideDecay = M2
+    END
+  END
+  # if knob is 7 (drumParam 2)
+  IF M1 == 7
+    # if drumParams are 'select'
+    IF drumParams == $14 $15 $16
+      ASS M1 = $15
+      ASS select2 = M2
+    END
+    # if drumParams are 'level'
+    IF drumParams == $17 $18 $19
+      ASS M1 = $18
+      ASS level2 = M2
+    END
+    # if drumParams are 'attack'
+    IF drumParams == $20 $21 $22
+      ASS M1 = $21
+      ASS attack2 = M2
+    END
+    # if drumParams are 'release'
+    IF drumParams == $23 $24 $25
+      ASS M1 = $24
+      ASS release2 = M2
+    END
+    # if drumParams are 'pitch'
+    IF drumParams == $26 $27 $28
+      ASS M1 = $27
+      ASS pitch2 = M2
+    END
+    # if drumParams are 'modAmount'
+    IF drumParams == $29 $30 $31
+      ASS M1 = $30
+      ASS modAmount2 = M2
+    END
+    # if drumParams are 'modRate'
+    IF drumParams == $46 $47 $48
+      ASS M1 = $47
+      ASS modRate2 = M2
+    END
+    # if drumParams are 'waveguide'
+    IF drumParams == $117 $118 $119
+      ASS M1 = $118
+      ASS waveguideBody = M2
+    END
+  END
+  # if knob is 8 (drumParam 3)
+  IF M1 == 8
+    # if drumParams are 'select'
+    IF drumParams == $14 $15 $16
+      ASS M1 = $16
+      ASS selectBoth = M2
+    END
+    # if drumParams are 'level'
+    IF drumParams == $17 $18 $19
+      ASS M1 = $19
+      ASS levelBoth = M2
+    END
+    # if drumParams are 'attack'
+    IF drumParams == $20 $21 $22
+      ASS M1 = $22
+      ASS attackBoth = M2
+    END
+    # if drumParams are 'release'
+    IF drumParams == $23 $24 $25
+      ASS M1 = $25
+      ASS releaseBoth = M2
+    END
+    # if drumParams are 'pitch'
+    IF drumParams == $26 $27 $28
+      ASS M1 = $28
+      ASS pitchBoth = M2
+    END
+    # if drumParams are 'modAmount'
+    IF drumParams == $29 $30 $31
+      ASS M1 = $31
+      ASS modAmountBoth = M2
+    END
+    # if drumParams are 'modRate'
+    IF drumParams == $46 $47 $48
+      ASS M1 = $48
+      ASS modRateBoth = M2
+    END
+    # if drumParams are 'waveguide'
+    IF drumParams == $117 $118 $119
+      ASS M1 = $119
+      ASS waveguideTune = M2
+    END
+  END
+  # TEST
+  # ensure correct drumParam sent on knob turn
+  IF M1 > 5
+    LOG drumParams1 J10
+    LOG drumParams2 J11
+    LOG drumParamsBoth J12
+    LOG M1 M1
+  END
+  # END TEST
 END
 
 NX = XX +B
