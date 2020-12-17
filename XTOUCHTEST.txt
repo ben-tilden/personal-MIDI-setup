@@ -93,7 +93,9 @@ IF LOAD
   ALIAS JE arpModeSwitched # NOTE gateOpened
   ALIAS JF waveguideToggle
   ALIAS J10 drumParams
-  ALIAS J14 isLatch
+  ALIAS J14 isLatch # TODO
+  ALIAS J15 pitchQuantize # TODO
+  ALIAS J16 padMode # TODO
 
   ALIAS K0 select1
   ALIAS K1 select2
@@ -238,7 +240,7 @@ IF M0 == F0
     ASS J10 = 0E # drumParams (Part 1)
     ASS J11 = 0F # drumParams (Part 2)
     ASS J12 = 10 # drumParams (Part 1+2)
-    ASS J13 = 67 # drumParams (wg send) (103)
+    ASS J13 = 67 # drumParams (wg send) (103) # TODO - this goes for every file if we are removing
     ASS J14 = 00 # isLatch
     ASS J20 = 00 00 00 00 00 00 00 00 00 00 # arp values (J10 J11 J12 J13 J14 J15 J16 J17 J18 J19)
     ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
@@ -485,6 +487,32 @@ IF MT == 90
     # END TEST
   END
 
+  # if it is a button 4 push toggle padMode
+  IF M1 == 0B 7F
+    # isBeats
+    IF padMode == 0
+      ASS padMode = 1
+      # # SEND SYSEX
+      # SEND XX XX padMode F7 +F
+      # # END SYSEX
+    # isSample
+    ELSE
+      ASS padMode = 0
+      # # SEND SYSEX
+      # SEND F0 XX XX padMode F7 +F
+      # # END SYSEX
+    END
+    # TEST
+    # ensure latch is toggling
+    IF padMode == 0
+      LOG BEATS_PAD
+    END
+    IF padMode == 1
+      LOG SAMPLE_PAD
+    END
+    # END TEST
+  END
+
   # if it is channel 1-6
   IF currentChannel < 6
     IF M1 == 07 7F
@@ -677,9 +705,21 @@ IF MT == 80
     END
   END
 
+  IF M1 == 0B 00
+    IF padMode == 1
+      SEND 90 03 01
+    END
+  END
+
   IF M1 == 11 00
     IF arpPhraseOnOffToggle == 1
       SEND 90 09 01
+    END
+  END
+
+  IF M1 == 13 00
+    IF waveguideToggle == 1
+      SEND 90 0B 01
     END
   END
 

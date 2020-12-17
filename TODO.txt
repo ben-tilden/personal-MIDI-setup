@@ -16,13 +16,6 @@
 # pros: it's more intuitive, prevents two hands from being used at the same time, and allows for more mapping on xtouch
 # will likely need knobVal parameter to store what knob it is - more scalable
 
-# TODO we could save knobs by combining the waveguide send and one of the other waveguide knobs
-# could also change pitch quant knob to a button and remove waveguide send from xtouch
-# tempo gate velocity lfoDepth lfoSpeed decay body tune send
-# single knob press - switch to send
-# double knob press - switch waveguide model
-# change lighting type to indicate whether 'send' or one of the other waveguide parameters
-
 # notes on live testing:
 # app crashes when order / phrase used at a very high tempo
 # can put red tape to indicate
