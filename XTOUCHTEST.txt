@@ -488,10 +488,32 @@ IF MT == 90
   # if it is channel 1-6
   IF currentChannel < 6
     IF M1 == 07 7F
+      IF pitchQuantize == 0
+        ASS pitchQuantize = 1
+        SEND B0 $53 7F
+      ELSE
+        ASS pitchQuantize = 0
+        SEND B0 $53 00
+      END
+      # TEST
+      # ensure pitchQuantize is toggled properly
+      IF pitchQuantize == 0
+        LOG PITCH_NOT_QUANTIZED
+      END
+      IF pitchQuantize == 1
+        LOG PITCH_QUANTIZED
+      END
+      # END TEST
+    END
+    IF M1 == 13 7F
       IF waveguideToggle == 0
         ASS waveguideToggle = 1
+        # NOTE unsure if this is correct as of now
+        SEND B0 $116 7F
       ELSE
         ASS waveguideToggle = 0
+        # NOTE unsure if this is correct as of now
+        SEND B0 $116 00
       END
       # TEST
       # ensure waveguide is toggled properly

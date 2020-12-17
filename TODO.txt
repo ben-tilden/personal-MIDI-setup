@@ -8,8 +8,6 @@
 # knob 2 press restarts current lfo
 # knob 1 rate; knob 2 depth
 
-# TODO will need to eventually handle knobs for drumparams
-
 # TODO implement push control
 # push control will be set such that when the knob is pushed, knobPush is set to true, and the current value is saved
 # if knobPush is set to true and knobTurned is set to true, the original value will be sent back to the parameter and the knob lighting
@@ -19,6 +17,7 @@
 # will likely need knobVal parameter to store what knob it is - more scalable
 
 # TODO we could save knobs by combining the waveguide send and one of the other waveguide knobs
+# could also change pitch quant knob to a button and remove waveguide send from xtouch
 # tempo gate velocity lfoDepth lfoSpeed decay body tune send
 # single knob press - switch to send
 # double knob press - switch waveguide model

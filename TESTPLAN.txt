@@ -28,6 +28,7 @@
 # ensure latch is toggling
 
 # ensure waveguide is toggled properly
+# ensure pitchQuantize is toggled properly
 
 # ensure drumparams are assigned according to correct buttons
 
