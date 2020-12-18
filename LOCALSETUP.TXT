@@ -466,10 +466,10 @@ IF MC < 6
   END
 END
 
-# pitch quantize to knob 6
+# waveguide send to knob 6
 IF MC < 6
   IF M1 == 1A
-    ASS M1 = 35
+    ASS M1 = 67
   END
 END
 

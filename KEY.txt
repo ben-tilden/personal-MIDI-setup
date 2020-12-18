@@ -95,6 +95,12 @@ when adding new passable value:
 4. add init set
 5. add testing
 
+rules for push control
+1. when a knob is set without turning, L should automatically be set to whatever is sent to the knob, otherwise it should be set to the current knob value
+NOTE tempo is an exception here because when the lighting is sent from xtouch, it does not loop back to the code until the knob is turned from the hardware - there is no opportunity to change the L value otherwise, so it must (unfortunately) manually be changed when the lighting is sent
+2. if a knob is turning, L should only be set if knobPush is false
+3. lighting should only be sent at knob release if the knob which is being turned does not already have code in xtouch that sends lighting for it (i.e. tempo) (the lighting change will be blocked otherwise)
+
 # SCRAPS
 
 # launchkey

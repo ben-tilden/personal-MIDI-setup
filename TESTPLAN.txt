@@ -29,6 +29,7 @@
 
 # ensure waveguide is toggled properly
 # ensure pitchQuantize is toggled properly
+# ensure padMode is toggled properly
 
 # ensure drumparams are assigned according to correct buttons
 
@@ -50,6 +51,19 @@
 
 # ensure velocity aligns with velocity
 
+# ensure knobPush turned on accordingly
+
+# ensure push control release handled correctly
+  # ensure lighting matches with L array
+  # ensure L array matches with previous value
+  # ensure parameter associated with knob lighting also changed
+  # tempoPulse, gate, velocity, drumParam1, drumParam2, drumParam3
+  # ensure knobPush reset if no knob has been turned
+
+# ensure that if knob is turned while knob is pressed, knob turn is set to true
+
+# ensure that if a drum param button is pressed while drum param push control is occuring that nothing happens
+
 ###
 # launchkey mini
 ###
@@ -61,8 +75,8 @@
 # ensure launchkey receives setPhrase
 # ensure launchkey receives isLatch
 
-# ensure global array reset
-# ensure xtouch reset
+# ensure global array reset (with locals)
+# ensure xtouch reset (with locals)
 # ensure channel information reset (will need to be done on individual files) # pending implementation completion
 
 # ensure J array contains correct key values pressed on reset (0)

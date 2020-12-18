@@ -1,6 +1,7 @@
 # xtouch test code
 
 # TEST NOTES
+# TODO / NOTE - likely easier to actually have push control be via a button as opposed to the knob buttons
 
 
 
@@ -78,6 +79,23 @@ IF LOAD
   ALIAS I5 resetIndex
   ALIAS I6 resetIndexMinusOne
   ALIAS I7 gateTemp # TODO
+  ALIAS I8 knob1Push # TODO
+  ALIAS I9 knob1Turn # TODO
+  ALIAS IA knob2Push # TODO
+  ALIAS IB knob2Turn # TODO
+  ALIAS IC knob3Push # TODO
+  ALIAS ID knob3Turn # TODO
+  ALIAS IE knob4Push # TODO
+  ALIAS IF knob4Turn # TODO
+  ALIAS I10 knob5Push # TODO
+  ALIAS I11 knob5Turn # TODO
+  ALIAS I12 knob6Push # TODO
+  ALIAS I13 knob6Turn # TODO
+  ALIAS I14 knob7Push # TODO
+  ALIAS I15 knob7Turn # TODO
+  ALIAS I16 knob8Push # TODO
+  ALIAS I17 knob8Turn # TODO
+  ALIAS I18 knobTemp # TODO
 
   ALIAS J0 currentChannel
   ALIAS J2 arpPhraseToggle
@@ -133,7 +151,25 @@ IF LOAD
   ASS previousDrumVal = 04
   ASS gateFactor = 1
 
+  ASS knob1Push = 0
+  ASS knob1Turn = 0
+  ASS knob2Push = 0
+  ASS knob2Turn = 0
+  ASS knob3Push = 0
+  ASS knob3Turn = 0
+  ASS knob4Push = 0
+  ASS knob4Turn = 0
+  ASS knob5Push = 0
+  ASS knob5Turn = 0
+  ASS knob6Push = 0
+  ASS knob6Turn = 0
+  ASS knob7Push = 0
+  ASS knob7Turn = 0
+  ASS knob8Push = 0
+  ASS knob8Turn = 0
+
   ASS K0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  ASS L0 = 0E 00 64 00 00 00 00 00
 
 END
 
@@ -187,6 +223,10 @@ IF M0 == F0
     ASS arpValueMode = 8004
     # NOTE this is set to 'select' on initial load
     ASS previousDrumVal = 04
+    ASS gateFactor = 1
+
+    ASS K0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    ASS L0 = 0E 00 64 00 00 00 00 00
     # TEST
     # uncomment to turn on all lights on xtouch
     # IF LOAD
@@ -250,6 +290,24 @@ IF M0 == F0
     SEND BA 03 $100
     # send init drum lighting
     SEND 90 04 01
+
+    ASS knob1Push = 0
+    ASS knob1Turn = 0
+    ASS knob2Push = 0
+    ASS knob2Turn = 0
+    ASS knob3Push = 0
+    ASS knob3Turn = 0
+    ASS knob4Push = 0
+    ASS knob4Turn = 0
+    ASS knob5Push = 0
+    ASS knob5Turn = 0
+    ASS knob6Push = 0
+    ASS knob6Turn = 0
+    ASS knob7Push = 0
+    ASS knob7Turn = 0
+    ASS knob8Push = 0
+    ASS knob8Turn = 0
+
     # TEST
     # ensure lights turn off on init
     LOG LIGHTS_OFF_SYSEX_RECEIVED
@@ -264,85 +322,76 @@ END
 
 # if it is a button push
 IF MT == 90
-  # if it is a knob 1 button push, increase tempo mode
-  # if variable is too high, reset
-  IF M1 == 00 7F
-    MATH tempoMode = tempoMode + 1
-    # set tempo mode to variable modulo 4
-    MATH tempoModeMod = tempoMode % 4
-    IF tempoModeMod == 0
-      ASS tempoPulse = $24
-      # SEND SYSEX
-      SEND F0 CC 05 tempoPulse F7 +F
-      # END SYSEX
-      SEND BA 01 $26
-    END
-    # set each tempoPulse to default value on switching
-    # also send data to xtouch to reflect this
-    IF tempoModeMod == 1
-      ASS tempoPulse = $24
-      # SEND SYSEX
-      SEND F0 CC 05 tempoPulse F7 +F
-      # END SYSEX
-      SEND BA 01 00
-    END
-    IF tempoModeMod == 2
-      ASS tempoPulse = $24
-      # SEND SYSEX
-      SEND F0 CC 05 tempoPulse F7 +F
-      # END SYSEX
-      SEND BA 01 $50
-    END
-    IF tempoModeMod == 3
-      ASS tempoPulse = $18
-      # SEND SYSEX
-      SEND F0 CC 05 tempoPulse F7 +F
-      # END SYSEX
-      SEND BA 01 $50
-    END
+
+  # assign knob1Push to true when knob1 is pushed - for push control
+  IF M1 == 0 
+    ASS knob1Push = 1
     # TEST
-    # ensure tempoModeMod changes accordingly and tempoPulse correlates
-    LOG tempoMode tempoModeMod
-    LOG tempoPulse tempoPulse
+    # ensure knobPush turned on accordingly
+    LOG knob1Push knob1Push
     # END TEST
   END
 
-  # if it is a knob 2 button push, increase gate mode
-  # if variable is too high, reset
-  IF M1 == 01 7F
-    MATH gateMode = gateMode + 1
-    # set tempo mode to variable modulo 6
-    # NOTE preventing the light from sending will change the length more quickly, more easily
-    # NOTE will be testing with live to see best setup here
-    MATH gateModeMod = gateMode % 6
-    IF gateModeMod == 0
-      ASS gateFactor = 1
-      SEND BA 02 00
-    END
-    IF gateModeMod == 1
-      ASS gateFactor = 2
-      SEND BA 02 00
-    END
-    IF gateModeMod == 2
-      ASS gateFactor = 5
-      SEND BA 02 00
-    END
-    IF gateModeMod == 3
-      ASS gateFactor = 10
-      SEND BA 02 00
-    END
-    IF gateModeMod == 4
-      ASS gateFactor = 20
-      SEND BA 02 00
-    END
-    IF gateModeMod == 5
-      ASS gateFactor = 40
-      SEND BA 02 00
-    END
+  # assign knob2Push to true when knob2 is pushed - for push control
+  IF M1 == 1 
+    ASS knob2Push = 1
     # TEST
-    # ensure gateModeMod changes accordingly and gate correlates
-    LOG gateMode gateModeMod
-    LOG gate gate
+    # ensure knobPush turned on accordingly
+    LOG knob2Push knob2Push
+    # END TEST
+  END
+
+  # assign knob3Push to true when knob3 is pushed - for push control
+  IF M1 == 2
+    ASS knob3Push = 1
+    # TEST
+    # ensure knobPush turned on accordingly
+    LOG knob3Push knob3Push
+    # END TEST
+  END
+
+  # assign knob4Push to true when knob4 is pushed - for push control
+  IF M1 == 3
+    ASS knob4Push = 1
+    # TEST
+    # ensure knobPush turned on accordingly
+    LOG knob4Push knob4Push
+    # END TEST
+  END
+
+  # assign knob5Push to true when knob5 is pushed - for push control
+  IF M1 == 4
+    ASS knob5Push = 1
+    # TEST
+    # ensure knobPush turned on accordingly
+    LOG knob5Push knob5Push
+    # END TEST
+  END
+
+  # assign knob6Push to true when knob6 is pushed - for push control
+  IF M1 == 5
+    ASS knob6Push = 1
+    # TEST
+    # ensure knobPush turned on accordingly
+    LOG knob6Push knob6Push
+    # END TEST
+  END
+
+  # assign knob7Push to true when knob7 is pushed - for push control
+  IF M1 == 6
+    ASS knob7Push = 1
+    # TEST
+    # ensure knobPush turned on accordingly
+    LOG knob7Push knob7Push
+    # END TEST
+  END
+
+  # assign knob8Push to true when knob8 is pushed - for push control
+  IF M1 == 7
+    ASS knob8Push = 1
+    # TEST
+    # ensure knobPush turned on accordingly
+    LOG knob8Push knob8Push
     # END TEST
   END
 
@@ -503,7 +552,7 @@ IF MT == 90
       # # END SYSEX
     END
     # TEST
-    # ensure latch is toggling
+    # ensure padMode is toggling
     IF padMode == 0
       LOG BEATS_PAD
     END
@@ -515,24 +564,7 @@ IF MT == 90
 
   # if it is channel 1-6
   IF currentChannel < 6
-    IF M1 == 07 7F
-      IF pitchQuantize == 0
-        ASS pitchQuantize = 1
-        SEND B0 $53 7F
-      ELSE
-        ASS pitchQuantize = 0
-        SEND B0 $53 00
-      END
-      # TEST
-      # ensure pitchQuantize is toggled properly
-      IF pitchQuantize == 0
-        LOG PITCH_NOT_QUANTIZED
-      END
-      IF pitchQuantize == 1
-        LOG PITCH_QUANTIZED
-      END
-      # END TEST
-    END
+
     IF M1 == 13 7F
       IF waveguideToggle == 0
         ASS waveguideToggle = 1
@@ -553,6 +585,22 @@ IF MT == 90
       END
       # END TEST
     END
+
+    # if knob is pressed and a drumParam is changed, the value in the L array will not match up correctly
+    # NOTE monitor for actions that this may be blocking that are unrelated to drum
+    IF knob6Push == 1
+      BLOCK
+      EXIT
+    END
+    IF knob7Push == 1
+      BLOCK
+      EXIT
+    END
+    IF knob8Push == 1
+      BLOCK
+      EXIT
+    END
+
     # for all except the last, order is part 1, part 2, part 1 and 2
     # if it is button 5 - knobs control 'select'
     IF M1 == 0C 7F
@@ -561,8 +609,20 @@ IF MT == 90
         SEND 90 previousDrumVal 00
       END
       SEND BA 06 select1
+      ASS L5 = select1
+      # TEST
+      LOG L5 L5
+      # END TEST
       SEND BA 07 select2
+      ASS L6 = select2
+      # TEST
+      LOG L6 L6
+      # END TEST
       SEND BA 08 selectBoth
+      ASS L7 = selectBoth
+      # TEST
+      LOG L7 L7
+      # END TEST
       # TEST
       # ensure drumparams are assigned according to correct buttons
       # ensure 'select' lighting sent to knobs
@@ -576,8 +636,20 @@ IF MT == 90
         SEND 90 previousDrumVal 00
       END
       SEND BA 06 level1
+      ASS L5 = level1
+      # TEST
+      LOG L5 L5
+      # END TEST
       SEND BA 07 level2
+      ASS L6 = level2
+      # TEST
+      LOG L6 L6
+      # END TEST
       SEND BA 08 levelBoth
+      ASS L7 = levelBoth
+      # TEST
+      LOG L7 L7
+      # END TEST
       # TEST
       # ensure drumparams are assigned according to correct buttons
       # ensure 'level' lighting sent to knobs
@@ -591,8 +663,20 @@ IF MT == 90
         SEND 90 previousDrumVal 00
       END
       SEND BA 06 attack1
+      ASS L5 = attack1
+      # TEST
+      LOG L5 L5
+      # END TEST
       SEND BA 07 attack2
+      ASS L6 = attack2
+      # TEST
+      LOG L6 L6
+      # END TEST
       SEND BA 08 attackBoth
+      ASS L7 = attackBoth
+      # TEST
+      LOG L7 L7
+      # END TEST
       # TEST
       # ensure drumparams are assigned according to correct buttons
       # ensure 'attack' lighting sent to knobs
@@ -606,8 +690,20 @@ IF MT == 90
         SEND 90 previousDrumVal 00
       END
       SEND BA 06 release1
+      ASS L5 = release1
+      # TEST
+      LOG L5 L5
+      # END TEST
       SEND BA 07 release2
+      ASS L6 = release2
+      # TEST
+      LOG L6 L6
+      # END TEST
       SEND BA 08 releaseBoth
+      ASS L7 = releaseBoth
+      # TEST
+      LOG L7 L7
+      # END TEST
       # TEST
       # ensure drumparams are assigned according to correct buttons
       # ensure 'release' lighting sent to knobs
@@ -621,8 +717,20 @@ IF MT == 90
         SEND 90 previousDrumVal 00
       END
       SEND BA 06 pitch1
+      ASS L5 = pitch1
+      # TEST
+      LOG L5 L5
+      # END TEST
       SEND BA 07 pitch2
+      ASS L6 = pitch2
+      # TEST
+      LOG L6 L6
+      # END TEST
       SEND BA 08 pitchBoth
+      ASS L7 = pitchBoth
+      # TEST
+      LOG L7 L7
+      # END TEST
       # TEST
       # ensure drumparams are assigned according to correct buttons
       # ensure 'pitch' lighting sent to knobs
@@ -636,8 +744,20 @@ IF MT == 90
         SEND 90 previousDrumVal 00
       END
       SEND BA 06 modAmount1
+      ASS L5 = modAmount1
+      # TEST
+      LOG L5 L5
+      # END TEST
       SEND BA 07 modAmount2
+      ASS L6 = modAmount2
+      # TEST
+      LOG L6 L6
+      # END TEST
       SEND BA 08 modAmountBoth
+      ASS L7 = modAmountBoth
+      # TEST
+      LOG L7 L7
+      # END TEST
       # TEST
       # ensure drumparams are assigned according to correct buttons
       # ensure 'modAmount' lighting sent to knobs
@@ -651,8 +771,20 @@ IF MT == 90
         SEND 90 previousDrumVal 00
       END
       SEND BA 06 modRate1
+      ASS L5 = modRate1
+      # TEST
+      LOG L5 L5
+      # END TEST
       SEND BA 07 modRate2
+      ASS L6 = modRate2
+      # TEST
+      LOG L6 L6
+      # END TEST
       SEND BA 08 modRateBoth
+      ASS L7 = modRateBoth
+      # TEST
+      LOG L7 L7
+      # END TEST
       # TEST
       # ensure drumparams are assigned according to correct buttons
       # ensure 'modRate' lighting sent to knobs
@@ -667,8 +799,20 @@ IF MT == 90
         SEND 90 previousDrumVal 00
       END
       SEND BA 06 waveguideDecay
+      ASS L5 = waveguideDecay
+      # TEST
+      LOG L5 L5
+      # END TEST
       SEND BA 07 waveguideBody
-      SEND BA 08 waveguideSend
+      ASS L6 = waveguideBody
+      # TEST
+      LOG L6 L6
+      # END TEST
+      SEND BA 08 waveguideTune
+      ASS L7 = waveguideTune
+      # TEST
+      LOG L7 L7
+      # END TEST
       # TEST
       # ensure drumparams are assigned according to correct buttons
       # ensure 'waveguide' lighting sent to knobs
@@ -680,6 +824,383 @@ END
 
 # if it is a button note-off (important for lighting)
 IF MT == 80
+
+  # push control
+  # NOTE / TODO if we add a button which will set global push control (for all knobs), we'll need to likely copy the if statements below into a large if statement on press/release
+  # additionally, when the button is pressed it will just set all 8 knob pushes to on, and send lighting on release if on
+  # NOTE does not function for knobs 4 and 5 (lfo) because there's no action to change L3 and L4
+
+  IF M1 == 00 00
+    IF knob1Turn == 1
+      MATH knobTemp = M1 + 1
+      # injection makes sure the parameters are changed correctly
+      SEND BA knobTemp LM1 +I
+      # no need to send lighting here, since tempo sends its own on injection
+      ASS knob1Push = 0
+      ASS knob1Turn = 0
+      # TEST
+      # ensure push control release handled correctly
+      # ensure lighting matches with L array
+      # ensure L array matches with previous value
+      # ensure parameter associated with knob lighting also changed
+      # tempoPulse
+      LOG M1 M1
+      LOG LM1 LM1
+      LOG knob1Push knob1Turn
+      LOG knob1Turn knob1Turn
+      # END TEST
+      # if using push control, releasing the knob button should not have any effect
+      BLOCK
+      EXIT
+    ELSE
+      ASS knob1Push = 0
+      # TEST
+      LOG knob1Push_RESET
+      # END TEST
+    END
+  END
+
+  IF M1 == 01 00
+    IF knob2Turn == 1
+      MATH knobTemp = M1 + 1
+      # injection makes sure the parameters are changed correctly
+      SEND BA knobTemp LM1 +I
+      # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
+      SEND BA knobTemp LM1
+      ASS knob2Push = 0
+      ASS knob2Turn = 0
+      # TEST
+      # ensure push control release handled correctly
+      # ensure lighting matches with L array
+      # ensure L array matches with previous value
+      # ensure parameter associated with knob lighting also changed
+      # gate
+      LOG M1 M1
+      LOG LM1 LM1
+      LOG knob2Push knob2Turn
+      LOG knob2Turn knob2Turn
+      # END TEST
+      # if using push control, releasing the knob button should not have any effect
+      BLOCK
+      EXIT
+    ELSE
+      ASS knob2Push = 0
+      # TEST
+      LOG knob2Push_RESET
+      # END TEST
+    END
+  END
+
+  IF M1 == 02 00
+    IF knob3Turn == 1
+      MATH knobTemp = M1 + 1
+      # injection makes sure the parameters are changed correctly
+      SEND BA knobTemp LM1 +I
+      # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
+      SEND BA knobTemp LM1
+      ASS knob3Push = 0
+      ASS knob3Turn = 0
+      # TEST
+      # ensure push control release handled correctly
+      # ensure lighting matches with L array
+      # ensure L array matches with previous value
+      # ensure parameter associated with knob lighting also changed
+      # velocity
+      LOG M1 M1
+      LOG LM1 LM1
+      LOG knob3Push knob3Turn
+      LOG knob3Turn knob3Turn
+      # END TEST
+      # if using push control, releasing the knob button should not have any effect
+      BLOCK
+      EXIT
+    ELSE
+      ASS knob3Push = 0
+      # TEST
+      LOG knob3Push_RESET
+      # END TEST
+    END
+  END
+
+  IF M1 == 03 00
+    IF knob4Turn == 1
+      MATH knobTemp = M1 + 1
+      # injection makes sure the parameters are changed correctly
+      SEND BA knobTemp LM1 +I
+      # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
+      SEND BA knobTemp LM1
+      ASS knob4Push = 0
+      ASS knob4Turn = 0
+      # TEST
+      # ensure push control release handled correctly
+      # ensure lighting matches with L array
+      # ensure L array matches with previous value
+      # ensure parameter associated with knob lighting also changed
+      # lfo rate
+      LOG M1 M1
+      LOG LM1 LM1
+      LOG knob4Push knob4Turn
+      LOG knob4Turn knob4Turn
+      # END TEST
+      # if using push control, releasing the knob button should not have any effect
+      BLOCK
+      EXIT
+    ELSE
+      ASS knob4Push = 0
+      # TEST
+      LOG knob4Push_RESET
+      # END TEST
+    END
+  END
+
+  IF M1 == 04 00
+    IF knob5Turn == 1
+      MATH knobTemp = M1 + 1
+      # injection makes sure the parameters are changed correctly
+      SEND BA knobTemp LM1 +I
+      # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
+      SEND BA knobTemp LM1
+      ASS knob5Push = 0
+      ASS knob5Turn = 0
+      # TEST
+      # ensure push control release handled correctly
+      # ensure lighting matches with L array
+      # ensure L array matches with previous value
+      # ensure parameter associated with knob lighting also changed
+      # lfo depth
+      LOG M1 M1
+      LOG LM1 LM1
+      LOG knob5Push knob5Turn
+      LOG knob5Turn knob5Turn
+      # END TEST
+      # if using push control, releasing the knob button should not have any effect
+      BLOCK
+      EXIT
+    ELSE
+      ASS knob5Push = 0
+      # TEST
+      LOG knob5Push_RESET
+      # END TEST
+    END
+  END
+
+  IF M1 == 05 00
+    IF knob6Turn == 1
+      MATH knobTemp = M1 + 1
+      # injection makes sure the parameters are changed correctly
+      SEND BA knobTemp LM1 +I
+      # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
+      SEND BA knobTemp LM1
+      ASS knob6Push = 0
+      ASS knob6Turn = 0
+      # TEST
+      # ensure push control release handled correctly
+      # ensure lighting matches with L array
+      # ensure L array matches with previous value
+      # ensure parameter associated with knob lighting also changed
+      # drumParam1
+      LOG M1 M1
+      LOG LM1 LM1
+      LOG knob6Push knob6Turn
+      LOG knob6Turn knob6Turn
+      # END TEST
+      # if using push control, releasing the knob button should not have any effect
+      BLOCK
+      EXIT
+    ELSE
+      ASS knob6Push = 0
+      # TEST
+      LOG knob6Push_RESET
+      # END TEST
+    END
+  END
+
+  IF M1 == 06 00
+    IF knob7Turn == 1
+      MATH knobTemp = M1 + 1
+      # injection makes sure the parameters are changed correctly
+      SEND BA knobTemp LM1 +I
+      # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
+      SEND BA knobTemp LM1
+      ASS knob7Push = 0
+      ASS knob7Turn = 0
+      # TEST
+      # ensure push control release handled correctly
+      # ensure lighting matches with L array
+      # ensure L array matches with previous value
+      # ensure parameter associated with knob lighting also changed
+      # drumParam2
+      LOG M1 M1
+      LOG LM1 LM1
+      LOG knob7Push knob7Turn
+      LOG knob7Turn knob7Turn
+      # END TEST
+      # if using push control, releasing the knob button should not have any effect
+      BLOCK
+      EXIT
+    ELSE
+      ASS knob7Push = 0
+      # TEST
+      LOG knob7Push_RESET
+      # END TEST
+    END
+  END
+
+  IF M1 == 07 00
+    IF knob8Turn == 1
+      MATH knobTemp = M1 + 1
+      # injection makes sure the parameters are changed correctly
+      SEND BA knobTemp LM1 +I
+      # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
+      SEND BA knobTemp LM1
+      ASS knob8Push = 0
+      ASS knob8Turn = 0
+      # TEST
+      # ensure push control release handled correctly
+      # ensure lighting matches with L array
+      # ensure L array matches with previous value
+      # ensure parameter associated with knob lighting also changed
+      # drumParam3
+      LOG M1 M1
+      LOG LM1 LM1
+      LOG knob8Push knob8Turn
+      LOG knob8Turn knob8Turn
+      # END TEST
+      # if using push control, releasing the knob button should not have any effect
+      BLOCK
+      EXIT
+    ELSE
+      ASS knob8Push = 0
+      # TEST
+      LOG knob8Push_RESET
+      # END TEST
+    END
+  END
+
+  # end push control
+
+  # if it is a knob 1 button release, increase tempo mode
+  # if variable is too high, reset
+  IF M1 == 00 00
+    MATH tempoMode = tempoMode + 1
+    # set tempo mode to variable modulo 4
+    MATH tempoModeMod = tempoMode % 4
+    IF tempoModeMod == 0
+      ASS tempoPulse = $24
+      # SEND SYSEX
+      SEND F0 CC 05 tempoPulse F7 +F
+      # END SYSEX
+      SEND BA 01 $26
+      ASS L0 = $14
+      # TEST
+      LOG L0 L0
+      # END TEST
+    END
+    # set each tempoPulse to default value on switching
+    # also send data to xtouch to reflect this
+    IF tempoModeMod == 1
+      ASS tempoPulse = $24
+      # SEND SYSEX
+      SEND F0 CC 05 tempoPulse F7 +F
+      # END SYSEX
+      SEND BA 01 00
+      ASS L0 = 00
+      # TEST
+      LOG L0 L0
+      # END TEST
+    END
+    IF tempoModeMod == 2
+      ASS tempoPulse = $24
+      # SEND SYSEX
+      SEND F0 CC 05 tempoPulse F7 +F
+      # END SYSEX
+      SEND BA 01 $50
+      ASS L0 = $26
+      # TEST
+      LOG L0 L0
+      # END TEST
+    END
+    IF tempoModeMod == 3
+      ASS tempoPulse = $18
+      # SEND SYSEX
+      SEND F0 CC 05 tempoPulse F7 +F
+      # END SYSEX
+      SEND BA 01 $50
+      ASS L0 = $26
+      # TEST
+      LOG L0 L0
+      # END TEST
+    END
+    # TEST
+    # ensure tempoModeMod changes accordingly and tempoPulse correlates
+    LOG tempoMode tempoModeMod
+    LOG tempoPulse tempoPulse
+    # END TEST
+  END
+
+  # if it is a knob 2 button release, increase gate mode
+  # if variable is too high, reset
+  IF M1 == 01 00
+    MATH gateMode = gateMode + 1
+    # set tempo mode to variable modulo 6
+    # NOTE preventing the light from sending will change the length more quickly, more easily
+    # NOTE will be testing with live to see best setup here
+    MATH gateModeMod = gateMode % 6
+    IF gateModeMod == 0
+      ASS gateFactor = 1
+      SEND BA 02 00
+      ASS L1 = 00
+      # TEST
+      LOG L1 L1
+      # END TEST
+    END
+    IF gateModeMod == 1
+      ASS gateFactor = 2
+      SEND BA 02 00
+      ASS L1 = 00
+      # TEST
+      LOG L1 L1
+      # END TEST
+    END
+    IF gateModeMod == 2
+      ASS gateFactor = 5
+      SEND BA 02 00
+      ASS L1 = 00
+      # TEST
+      LOG L1 L1
+      # END TEST
+    END
+    IF gateModeMod == 3
+      ASS gateFactor = 10
+      SEND BA 02 00
+      ASS L1 = 00
+      # TEST
+      LOG L1 L1
+      # END TEST
+    END
+    IF gateModeMod == 4
+      ASS gateFactor = 20
+      SEND BA 02 00
+      ASS L1 = 00
+      # TEST
+      LOG L1 L1
+      # END TEST
+    END
+    IF gateModeMod == 5
+      ASS gateFactor = 40
+      SEND BA 02 00
+      ASS L1 = 00
+      # TEST
+      LOG L1 L1
+      # END TEST
+    END
+    # TEST
+    # ensure gateModeMod changes accordingly and gate correlates
+    LOG gateMode gateModeMod
+    LOG gate gate
+    # END TEST
+  END
+
   IF M1 == 08 00
     IF arpPhraseToggle == 1
       IF setPhrase == 1
@@ -717,14 +1238,49 @@ IF MT == 80
     END
   END
 
-  IF M1 == 13 00
-    IF waveguideToggle == 1
-      SEND 90 0B 01
-    END
-  END
-
   # if it is channel 1-6
   IF currentChannel < 6
+
+    IF M1 == 13 00
+      IF waveguideToggle == 1
+        SEND 90 0B 01
+      END
+    END
+
+    IF M1 == 07 00
+      IF pitchQuantize == 0
+        ASS pitchQuantize = 1
+        SEND B0 $53 7F
+      ELSE
+        ASS pitchQuantize = 0
+        SEND B0 $53 00
+      END
+      # TEST
+      # ensure pitchQuantize is toggled properly
+      IF pitchQuantize == 0
+        LOG PITCH_NOT_QUANTIZED
+      END
+      IF pitchQuantize == 1
+        LOG PITCH_QUANTIZED
+      END
+      # END TEST
+    END
+
+    # if knob is pressed and a drumParam is changed, the value in the L array will not match up correctly
+    # NOTE monitor for actions that this may be blocking that are unrelated to drum
+    IF knob6Push == 1
+      BLOCK
+      EXIT
+    END
+    IF knob7Push == 1
+      BLOCK
+      EXIT
+    END
+    IF knob8Push == 1
+      BLOCK
+      EXIT
+    END
+
     IF M1 == 0C 00
       SEND 90 04 01
       ASS previousDrumVal = 04
@@ -760,8 +1316,66 @@ IF MT == 80
   END
 END
 
+
 # if it is a knob turn
 IF MT == B0
+  # set knob turn to true if using push control
+  IF knob1Push == 1
+    ASS knob1Turn = 1
+    # TEST
+    # ensure that if knob is turned while knob is pressed, knob turn is set to true
+    LOG knob1Turn knob1Turn
+    # END TEST
+  END
+  IF knob2Push == 1
+    ASS knob2Turn = 1
+    # TEST
+    # ensure that if knob is turned while knob is pressed, knob turn is set to true
+    LOG knob2Turn knob2Turn
+    # END TEST
+  END
+  IF knob3Push == 1
+    ASS knob3Turn = 1
+    # TEST
+    # ensure that if knob is turned while knob is pressed, knob turn is set to true
+    LOG knob3Turn knob3Turn
+    # END TEST
+  END
+  IF knob4Push == 1
+    ASS knob4Turn = 1
+    # TEST
+    # ensure that if knob is turned while knob is pressed, knob turn is set to true
+    LOG knob4Turn knob4Turn
+    # END TEST
+  END
+  IF knob5Push == 1
+    ASS knob5Turn = 1
+    # TEST
+    # ensure that if knob is turned while knob is pressed, knob turn is set to true
+    LOG knob5Turn knob5Turn
+    # END TEST
+  END
+  IF knob6Push == 1
+    ASS knob6Turn = 1
+    # TEST
+    # ensure that if knob is turned while knob is pressed, knob turn is set to true
+    LOG knob6Turn knob6Turn
+    # END TEST
+  END
+  IF knob7Push == 1
+    ASS knob7Turn = 1
+    # TEST
+    # ensure that if knob is turned while knob is pressed, knob turn is set to true
+    LOG knob7Turn knob7Turn
+    # END TEST
+  END
+  IF knob8Push == 1
+    ASS knob8Turn = 1
+    # TEST
+    # ensure that if knob is turned while knob is pressed, knob turn is set to true
+    LOG knob8Turn knob8Turn
+    # END TEST
+  END
   # TEST
   # ensure tempo lighting functions as expected
   # END TEST
@@ -781,6 +1395,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $13
+          IF knob1Push == 0
+            ASS L0 = 1
+          END
         END
       END
       # if knob value is 14
@@ -792,6 +1409,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $26
+          IF knob1Push == 0
+            ASS L0 = $14
+          END
         END
       END
       # if knob value is 27
@@ -803,6 +1423,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $39
+          IF knob1Push == 0
+            ASS L0 = $27
+          END
         END
       END
       # if knob value is 40
@@ -814,6 +1437,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $52
+          IF knob1Push == 0
+            ASS L0 = $40
+          END
         END
       END
       # if knob value is 53
@@ -825,6 +1451,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $65
+          IF knob1Push == 0
+            ASS L0 = $53
+          END
         END
       END
       # if knob value is 66
@@ -836,6 +1465,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $78
+          IF knob1Push == 0
+            ASS L0 = $66
+          END
         END
       END
       # if knob value is 79
@@ -847,6 +1479,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $91
+          IF knob1Push == 0
+            ASS L0 = $79
+          END
         END
       END
       # if knob value is 92
@@ -858,6 +1493,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $104
+          IF knob1Push == 0
+            ASS L0 = $92
+          END
         END
       END
       # if knob value is 105
@@ -869,6 +1507,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $117
+          IF knob1Push == 0
+            ASS L0 = $105
+          END
         END
       END
       # if knob value is 118
@@ -880,6 +1521,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $127
+          IF knob1Push == 0
+            ASS L0 = $118
+          END
         END
       END
       # turning down
@@ -892,6 +1536,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $0
+          IF knob1Push == 0
+            ASS L0 = $12
+          END
         END
       END
       # if knob value is 25
@@ -903,6 +1550,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $13
+          IF knob1Push == 0
+            ASS L0 = $25
+          END
         END
       END
       # if knob value is 38
@@ -914,6 +1564,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $26
+          IF knob1Push == 0
+            ASS L0 = $38
+          END
         END
       END
       # if knob value is 51
@@ -925,6 +1578,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $39
+          IF knob1Push == 0
+            ASS L0 = $51
+          END
         END
       END
       # if knob value is 64
@@ -936,6 +1592,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $52
+          IF knob1Push == 0
+            ASS L0 = $64
+          END
         END
       END
       # if knob value is 77
@@ -947,6 +1606,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $65
+          IF knob1Push == 0
+            ASS L0 = $77
+          END
         END
       END
       # if knob value is 90
@@ -958,6 +1620,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $78
+          IF knob1Push == 0
+            ASS L0 = $90
+          END
         END
       END
       # if knob value is 103
@@ -969,6 +1634,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $91
+          IF knob1Push == 0
+            ASS L0 = $103
+          END
         END
       END
       # if knob value is 116
@@ -980,6 +1648,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $104
+          IF knob1Push == 0
+            ASS L0 = $116
+          END
         END
       END
       # if knob value is 126
@@ -991,6 +1662,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $117
+          IF knob1Push == 0
+            ASS L0 = $126
+          END
         END
       END
     END
@@ -1007,6 +1681,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $25
+          IF knob1Push == 0
+            ASS L0 = 1
+          END
         END
       END
       # if knob value is 26
@@ -1018,6 +1695,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $50
+          IF knob1Push == 0
+            ASS L0 = $26
+          END
         END
       END
       # if knob value is 51
@@ -1029,6 +1709,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $75
+          IF knob1Push == 0
+            ASS L0 = $51
+          END
         END
       END
       # if knob value is 76
@@ -1040,6 +1723,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $100
+          IF knob1Push == 0
+            ASS L0 = $76
+          END
         END
       END
       # if knob value is 101
@@ -1051,6 +1737,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $127
+          IF knob1Push == 0
+            ASS L0 = $101
+          END
         END
       END
       # turning down
@@ -1063,6 +1752,7 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 00
+          ASS L0 = $24
         END
       END
       # if knob value is 49
@@ -1074,6 +1764,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $25
+          IF knob1Push == 0
+            ASS L0 = $49
+          END
         END
       END
       # if knob value is 74
@@ -1085,6 +1778,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $50
+          IF knob1Push == 0
+            ASS L0 = $74
+          END
         END
       END
       # if knob value is 99
@@ -1096,6 +1792,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $75
+          IF knob1Push == 0
+            ASS L0 = $99
+          END
         END
       END
       # if knob value is 126
@@ -1107,6 +1806,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $100
+          IF knob1Push == 0
+            ASS L0 = $126
+          END
         END
       END
     END
@@ -1123,6 +1825,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $25
+          IF knob1Push == 0
+            ASS L0 = 1
+          END
         END
       END
       # if knob value is 26
@@ -1134,6 +1839,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $50
+          IF knob1Push == 0
+            ASS L0 = $26
+          END
         END
       END
       # if knob value is 51
@@ -1145,6 +1853,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $75
+          IF knob1Push == 0
+            ASS L0 = $51
+          END
         END
       END
       # if knob value is 76
@@ -1156,6 +1867,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $100
+          IF knob1Push == 0
+            ASS L0 = $76
+          END
         END
       END
       # if knob value is 101
@@ -1167,6 +1881,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $127
+          IF knob1Push == 0
+            ASS L0 = $101
+          END
         END
       END
       # turning down
@@ -1179,6 +1896,7 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 00
+          ASS L0 = $24
         END
       END
       # if knob value is 49
@@ -1190,6 +1908,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $25
+          IF knob1Push == 0
+            ASS L0 = $49
+          END
         END
       END
       # if knob value is 74
@@ -1201,6 +1922,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $50
+          IF knob1Push == 0
+            ASS L0 = $74
+          END
         END
       END
       # if knob value is 99
@@ -1212,6 +1936,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $75
+          IF knob1Push == 0
+            ASS L0 = $99
+          END
         END
       END
       # if knob value is 126
@@ -1223,6 +1950,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $100
+          IF knob1Push == 0
+            ASS L0 = $126
+          END
         END
       END
     END
@@ -1239,6 +1969,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $25
+          IF knob1Push == 0
+            ASS L0 = 1
+          END
         END
       END
       # if knob value is 26
@@ -1250,6 +1983,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $50
+          IF knob1Push == 0
+            ASS L0 = $26
+          END
         END
       END
       # if knob value is 51
@@ -1261,6 +1997,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $75
+          IF knob1Push == 0
+            ASS L0 = $51
+          END
         END
       END
       # if knob value is 76
@@ -1272,6 +2011,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $100
+          IF knob1Push == 0
+            ASS L0 = $76
+          END
         END
       END
       # if knob value is 101
@@ -1283,6 +2025,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $127
+          IF knob1Push == 0
+            ASS L0 = $101
+          END
         END
       END
       # turning down
@@ -1295,6 +2040,7 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 00
+          ASS L0 = $24
         END
       END
       # if knob value is 49
@@ -1306,6 +2052,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $25
+          IF knob1Push == 0
+            ASS L0 = $49
+          END
         END
       END
       # if knob value is 74
@@ -1317,6 +2066,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $50
+          IF knob1Push == 0
+            ASS L0 = $74
+          END
         END
       END
       # if knob value is 99
@@ -1328,6 +2080,9 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $75
+          IF knob1Push == 0
+            ASS L0 = $99
+          END
         END
       END
       # if knob value is 126
@@ -1339,12 +2094,17 @@ IF MT == B0
           SEND F0 CC 05 tempoPulse F7 +F
           # END SYSEX
           SEND BA 01 $100
+          IF knob1Push == 0
+            ASS L0 = $126
+          END
         END
       END
     END
     # TEST
     # ensure tempoPulse aligns with tempoMode
     LOG tempoPulse tempoPulse
+    LOG L0_SET
+    LOG L0 L0
     # END TEST
   END
   # if knob is 2 (gate)
@@ -1357,11 +2117,15 @@ IF MT == B0
     # SEND SYSEX
     SEND F0 CC 07 gateTemp gate F7 +F
     # END SYSEX
+    IF knob2Push == 0
+      ASS L1 = M2
+    END
     # TEST
     # ensure gate aligns with gate
     # ensure gateFactor is correct
     LOG gate gate
     LOG gateFactor gateFactor
+    LOG L1 L1
     # END TEST
   END
   # if knob is 3 (velocity)
@@ -1370,13 +2134,24 @@ IF MT == B0
     # SEND SYSEX
     SEND F0 C1 08 velocity F7 +F
     # END SYSEX
+    IF knob3Push == 0
+      ASS L2 = M2
+    END
     # TEST
     # ensure velocity aligns with velocity
     LOG velocity velocity
+    LOG L2 L2
     # END TEST
   END
   # if knob is 6 (drumParam 1)
   IF M1 == 6
+    # assign for push control
+    IF knob6Push == 0
+      ASS L5 = M2
+    END
+    # TEST
+    LOG L5 L5
+    # END TEST
     # if drumParams are 'select'
     IF drumParams == $14 $15 $16
       ASS M1 = $14
@@ -1420,6 +2195,13 @@ IF MT == B0
   END
   # if knob is 7 (drumParam 2)
   IF M1 == 7
+    # assign for push control
+    IF knob7Push == 0
+      ASS L6 = M2
+    END
+    # TEST
+    LOG L6 L6
+    # END TEST
     # if drumParams are 'select'
     IF drumParams == $14 $15 $16
       ASS M1 = $15
@@ -1463,6 +2245,13 @@ IF MT == B0
   END
   # if knob is 8 (drumParam 3)
   IF M1 == 8
+    # assign for push control
+    IF knob8Push == 0
+      ASS L7 = M2
+    END
+    # TEST
+    LOG L7 L7
+    # END TEST
     # if drumParams are 'select'
     IF drumParams == $14 $15 $16
       ASS M1 = $16
@@ -1515,4 +2304,17 @@ IF MT == B0
   # END TEST
 END
 
+# assign values to L array for push control
+IF MT == B0
+  IF M1 < 9
+    ASS LM1 = M2
+    # TEST
+    LOG LM1 LM1
+    # END TEST
+  END
+END
+
 NX = XX +B
+# once channel data is figured out, this will need to be changed - likely will let any channel through that's not channel 9, switching M1 here
+# channel 9 because it's the only channel that's not usable due to beats remapping
+BA = XX +B
