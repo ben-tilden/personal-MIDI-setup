@@ -8,14 +8,6 @@
 # knob 2 press restarts current lfo
 # knob 1 rate; knob 2 depth
 
-# TODO implement push control
-# push control will be set such that when the knob is pushed, knobPush is set to true, and the current value is saved
-# if knobPush is set to true and knobTurned is set to true, the original value will be sent back to the parameter and the knob lighting
-# on knob release, knobPush will be set to false and the settings will change if knobTurned is set to false
-# cons: this may make it more difficult in a live setting, since pushing and not turning by accident could cause issues
-# pros: it's more intuitive, prevents two hands from being used at the same time, and allows for more mapping on xtouch
-# will likely need knobVal parameter to store what knob it is - more scalable
-
 # notes on live testing:
 # app crashes when order / phrase used at a very high tempo
 # can put red tape to indicate
@@ -23,6 +15,8 @@
 # knob to change channel instead of launchkey button
 
 # lfo's
+
+# when reviewing variables - review to see if it would be possible to create arrays just via offset and iterate through rather than have x if statements
 
 # drunk mode in terms of value
 # randomizer probability implemented with current arp value implementation

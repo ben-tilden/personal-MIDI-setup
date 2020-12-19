@@ -14,8 +14,14 @@
 # C - channels
 
 # F0 11 FF 2E 57 F7 - rest, sent from xtouch to launchkey
+
 # F0 FF FF 00 00 F7 - message sent from launchkey to xtouch to reset lighting
-# F0 CC FF 00 00 F7 - message sent from launchkey to channels to reset latch
+# F0 CC FF 00 00 F7 - message sent from launchkey to channel to reset channel
+# F0 FF FF CC CC F7 - message sent from launchkey to xtouch at change channel - send xtouch lights to xtouch for new channel
+
+# F0 0F FF M0 M1 M2 F7 - message sent from xtouch to xtouch filter to send lighting back to xtouch
+
+# F0 11 FF M0 M1 M2 F7 - message sent from xtouch to launchkey for CC output
 
 # sysex key for value updates
 
@@ -102,6 +108,36 @@ NOTE tempo is an exception here because when the lighting is sent from xtouch, i
 3. lighting should only be sent at knob release if the knob which is being turned does not already have code in xtouch that sends lighting for it (i.e. tempo) (the lighting change will be blocked otherwise)
 
 # SCRAPS
+
+# allow for drumParams to pass
+IF M0 == B0
+  IF M1 < $14
+    BLOCK
+    EXIT
+  END
+  IF M1 > $31
+    IF M1 < $46
+      BLOCK
+      EXIT
+    END
+  END
+  IF M1 > $48
+    IF M1 < $53
+      BLOCK
+      EXIT
+    END
+  END
+  IF M1 > $53
+    IF M1 < $116
+      BLOCK
+      EXIT
+    END
+  END
+  IF M1 > $119
+    BLOCK
+    EXIT
+  END
+END
 
 # launchkey
 

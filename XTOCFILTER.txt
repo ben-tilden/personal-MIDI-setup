@@ -1,11 +1,30 @@
 # xtouch to channel filter
 
-# filter messages that don't have CC or C1 as their routing (11)
+# filter out messages that don't have CC or C1 as their routing (11, 0F)
 
-IF M1 < C1
-  BLOCK
-  EXIT
+# messages expected:   
+
+# BLOCK | F0 11 FF 2E 57 F7 - rest, sent from xtouch to launchkey
+# BLOCK | F0 0F FF M0 M1 M2 F7 - message sent from xtouch to xtouch filter to send lighting back to xtouch
+# BLOCK | F0 11 FF M0 M1 M2 F7 - message sent from xtouch to launchkey for CC output
+
+# ALLOW | F0 C1    02    val  F7      arpPhraseToggle
+# ALLOW | F0 C1    03    val  F7      arpPhraseOnOffToggle
+# ALLOW | F0 CC    05    val  F7      tempoPulse
+# ALLOW | F0 CC    07    val1 val2 F7 gate
+# ALLOW | F0 C1    08    val  F7      velocity
+# ALLOW | F0 C1    09    val  F7      arpValueModeMod
+# ALLOW | F0 CC/FF 0E    val  F7      gateOpened
+# BLOCK | F0 11    14    val  F7      isLatch
+
+# BLOCK | any channel specific CC messages
+
+IF M0 == F0
+  IF M1 < C1
+    BLOCK
+    EXIT
+  END
 END
 
-N0-F = XX +B
-B0-F = XX +B
+NX = XX +B
+BX = XX +B

@@ -1,40 +1,34 @@
 # xtouch to launchkey filter
 
-# filter messages that don't have 11 or C1 as their routing (CC)
+# filter out messages that don't have 11 or C1 as their routing (CC, 0F)
 
-IF M1 > C1
-  BLOCK
-  EXIT
-END
+# messages expected:   
 
-# allow for drumParams to pass
-IF M0 == B0
-  IF M1 < $14
+# ALLOW | F0 11 FF 2E 57 F7 - rest, sent from xtouch to launchkey
+# BLOCK | F0 0F FF M0 M1 M2 F7 - message sent from xtouch to xtouch filter to send lighting back to xtouch
+# ALLOW | F0 11 FF M0 M1 M2 F7 - message sent from xtouch to launchkey for CC output
+
+# ALLOW | F0 C1    02    val  F7      arpPhraseToggle
+# ALLOW | F0 C1    03    val  F7      arpPhraseOnOffToggle
+# BLOCK | F0 CC    05    val  F7      tempoPulse
+# BLOCK | F0 CC    07    val1 val2 F7 gate
+# ALLOW | F0 C1    08    val  F7      velocity
+# ALLOW | F0 C1    09    val  F7      arpValueModeMod
+# BLOCK | F0 CC/FF 0E    val  F7      gateOpened
+# ALLOW | F0 11    14    val  F7      isLatch
+
+# ALLOW | any channel specific CC messages
+
+IF M0 == F0
+  IF M1 > C1
     BLOCK
     EXIT
   END
-  IF M1 > $31
-    IF M1 < $46
-      BLOCK
-      EXIT
-    END
-  END
-  IF M1 > $48
-    IF M1 < $53
-      BLOCK
-      EXIT
-    END
-  END
-  IF M1 > $53
-    IF M1 < $116
-      BLOCK
-      EXIT
-    END
-  END
-  IF M1 > $119
+
+  IF M1 == 0F
     BLOCK
     EXIT
   END
 END
 
-N0-F = XX +B
+NX = XX +B

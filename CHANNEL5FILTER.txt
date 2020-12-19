@@ -1,0 +1,14 @@
+# channel 5 hardware filter
+
+IF LOAD
+  # global
+  ALIAS G0 globalChannel
+
+  # constant
+  ALIAS 04 thisChannel
+END
+
+IF globalChannel != thisChannel
+  BLOCK
+  EXIT
+END

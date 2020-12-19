@@ -2,6 +2,7 @@
 
 # TEST NOTES
 # NOTE phrase tested and passed all tests, but there may still be one unconfirmed bug where the notes are transposed downward incorrectly
+# TODO add hardware filters
 
 
 
@@ -13,37 +14,32 @@
 
 # launchkey mini (mk2)
 
-# this will feed data into each channel file and will be toggled by xtouch
-# if phrase and arp are off, notes will be passed through as expected
+# J is the local storage array (database)
+# TODO implement button reset
 
-SUBROUTINE INSERTION_SORT isOrder length
-  ALIAS I10 i
-  ALIAS I11 j
-  ALIAS I12 jPlusOne
-  ALIAS I13 keyVal
-  ALIAS I14 keyBool
-  ALIAS I15 isSetSort
-  ALIAS I16 lengthOffset
+IF LOAD
 
-  MATH lengthOffset = length + 20
 
-  IF isOrder == 1
-    ASS i = 21
-    WHILE i < lengthOffset
-      ASS keyVal = KI10
-      ASS keyBool = JI10
-      MATH j = i - 1
-      MATH jPlusOne = j + 1
-      ASS isSetSort = 0
-      IF j >= 20
-        IF KI11 < keyVal
-          ASS isSetSort = 1
-        END
-      END
-      WHILE isSetSort == 1
-        ASS KI12 = KI11
-        ASS JI12 = JI11
-        MATH j = j - 1
+  # this will feed data into each channel file and will be toggled by xtouch
+  # if phrase and arp are off, notes will be passed through as expected
+
+  SUBROUTINE INSERTION_SORT isOrder length
+    ALIAS I10 i
+    ALIAS I11 j
+    ALIAS I12 jPlusOne
+    ALIAS I13 keyVal
+    ALIAS I14 keyBool
+    ALIAS I15 isSetSort
+    ALIAS I16 lengthOffset
+
+    MATH lengthOffset = length + 20
+
+    IF isOrder == 1
+      ASS i = 21
+      WHILE i < lengthOffset
+        ASS keyVal = KI10
+        ASS keyBool = JI10
+        MATH j = i - 1
         MATH jPlusOne = j + 1
         ASS isSetSort = 0
         IF j >= 20
@@ -51,28 +47,28 @@ SUBROUTINE INSERTION_SORT isOrder length
             ASS isSetSort = 1
           END
         END
-      END
-      ASS KI12 = keyVal
-      ASS JI12 = keyBool
-      MATH i = i + 1
-    END
-  ELSE
-    ASS i = 21
-    WHILE i < lengthOffset
-      ASS keyVal = JI10
-      ASS keyBool = KI10
-      MATH j = i - 1
-      MATH jPlusOne = j + 1
-      ASS isSetSort = 0
-      IF j >= 20
-        IF JI11 < keyVal
-          ASS isSetSort = 1
+        WHILE isSetSort == 1
+          ASS KI12 = KI11
+          ASS JI12 = JI11
+          MATH j = j - 1
+          MATH jPlusOne = j + 1
+          ASS isSetSort = 0
+          IF j >= 20
+            IF KI11 < keyVal
+              ASS isSetSort = 1
+            END
+          END
         END
+        ASS KI12 = keyVal
+        ASS JI12 = keyBool
+        MATH i = i + 1
       END
-      WHILE isSetSort == 1
-        ASS JI12 = JI11
-        ASS KI12 = KI11
-        MATH j = j - 1
+    ELSE
+      ASS i = 21
+      WHILE i < lengthOffset
+        ASS keyVal = JI10
+        ASS keyBool = KI10
+        MATH j = i - 1
         MATH jPlusOne = j + 1
         ASS isSetSort = 0
         IF j >= 20
@@ -80,23 +76,30 @@ SUBROUTINE INSERTION_SORT isOrder length
             ASS isSetSort = 1
           END
         END
+        WHILE isSetSort == 1
+          ASS JI12 = JI11
+          ASS KI12 = KI11
+          MATH j = j - 1
+          MATH jPlusOne = j + 1
+          ASS isSetSort = 0
+          IF j >= 20
+            IF JI11 < keyVal
+              ASS isSetSort = 1
+            END
+          END
+        END
+        ASS JI12 = keyVal
+        ASS KI12 = keyBool
+        MATH i = i + 1
       END
-      ASS JI12 = keyVal
-      ASS KI12 = keyBool
-      MATH i = i + 1
     END
   END
-END
 
-# J is the local storage array (database)
-# TODO implement button reset
-
-IF LOAD
 
   # setup init - comment out if there is a need to save global information between sessions
   # reset global array
-  # TODO IF keypressed here? can that prevent extra work?
 
+  ASS G0 = 00 # TODO
   ASS J0 = 00 # currentChannel
   ASS J1 = 00 # numPressed
   ASS J2 = 00 # arpPhraseToggle
@@ -145,13 +148,13 @@ IF LOAD
   LOG CHANNELS_RESET
   # END TEST
 
-  # global variable
-  ALIAS G0 currentChannel
-
   # end init
 
-  # constant
+  # global
+  ALIAS G0 channel
 
+  # constant
+  ALIAS 00 channelVal
   ALIAS 20 arpIndexOffset
   ALIAS C8 latchInterval
 
@@ -170,6 +173,9 @@ IF LOAD
   ALIAS I19 latchTiming # TODO
   ALIAS I1C initLatch # TODO
   # NOTE I10 - I16 taken by insertion sort above
+  ALIAS I1A channelCC # TODO
+  ALIAS I1B channelNoteOn # TODO
+  ALIAS I1C channelNoteOff # TODO
 
   # global
   ALIAS J1 numPressed
@@ -185,6 +191,12 @@ IF LOAD
   ALIAS J14 isLatch
 
   # assign local
+
+  # these are only defined here, since they are essentially constants - will not change past this
+  ASS channelCC = B0 + channelVal
+  ASS channelNoteOn = 90 + channelVal
+  ASS channelNoteOff = 80 + channelVal
+
   ASS K20 = 00 00 00 00 00 00 00 00 00 00
 
   ASS numPressedTotal = 0
@@ -195,13 +207,6 @@ IF LOAD
   ASS isFirst = 0
   ASS initLatch = 1
 
-END
-
-# TODO fix this - can't make it global because then it can't be recorded - or would need to save channel when recording somehow
-# filter xtouch into modstep?
-IF isFirst == 0
-  ASS currentChannel = MC
-  ASS isFirst = 1
 END
 
 # sysex reception
@@ -234,7 +239,7 @@ IF M0 == F0
       IF arpPhraseOnOffToggle == 1
         ASS iter = arpIndexOffset
         WHILE iter < arpIndex
-          SEND 80 JI0 00
+          SEND channelNoteOff JI0 00
           MATH iter = iter + 1
         END
         # need to open gate so that there's a smooth transition here
@@ -245,7 +250,7 @@ IF M0 == F0
       ELSE
         ASS iter = arpIndexOffset
         WHILE iter < arpIndex
-          SEND 90 JI0 velocity
+          SEND channelNoteOn JI0 velocity
           MATH iter = iter + 1
         END
       END
@@ -307,7 +312,7 @@ IF M0 == F0
       IF isLatch == 0
         ASS iter = arpIndexOffset
         WHILE iter < arpIndex
-          SEND 80 JI0 00
+          SEND channelNoteOff JI0 00
           ASS JI0 = 0
           ASS KI0 = 0
           MATH iter = iter + 1
@@ -334,17 +339,82 @@ END
 
 # end sysex reception
 
-# TODO not currently functional
 IF MT == B0
+  # channel changed on release - should be released when hold released on launchkey
+  # NOTE pressing a button / key and changing the channel before note off is not supported
+  # channel change should use two hands, so hoping this will not come up
   IF M1 == 6B 00
-    # TODO two buttons at once? triple tap? on release
 
-    # NOTE will need to send lighting to xtouch for sure, but setting the global channel should be enough to change routing
-    # SEND sysex here
+    # send channel change sysex
+    # SEND SYSEX
+    SEND F0 FF FF CC CC F7 +F
+    # END SYSEX
 
-    ASS currentChannel = MC
+    # change channel variable here
+    # NOTE currently global, but could change to sysex
+    ASS channel = channelVal
 
-    NX = XX +B
+    BLOCK
+    EXIT
+  END
+
+  # channel reset
+  IF M1 == 6A 7F
+
+    # NOTE / TODO possible to add double tap to reset all channels
+
+    # reset global array
+
+    ASS J0 = 00 # currentChannel
+    ASS J1 = 00 # numPressed
+    ASS J2 = 00 # arpPhraseToggle
+    ASS J3 = 00 # arpPhraseOnOffToggle
+    ASS J4 = 00 # tempoModeMod
+    ASS J5 = 24 # tempoPulse
+    ASS J6 = 00 # gateModeMod
+    ASS J7 = 00 # gate
+    ASS J8 = 64 # velocity
+    ASS J9 = 00 # arpValueModeMod
+    ASS JA = 00 # setPhrase
+    ASS JB = 3C # phraseVal
+    ASS JC = 2A # phraseindex
+    ASS JD = 2A # phraseLengthPlusOffset
+    ASS JE = 00 # gateOpened
+    ASS JF = 00 # waveguideToggle
+    ASS J10 = 0E # drumParams (Part 1)
+    ASS J11 = 0F # drumParams (Part 2)
+    ASS J12 = 10 # drumParams (Part 1+2)
+    ASS J13 = 67 # drumParams (wg send) (103)
+    ASS J14 = 00 # isLatch
+    ASS J20 = 00 00 00 00 00 00 00 00 00 00 # arp values (J10 J11 J12 J13 J14 J15 J16 J17 J18 J19)
+    ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
+    # TEST
+    # ensure global array reset
+    ASS LFF = 0
+    WHILE LFF < 48
+      LOG J_INDEX LFF
+      LOG LFF JLFF
+      MATH LFF = LFF + 1
+    END
+    # END TEST
+
+    # reset xtouch lighting and params
+    SEND F0 FF FF 00 00 F7 +F
+    # TEST
+    # ensure xtouch reset
+    LOG XTOUCH_RESET
+    # END TEST
+
+    # full setup init - comment out if there is a need to save channel information between sessions
+    # reset channel information
+    SEND F0 CC FF 00 00 F7 +F
+    # TEST
+    # ensure channel information reset (will need to be done on individual files)
+    LOG CHANNELS_RESET
+    # END TEST
+
+    BLOCK
+    EXIT
   END
 END
 
@@ -443,9 +513,9 @@ IF MT == 90
         ASS iter = arpIndexOffset
         WHILE iter < arpIndex
           # NOTE if the note value is the same as a value that has just been pressed, we need to resend the value, since that is what will be happening with any other overlapping values pressed
-          SEND 80 JI0 00
+          SEND channelNoteOff JI0 00
           IF M1 == JI0
-            SEND 90 JI0 velocity
+            SEND channelNoteOn JI0 velocity
           END
           ASS JI0 = 0
           ASS KI0 = 0
@@ -748,7 +818,7 @@ IF setPhrase == 1
     MATH phraseIndex = phraseIndex + 1
   END
   # if phraseRest is sent
-  # NOTE M1 used due to SB limiting comparisons to four indices
+  # NOTE M1 used due to SB limiting comparisons to four indices # TODO make M1 / M2 usage consistent
   IF M2 == FF 2E 57
     # assign value to 2E57, indicating a rest
     ASS JJC = 2E57

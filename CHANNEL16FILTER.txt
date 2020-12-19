@@ -1,0 +1,14 @@
+# channel 16 hardware filter
+
+IF LOAD
+  # global
+  ALIAS G0 globalChannel
+
+  # constant
+  ALIAS 0F thisChannel
+END
+
+IF globalChannel != thisChannel
+  BLOCK
+  EXIT
+END
