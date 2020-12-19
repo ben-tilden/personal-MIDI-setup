@@ -1,0 +1,66 @@
+# TODO IDEAS
+
+# ensure xtouch receives currentChannel # pending implementation completion
+# ensure channel information reset on init (will need to be done on individual files) # pending implementation completion
+
+# TODO lfo params
+# knob 1 press alternates lfo control
+# knob 2 press restarts current lfo
+# knob 1 rate; knob 2 depth
+
+# notes on live testing:
+# app crashes when order / phrase used at a very high tempo
+# can put red tape to indicate
+
+# knob to change channel instead of launchkey button
+
+# lfo's
+
+# when reviewing variables - review to see if it would be possible to create arrays just via offset and iterate through rather than have x if statements
+
+# drunk mode in terms of value
+# randomizer probability implemented with current arp value implementation
+# randomizer / drunk mode in terms of tempo / probability
+# NOTE aka swing
+
+# ARP sync (button)
+# NOTE could technically do this via offset, but likely not valuable at this point
+# PHRASE sync (button)
+# NOTE could technically do this via offset, but likely not valuable at this point
+
+# parts we can map that have not been mapped yet
+
+Best based on channel - 1-8, 10-12 (layer A)
+----------------------------------
+LFO on (button)
+LFO tempo (knob)
+LFO type (button)
+LFO sync (button)
+
+Scenes and Tracks for live sets (modstep) (less feasible)
+
+OMNI mode (layer B)
+---------
+Map based on what is used a lot
+Can change knob controls by pressing - cycles through
+
+# parts that could be remapped
+- keyboard filter 'ON' (Track <)
+- modstep filter 'ON' (Track >)
+- sample mode 'TOGGLE' (Scene - up, down)
+- play, stop (|>)
+
+- channel 9 to channel 16
+
+Other notes:
+------------
+ARP can be used as a drum roll for any instrument by changing tempo accordingly
+ARP can be used with different values for channel 10 / 11 - see what combinations of percussion work
+Try using ARP and PHRASE at the same time for a channel
+Try using ARP or PHRASE with the FM (and the FM's ARP)
+Might be interesting to have ARP and PHRASE sync options to try ARP and PHRASE where it doesn't match Ableton link
+if you pass a variable into a recursive function by reference is will almost always change mid function
+Midifire can remain open in front of modstep, but modstep will be doing most of the sequencing
+Fugue Machine can be used to reverse, invert, bounce phrase
+
+Micron and MicroBrute will be incorporated eventually

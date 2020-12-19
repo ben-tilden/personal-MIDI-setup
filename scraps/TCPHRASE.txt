@@ -1,0 +1,152 @@
+# UPDATE: this will likely need to be overhauled, since Dynamic Clock has proved not to be as powerful as initially thought
+# revamp will likely implement similar functionality to MicroBrute
+# one step at a time, but will likely be an array of values / rests
+# tempo is 100% a factor now
+# gate a factor as well
+
+# tempo controller
+# TODO:
+# edit scene so that clock sends only from link 2 midi and only FA and FC come from this file
+# no need to edit this file, but scene needs to be fixed - sending ableton link external clock works, but sending FA does not (song position 0?) (sysex?)
+# song position at zero
+
+IF LOAD
+  ASS I0 = 0
+  ALIAS I0 numPressed
+  ASS I1 = 0
+  ALIAS I1 numHaveBeenPressed
+  ASS L0 = 0
+  ALIAS L0 iter
+  ALIAS L1 max
+  ALIAS L5 secondMax
+  ASS L2 = 0
+  ASS L3 = 0
+  ALIAS L2 maxIndex
+  ALIAS L3 secondMaxIndex
+  ASS L4 = 0
+  ALIAS L4 isSet
+  
+  ASS J00 = 00 00 00 00 00
+  ASS K00 = 00 00 00 00 00
+  
+  SET Q0 TEMPO
+  
+  LOG INIT_LOG
+  LOG K1 K1
+  LOG K2 K2
+  LOG K3 K3
+  LOG K4 K4
+  LOG K5 K5
+  LOG J1 J1
+  LOG J2 J2
+  LOG J3 J3
+  LOG J4 J4
+  LOG J5 J5
+END
+
+IF M0 == F0 7D 01 00
+  SEND B0 13 Q0
+END
+
+#key down and key up quasi stack
+#alternating between keys sometimes transposes too far downward
+
+# if key pressed
+IF MT == 90
+  
+  # setting arbitrary limit on number of keys pressed at a time to 5
+  IF numPressed == 5
+    SEND FC
+    ASS K0 = 00 00 00 00 00
+    ASS numHaveBeenPressed = 0
+  END
+  
+  # trigger new offset
+  ASS G0 = 00
+  # set initial note to calculate offset
+  ASS G1 = M1
+  LOG G1 G1
+  
+  # add to number of keys pressed
+  MAT numPressed = numPressed + 1
+  MAT numHaveBeenPressed = numHaveBeenPressed + 1
+  
+  IF numPressed == 1
+    SEND FA
+  END
+  
+  # we need to have a while loop here to account for the user pressing and releasing keys in different orders
+  # say user presses A, B, C, then lifts up B
+  # this sets numPressed to 2, but when another key is pressed it will overwrite C if we continue linearly
+  ASS iter = 1
+  ASS isSet = 0
+  WHILE isSet != 1
+    IF KL0 == 0
+      # add note value into J - this array's indices will all be >= 1
+      ASS JL0 = M1
+      
+      # add note index in K to show it is pressed - this array's indices will all be >= 1
+      ASS KL0 = numHaveBeenPressed
+      ASS isSet = 1
+    END
+    MATH iter = iter + 1
+  END
+  
+  LOG ON_LOG
+  LOG K1 K1
+  LOG K2 K2
+  LOG J1 J1
+  LOG J2 J2
+  
+END
+
+IF MT == 80
+  # stop if no keys pressed
+  MAT numPressed = numPressed - 1
+  IF numPressed < 1
+    SEND FC
+    ASS K0 = 00 00 00 00 00
+    ASS numHaveBeenPressed = 0
+  END
+  
+  # find the max k value, or the most recent key pressed
+  # if the j value, or note value of that max is M1, we need to change the phrase offset,
+  # so reset the g values, setting G1 to the second most recent key pressed
+  # while we are iterating, we need to set the k value of whichever key is pressed to zero so we can reuse that index
+  ASS max = 0
+  ASS secondMax = 0
+  ASS iter = 1
+  WHILE iter <= 5
+    IF KL0 > max
+      ASS secondMax = max
+      ASS max = KL0
+      ASS secondMaxIndex = maxIndex
+      ASS maxIndex = iter
+    ELSE
+      IF KL0 > secondMax
+        ASS secondMax = KL0
+        ASS secondMaxIndex = iter
+      END
+    END
+    IF JL0 == M1
+      ASS KL0 = 0
+    END
+    MATH iter = iter + 1
+  END
+  IF JL2 == M1
+    # trigger new offset
+    ASS G0 = 00
+    # set value equal to second most recent key pressed
+    ASS G1 = JL3
+    LOG G1 G1
+  END
+  
+  LOG OFF_LOG
+  LOG K1 K1
+  LOG K2 K2
+  LOG J1 J1
+  LOG J2 J2
+  
+END
+
+NX = XX +B

@@ -1,0 +1,636 @@
+# local setup
+
+# option to add chromatic playing for only one part of the drum
+# option to add pitch to individual parts for beats 
+# option to add slapback
+
+IF LOAD
+  SET Q2 +H
+  SET Q3 +H
+  SET Q7 +H
+  # see 1.
+  ALIAS I0 CNT
+  ASS CNT = 0
+  ALIAS I1 TGL
+  ASS TGL = 0
+  # see 2.
+  SET Q3 DRUM_TRACKING 1 3 +MENU
+  # see 3.
+  ASS J0 = 0
+  ASS J1 = 0
+  ASS J2 = 0
+  ASS J3 = 0
+  # see 4.
+  ASS K3 = 0B # remote control event
+  ASS K4 = 31 # remote control event
+  ASS K5 = 05 # remote control event
+  SET Q4 BASS_EXPR
+  SET Q5 BASS_GATE
+  SET Q6 BASS_SLIDE
+  ASS Q4 = 64 +P # current fixed EXPR
+  ASS Q5 = 64 +P # current fixed GATE
+  ASS Q6 = 64 +P # current fixed SLIDE
+  # see 6.
+  ASS K0 = 7F # remote control event
+  SET Q1 VELOCITY
+  ASS Q1 = 64 +P # current fixed velocity
+  # see 7.
+  ASS K1 = 7E # remote control event
+  ASS K2 = 0
+  SET Q0 INTERVAL $-12 $12
+  ASS Q0 = 0 +P # current fixed interval level
+END
+
+# 1. switch MIDI from Beats
+
+# if a control message and scene change positive, change scene upward
+IF MT == B0
+  IF M1 == 68 7F
+    MAT CNT = CNT + 1
+    MAT TGL = CNT % 2
+  END
+END
+
+# if a control message and scene change negative, change scene downward
+IF MT == B0
+  IF M1 == 69 7F
+    MAT CNT = CNT - 1
+    MAT TGL = CNT % 2
+  END
+END
+
+# if toggle is one, block channel 10 24 - 2C and 30
+IF TGL == 1
+  N9 24-2C = XX XX +B
+  N9 30 = XX XX +B
+END
+
+# 3. chromaticize keys volca drum
+
+# if tracking is on
+IF Q3 != 3
+  # if M0 is a note in the current channel, send the channel (J1), pitch control, and note number (J0)
+  MAT J2 = MC + 90
+  IF M0 == J2
+    IF M0 < 96
+      MAT J0 = MC + B0
+      MAT J1 = M1 + 1
+      # if tracking is set to 1 part
+      IF Q3 == 2
+        SND J0 1C J1
+      ELSE
+        # I0 is divided into 25 separate groups, ranging 5 values from -12 to +12 semitones (with quantized pitch)
+        # J3 has the potential to send messages which will cause issues if it goes below zero / above 126
+        # including conditionals to prevent this
+        IF I0 < $6
+          MAT J3 = J1 - 18
+          IF J3 > 0
+            SND J0 1A J1
+            SND J0 1B J3
+          ELSE
+            SND J0 1A J1
+            SND J0 1B 01
+          END
+        END
+        IF I0 < $11
+          IF I0 >= $6
+            MAT J3 = J1 - 16
+            IF J3 > 0
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 01
+            END
+          END
+        END
+        IF I0 < $16
+          IF I0 >= $11
+            MAT J3 = J1 - 14
+            IF J3 > 0
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 01
+            END
+          END
+        END
+        IF I0 < $21
+          IF I0 >= $16
+            MAT J3 = J1 - 12
+            IF J3 > 0
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 01
+            END
+          END
+        END
+        IF I0 < $26
+          IF I0 >= $21
+            MAT J3 = J1 - 10
+            IF J3 > 0
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 01
+            END
+          END
+        END
+        IF I0 < $31
+          IF I0 >= $26
+            MAT J3 = J1 - E
+            IF J3 > 0
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 01
+            END
+          END
+        END
+        IF I0 < $36
+          IF I0 >= $31
+            MAT J3 = J1 - C
+            IF J3 > 0
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 01
+            END
+          END
+        END
+        IF I0 < $41
+          IF I0 >= $36
+            MAT J3 = J1 - A
+            IF J3 > 0
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 01
+            END
+          END
+        END
+        IF I0 < $46
+          IF I0 >= $41
+            MAT J3 = J1 - 8
+            IF J3 > 0
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 01
+            END
+          END
+        END
+        IF I0 < $51
+          IF I0 >= $46
+            MAT J3 = J1 - 6
+            IF J3 > 0
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 01
+            END
+          END
+        END
+        IF I0 < $56
+          IF I0 >= $51
+            MAT J3 = J1 - 4
+            IF J3 > 0
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 01
+            END
+          END
+        END
+        IF I0 < $61
+          IF I0 >= $56
+            MAT J3 = J1 - 2
+            IF J3 > 0
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 01
+            END
+          END
+        END
+        IF I0 < $67
+          IF I0 >= $61
+            SND J0 1A J1
+            SND J0 1B J1
+          END
+        END
+        IF I0 < $72
+          IF I0 >= $67
+            MAT J3 = J1 + 2
+            IF J3 < 127
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 7E
+            END
+          END
+        END
+        IF I0 < $77
+          IF I0 >= $72
+            MAT J3 = J1 + 4
+            IF J3 < 127
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 7E
+            END
+          END
+        END
+        IF I0 < $82
+          IF I0 >= $77
+            MAT J3 = J1 + 6
+            IF J3 < 127
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 7E
+            END
+          END
+        END
+        IF I0 < $87
+          IF I0 >= $82
+            MAT J3 = J1 + 8
+            IF J3 < 127
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 7E
+            END
+          END
+        END
+        IF I0 < $92
+          IF I0 >= $87
+            MAT J3 = J1 + A
+            IF J3 < 127
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 7E
+            END
+          END
+        END
+        IF I0 < $97
+          IF I0 >= $92
+            MAT J3 = J1 + C
+            IF J3 < 127
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 7E
+            END
+          END
+        END
+        IF I0 < $102
+          IF I0 >= $97
+            MAT J3 = J1 + E
+            IF J3 < 127
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 7E
+            END
+          END
+        END
+        IF I0 < $107
+          IF I0 >= $102
+            MAT J3 = J1 + 10
+            IF J3 < 127
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 7E
+            END
+          END
+        END
+        IF I0 < $112
+          IF I0 >= $107
+            MAT J3 = J1 + 12
+            IF J3 < 127
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 7E
+            END
+          END
+        END
+        IF I0 < $117
+          IF I0 >= $112
+            MAT J3 = J1 + 14
+            IF J3 < 127
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 7E
+            END
+          END
+        END
+        IF I0 < $122
+          IF I0 >= $117
+            MAT J3 = J1 + 16
+            IF J3 < 127
+              SND J0 1A J1
+              SND J0 1B J3
+            ELSE
+              SND J0 1A J1
+              SND J0 1B 7E
+            END
+          END
+        END
+        IF I0 >= $122
+          MAT J3 = J1 + 18
+          IF J3 < 127
+            SND J0 1A J1
+            SND J0 1B J3
+          ELSE
+            SND J0 1A J1
+            SND J0 1B 7E
+          END
+        END
+      END
+    END
+  END
+END
+
+# 4. mapping individual notes
+# seemingly out of order due to StreamByter being very literal with the way it assigns
+# CC's need to be remapped before they are mapped again
+
+N9 32 = X1 3C # remap 50 to 62 for channel 10 volca drum pt 2
+N9 2B = X9 32 # remap 43 to 50 for channel 10 hi tom
+N9 2A = X9 2B # remap 42 to 43 for channel 10 lo tom
+N9 24 = X9 2A # remap 36 to 40 for channel 10 cl hat
+N9 28 = X9 24 # remap 40 to 36 for channel 10 bass
+N9 26 = X9 4B # remap 38 to 75 for channel 10 claves
+N9 29 = X9 26 # remap 41 to 38 for channel 10 snare
+N9 2E = X4 3C # remap 46 to 67 for channel 10 volca drum pt 5
+N9 25 = X9 2E # remap 37 to 46 for channel 10 op hat
+N9 27 = X9 43 # remap 39 to 67 for channel 10 agogo
+N9 30 = X9 27 # remap 48 to 39 for channel 10 clap
+N9 31 = X0 3C # remap 49 to 60 for channel 10 volca drum pt 1
+N9 2C = X9 31 # remap 44 to 49 for channel 10 crash
+N9 33 = X2 3C # remap 51 to 64 for channel 10 volca drum pt 3
+N9 2D = X3 3C # remap 45 to 65 for channel 10 volca drum pt 4
+N9 2F = X5 3C # remap 47 to 69 for channel 10 volca drum pt 6
+
+# 5. mapping individual controls
+
+BX 6C 7F = FA # map start control
+BX 6D 7F = FC # map stop control
+
+# mapping hidden MIDI for bass
+B7 15 = B7 0B # expression to knob 1
+B7 16 = B7 31 # gate time to knob 2
+B7 17 = B7 05 # slide time to knob 3
+
+# adding expression to slider
+IF M0 == B7
+  IF M1 == K3
+    ASS Q4 = M2
+  END
+END
+
+# adding gate time to slider
+IF M0 == B7
+  IF M1 == K4
+    ASS Q5 = M2
+  END
+END
+
+# adding slide time to slider
+IF M0 == B7
+  IF M1 == K5
+    ASS Q6 = M2
+  END
+END
+
+# mapping drum
+
+# bit reduction to knob 1
+IF MC < 6
+  IF M1 == 15
+    ASS M1 = 31
+  END
+END
+
+# fold to knob 2
+IF MC < 6
+  IF M1 == 16
+    ASS M1 = 32
+  END
+END
+
+# drive to knob 3
+IF MC < 6
+  IF M1 == 17
+    ASS M1 = 33
+  END
+END
+
+# dry gain to knob 4
+IF MC < 6
+  IF M1 == 18
+    ASS M1 = 34
+  END
+END
+
+# pan to knob 5
+IF MC < 6
+  IF M1 == 19
+    ASS M1 = 0A
+  END
+END
+
+# waveguide send to knob 6
+IF MC < 6
+  IF M1 == 1A
+    ASS M1 = 67
+  END
+END
+
+# 6. velocity fixer (remote controllable)
+# if velocity becomes a consistent issue, add scene for non-fixed velocity
+
+# deassign knob 8 to free it up for velocity
+IF MT == B0
+  IF M1 == 1C
+    ASS M1 = K0
+  END
+END
+
+# handle remote control of velocity
+IF MT == B0
+  IF M1 == K0
+    ASS Q1 = M2 # assign velocity
+  END
+END
+
+# fix velocity
+IF MT == 90
+  IF M2 > 0
+    ASS M2 = Q1
+  END
+END
+
+# 7. interval setter
+
+# deassign knob 7 to free it up for interval level
+IF MT == B0
+  IF M1 == 1B
+    ASS M1 = K1
+  END
+END
+
+# handle remote control of interval level
+IF M0 < B6
+  IF M1 == K1
+    ASS I0 = M2 # assign interval
+    # I0 is divided into 25 separate groups, ranging 5 values from -12 to +12 semitones (with quantized pitch)
+    IF I0 < $6
+      ASS Q0 = $-12
+    END
+    IF I0 < $11
+      IF I0 >= $6
+        ASS Q0 = $-11
+      END
+    END
+    IF I0 < $16
+      IF I0 >= $11
+        ASS Q0 = $-10
+      END
+    END
+    IF I0 < $21
+      IF I0 >= $16
+        ASS Q0 = $-9
+      END
+    END
+    IF I0 < $26
+      IF I0 >= $21
+        ASS Q0 = $-8
+      END
+    END
+    IF I0 < $31
+      IF I0 >= $26
+        ASS Q0 = $-7
+      END
+    END
+    IF I0 < $36
+      IF I0 >= $31
+        ASS Q0 = $-6
+      END
+    END
+    IF I0 < $41
+      IF I0 >= $36
+        ASS Q0 = $-5
+      END
+    END
+    IF I0 < $46
+      IF I0 >= $41
+        ASS Q0 = $-4
+      END
+    END
+    IF I0 < $51
+      IF I0 >= $46
+        ASS Q0 = $-3
+      END
+    END
+    IF I0 < $56
+      IF I0 >= $51
+        ASS Q0 = $-2
+      END
+    END
+    IF I0 < $61
+      IF I0 >= $56
+        ASS Q0 = $-1
+      END
+    END
+    IF I0 < $67
+      IF I0 >= $61
+        ASS Q0 = $0
+      END
+    END
+    IF I0 < $72
+      IF I0 >= $67
+        ASS Q0 = $1
+      END
+    END
+    IF I0 < $77
+      IF I0 >= $72
+        ASS Q0 = $2
+      END
+    END
+    IF I0 < $82
+      IF I0 >= $77
+        ASS Q0 = $3
+      END
+    END
+    IF I0 < $87
+      IF I0 >= $82
+        ASS Q0 = $4
+      END
+    END
+    IF I0 < $92
+      IF I0 >= $87
+        ASS Q0 = $5
+      END
+    END
+    IF I0 < $97
+      IF I0 >= $92
+        ASS Q0 = $6
+      END
+    END
+    IF I0 < $102
+      IF I0 >= $97
+        ASS Q0 = $7
+      END
+    END
+    IF I0 < $107
+      IF I0 >= $102
+        ASS Q0 = $8
+      END
+    END
+    IF I0 < $112
+      IF I0 >= $107
+        ASS Q0 = $9
+      END
+    END
+    IF I0 < $117
+      IF I0 >= $112
+        ASS Q0 = $10
+      END
+    END
+    IF I0 < $122
+      IF I0 >= $117
+        ASS Q0 = $11
+      END
+    END
+    IF I0 >= $122
+      ASS Q0 = $12
+    END
+  END
+END
