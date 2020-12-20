@@ -102,6 +102,8 @@ IF LOAD
   ALIAS I1A channelCC # TODO
   ALIAS I1B channelNoteOn # TODO
   ALIAS I1C channelNoteOff # TODO
+  ALIAS I1D lfoRate # TODO
+  ALIAS I1E lfoDepth # TODO
 
   ALIAS J0 currentChannel # TODO in all files - deprecated
   ALIAS J2 arpPhraseToggle
@@ -162,6 +164,8 @@ IF LOAD
   # NOTE this is set to 'select' on initial load
   ASS previousDrumVal = 04
   ASS gateFactor = 1
+  ASS lfoRate = 0
+  ASS lfoDepth = 0
 
   ASS knob1Push = 0
   ASS knob1Turn = 0
@@ -236,6 +240,25 @@ IF M0 == F0
     # NOTE this is set to 'select' on initial load
     ASS previousDrumVal = 04
     ASS gateFactor = 1
+    ASS lfoRate = 0
+    ASS lfoDepth = 0
+
+    ASS knob1Push = 0
+    ASS knob1Turn = 0
+    ASS knob2Push = 0
+    ASS knob2Turn = 0
+    ASS knob3Push = 0
+    ASS knob3Turn = 0
+    ASS knob4Push = 0
+    ASS knob4Turn = 0
+    ASS knob5Push = 0
+    ASS knob5Turn = 0
+    ASS knob6Push = 0
+    ASS knob6Turn = 0
+    ASS knob7Push = 0
+    ASS knob7Turn = 0
+    ASS knob8Push = 0
+    ASS knob8Turn = 0
 
     ASS K0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
     ASS L0 = 0E 00 64 00 00 00 00 00
@@ -302,23 +325,6 @@ IF M0 == F0
     SEND F0 0F FF BA 03 $100 F7 +F
     # send init drum lighting
     SEND F0 0F FF 90 04 01 F7 +F
-
-    ASS knob1Push = 0
-    ASS knob1Turn = 0
-    ASS knob2Push = 0
-    ASS knob2Turn = 0
-    ASS knob3Push = 0
-    ASS knob3Turn = 0
-    ASS knob4Push = 0
-    ASS knob4Turn = 0
-    ASS knob5Push = 0
-    ASS knob5Turn = 0
-    ASS knob6Push = 0
-    ASS knob6Turn = 0
-    ASS knob7Push = 0
-    ASS knob7Turn = 0
-    ASS knob8Push = 0
-    ASS knob8Turn = 0
 
     # TEST
     # ensure lights turn off on init
@@ -468,11 +474,11 @@ IF M0 == F0
     # send velocity lighting
     SEND F0 0F FF BA 03 velocity F7 +F
 
-    # send lfo rate lighting # TODO not implemented
-    # SEND F0 0F FF BA 03 lfoRate F7 +F
+    # send lfo rate lighting
+    SEND F0 0F FF BA 04 lfoRate F7 +F
 
-    # send lfo depth lighting # TODO not implemented
-    # SEND F0 0F FF BA 03 lfoDepth F7 +F
+    # send lfo depth lighting
+    SEND F0 0F FF BA 05 lfoDepth F7 +F
 
     # channel specific # TODO add more of these tags throughout
 
@@ -1465,7 +1471,7 @@ IF MT == 80
       END
     END
 
-    IF M1 == 07 00
+    IF M1 == 07 00 # TODO fix this - should be sending to launchkey, not xtouch
       IF pitchQuantize == 0
         ASS pitchQuantize = 1
         SEND F0 0F FF B0 $53 7F F7 +F
@@ -2359,6 +2365,36 @@ IF MT == B0
     # ensure velocity aligns with velocity
     LOG velocity velocity
     LOG L2 L2
+    # END TEST
+  END
+  # if knob is 4 (lfo rate)
+  IF M1 == 4
+    ASS lfoRate = M2
+    # SEND SYSEX
+    SEND F0 01 EE BA XX lfoRate F7 +F # TODO
+    # END SYSEX
+    IF knob4Push == 0
+      ASS L3 = M2
+    END
+    # TEST
+    # ensure lfoRate aligns with lfoRate
+    LOG lfoRate lfoRate
+    LOG L3 L3
+    # END TEST
+  END
+  # if knob is 5 (lfo depth)
+  IF M1 == 5
+    ASS lfoDepth = M2
+    # SEND SYSEX
+    SEND F0 01 EE BA XX lfoDepth F7 +F # TODO
+    # END SYSEX
+    IF knob5Push == 0
+      ASS L4 = M2
+    END
+    # TEST
+    # ensure lfoDepth aligns with lfoDepth
+    LOG lfoDepth lfoDepth
+    LOG L4 L4
     # END TEST
   END
   # if knob is 6 (drumParam 1)

@@ -1,13 +1,13 @@
-# xtouch to xtouch filter
+# xtouch to lfo filter
 
-# filter out messages that don't have 0F as their routing (11, C1, CC)
+# filter out messages that don't have 01 as their routing (0F, 11, C1, CC)
 
 # messages expected:   
 
 # BLOCK | F0 11 FF 2E 57 F7 - rest, sent from xtouch to launchkey
-# ALLOW | F0 0F EE M0 M1 M2 F7 - message sent from xtouch to xtouch filter to send lighting back to xtouch (CC and note messages)
+# BLOCK | F0 0F EE M0 M1 M2 F7 - message sent from xtouch to xtouch filter to send lighting back to xtouch (CC and note messages)
 # BLOCK | F0 11 EE M0 M1 M2 F7 - message sent from xtouch to launchkey for CC output
-# BLOCK | F0 01 EE M0 M1 M2 F7 - message sent from xtouch to lfo auv3 for CC output
+# ALLOW | F0 01 EE M0 M1 M2 F7 - message sent from xtouch to lfo auv3 for CC output
 
 # BLOCK | F0 C1    02    val  F7      arpPhraseToggle
 # BLOCK | F0 C1    03    val  F7      arpPhraseOnOffToggle
@@ -19,7 +19,7 @@
 # BLOCK | F0 11    14    val  F7      isLatch
 
 IF M0 == F0
-  IF M1 == 0F EE
+  IF M1 == 01 EE
     ASS M0 = M3 M4 M5
   END
 END
