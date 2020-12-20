@@ -1,6 +1,0 @@
-# launchkey mini filter (xtouch)
-
-# filter to ensure that notes are not routed back to xtouch
-
-N0-F = XX +B
-B0-F = XX +B
