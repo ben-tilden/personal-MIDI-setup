@@ -5,8 +5,8 @@
 # messages expected:   
 
 # ALLOW | F0 11 FF 2E 57 F7 - rest, sent from xtouch to launchkey
-# BLOCK | F0 0F FF M0 M1 M2 F7 - message sent from xtouch to xtouch filter to send lighting back to xtouch
-# ALLOW | F0 11 FF M0 M1 M2 F7 - message sent from xtouch to launchkey for CC output
+# BLOCK | F0 0F EE M0 M1 M2 F7 - message sent from xtouch to xtouch filter to send lighting back to xtouch
+# ALLOW | F0 11 EE M0 M1 M2 F7 - message sent from xtouch to launchkey for CC output
 
 # ALLOW | F0 C1    02    val  F7      arpPhraseToggle
 # ALLOW | F0 C1    03    val  F7      arpPhraseOnOffToggle
@@ -17,8 +17,6 @@
 # BLOCK | F0 CC/FF 0E    val  F7      gateOpened
 # ALLOW | F0 11    14    val  F7      isLatch
 
-# ALLOW | any channel specific CC messages
-
 IF M0 == F0
   IF M1 > C1
     BLOCK
@@ -28,6 +26,10 @@ IF M0 == F0
   IF M1 == 0F
     BLOCK
     EXIT
+  END
+
+  IF M1 == 11 EE
+    ASS M0 = M3 M4 M5
   END
 END
 

@@ -8,6 +8,10 @@
 # knob 2 press restarts current lfo
 # knob 1 rate; knob 2 depth
 
+#global pushknob
+#ensure lighting still functions properly xtouch to xtouch
+#global reset X on hold
+
 # notes on live testing:
 # app crashes when order / phrase used at a very high tempo
 # can put red tape to indicate

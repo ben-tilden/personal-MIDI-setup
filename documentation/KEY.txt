@@ -19,9 +19,8 @@
 # F0 CC FF 00 00 F7 - message sent from launchkey to channel to reset channel
 # F0 FF FF CC CC F7 - message sent from launchkey to xtouch at change channel - send xtouch lights to xtouch for new channel
 
-# F0 0F FF M0 M1 M2 F7 - message sent from xtouch to xtouch filter to send lighting back to xtouch
-
-# F0 11 FF M0 M1 M2 F7 - message sent from xtouch to launchkey for CC output
+# F0 0F EE M0 M1 M2 F7 - message sent from xtouch to xtouch filter to send lighting back to xtouch
+# F0 11 EE M0 M1 M2 F7 - message sent from xtouch to launchkey for CC output
 
 # sysex key for value updates
 

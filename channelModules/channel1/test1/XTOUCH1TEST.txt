@@ -99,7 +99,6 @@ IF LOAD
   ALIAS I16 knob8Push # TODO
   ALIAS I17 knob8Turn # TODO
   ALIAS I18 knobTemp # TODO
-  ALIAS I19 sendThrough # TODO
   ALIAS I1A channelCC # TODO
   ALIAS I1B channelNoteOn # TODO
   ALIAS I1C channelNoteOff # TODO
@@ -781,6 +780,7 @@ IF MT == 90
   # if it is channel 1-6
   IF currentChannel < 6
 
+    # 
     IF M1 == 13 7F
       IF waveguideToggle == 0
         ASS waveguideToggle = 1
@@ -2364,7 +2364,6 @@ IF MT == B0
   # if knob is 6 (drumParam 1)
   IF M1 == 6
     # needs to be sent out
-    ASS sendThrough = 1
     # assign for push control
     IF knob6Push == 0
       ASS L5 = M2
@@ -2416,7 +2415,6 @@ IF MT == B0
   # if knob is 7 (drumParam 2)
   IF M1 == 7
     # needs to be sent out
-    ASS sendThrough = 1
     # assign for push control
     IF knob7Push == 0
       ASS L6 = M2
@@ -2468,7 +2466,6 @@ IF MT == B0
   # if knob is 8 (drumParam 3)
   IF M1 == 8
     # needs to be sent out
-    ASS sendThrough = 1
     # assign for push control
     IF knob8Push == 0
       ASS L7 = M2
@@ -2538,7 +2535,5 @@ IF MT == B0
   END
 END
 
-IF sendThrough != 1
-  BX = XX +B
-END
+BX = XX +B
 NX = XX +B

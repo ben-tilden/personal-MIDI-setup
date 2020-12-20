@@ -2,10 +2,18 @@
 # regex for code:( +# TEST\n(.+\n)+? +# END TEST\n)|( +# TEST LIVE\n(.+\n)+? +# END TEST LIVE\n)
 
 ###
+# filters
+###
+
+# ensure hardware messages only send to the correct modules
+
+###
 # x touch
 ###
 
-# ensure xtouch receives currentChannel # pending implementation completion
+# ensure xtouch lighting changes properly when channel changed
+  # ensure setPhrase, arpPhraseToggle, arpPhraseToggleOnOff, latch, lfo, padMode, groupKnobPush lighting resets
+  # ensure knob lighting resets
 # ensure xtouch receives setPhrase
 # ensure xtouch receives gateOpened # optional implementation not exercised yet
 
@@ -77,7 +85,11 @@
 
 # ensure global array reset (with locals)
 # ensure xtouch reset (with locals)
-# ensure channel information reset (will need to be done on individual files) # pending implementation completion
+# ensure channel information reset
+
+# ensure channel reset button properly resets the channel
+# ensure channel change properly affects filters
+  # ensure latch, etc. stay on for channel switched
 
 # ensure J array contains correct key values pressed on reset (0)
 # ensure K array contains correct order of keys pressed on reset (0)
