@@ -9,20 +9,31 @@
 
 # message routing key for signal messages (M1 = FF)
 # if multiple, routes positioned left to right lowest value to highest
-# 1 - launchkey
-# F - xtouch
-# C - channels
+# 11 - launchkey
+# FF - xtouch
+# CC - channel
+# 0F - xtouch filter
+# 01 - lfo auv3 (mozaic)
 
 # F0 11 FF 2E 57 F7 - rest, sent from xtouch to launchkey
 
 # F0 FF FF 00 00 F7 - message sent from launchkey to xtouch to reset lighting
 # F0 CC FF 00 00 F7 - message sent from launchkey to channel to reset channel
 # F0 FF FF CC CC F7 - message sent from launchkey to xtouch at change channel - send xtouch lights to xtouch for new channel
+# F0 01 FF XX XX F7 - message sent from xtouch to lfo auv3 for CC output
 
 # F0 0F EE M0 M1 M2 F7 - message sent from xtouch to xtouch filter to send lighting back to xtouch (CC and note messages)
 # F0 11 EE M0 M1 M2 F7 - message sent from xtouch to launchkey for CC output
 
-# F0 01 EE M0 M1 M2 F7 - message sent from xtouch to lfo auv3 for CC output
+# numbers need to change here - add to sysex main list below? how to handle init with regards to these now that many aren't used in other files? email brambros about performance?
+# reassess "Need to be saved, but don't need sysex" below - since these are already saved locally, it's unlikely they'll need to be included, since other files won't need access at all
+# F0 01 FF lfoNumMod lfoKnob F7 - message sent from xtouch to lfo auv3 to signal which knob the current lfo should modulate
+# F0 01 FF lfoNumMod 55 F7 - message sent from xtouch to lfo auv3 to turn sync on or off for the current lfo
+# F0 01 FF lfoNumMod lfoType F7 - message sent from xtouch to lfo auv3 to change lfo type for current lfo
+# F0 01 FF lfoNumMod 00 F7 - message sent from xtouch to lfo auv3 to reset the current lfo
+# F0 01 FF FF 00 F7 - message sent from xtouch to lfo auv3 to reset all lfos at once
+# F0 01 FF lfoNumMod lfo(1-4)Rate F7 - message sent from xtouch to lfo auv3 to change rate of current knob
+# F0 01 FF lfoNumMod lfo(1-4)Depth F7 - message sent from xtouch to lfo auv3 to change depth of current knob
 
 # sysex key for value updates
 
@@ -41,13 +52,10 @@
 
 name                      | sysex                       | range      | range (hex) | default | xtouch      | launchkey   | channel
 ----                      | -----                       | -----      | ----------- | ------- | ------      | ---------   | -------
-currentChannel            | F0 FC    00    val  F7      | (0-15)     | (0-F)       | 00      | VIEW        | CHANGE      | VIEW
 numPressed                | F0 CC    01    val  F7      | (0-10)     | (0-A)       | 00      | -           | VIEW CHANGE | VIEW
 arpPhraseToggle           | F0 C1    02    val  F7      | (0-1)      | (0-1)       | 00      | VIEW CHANGE | VIEW        | VIEW
 arpPhraseOnOffToggle      | F0 C1    03    val  F7      | (0-1)      | (0-1)       | 00      | VIEW CHANGE | VIEW        | VIEW
-tempoModeMod              | F0 00    04    val  F7      | (0-3)      | (0-3)       | 00      | VIEW CHANGE | -           | -
 tempoPulse                | F0 CC    05    val  F7      | (1-96)     | (1-60)      | 24      | CHANGE      | -           | VIEW
-gateModeMod               | F0 00    06    val  F7      | (0-5)      | (0-5)       | 00      | VIEW CHANGE | -           | -
 gate                      | F0 CC    07    val1 val2 F7 | (0-5080)   | (0-13D8)    | 00 00   | CHANGE      | -           | VIEW
 velocity                  | F0 C1    08    val  F7      | (0-127)    | (0-7F)      | 64      | CHANGE      | VIEW        | VIEW
 arpValueModeMod           | F0 C1    09    val  F7      | (0-11)     | (0-11)      | 00      | CHANGE      | VIEW        | VIEW
@@ -56,13 +64,7 @@ phraseVal                 | F0 CC    0B    val  F7      | (0-127)    | (1-7F)   
 phraseIndex               | F0 FF    0C    val  F7      | (42-73)    | (2A-49)     | 2A      | VIEW        | VIEW CHANGE | -
 phraseLengthPlusOffset    | F0 CC    0D    val  F7      | (42-73)    | (2A-49)     | 2A      | -           | CHANGE      | VIEW
 gateOpened                | F0 CC/FF 0E    val  F7      | (0-1)      | (0-1)       | 00      | CHANGE OPT  | CHANGE      | VIEW
-waveguideToggle           | F0 00    0F    val  F7      | (0-1)      | (0-1)       | 00      | VIEW CHANGE | -           | -
-drumParams(Part1)         | F0 00    10    val  F7      | (0-127)    | (1-7F)      | 0E      | CHANGE      | -           | -
-drumParams(Part2)         | F0 00    11    val  F7      | (0-127)    | (1-7F)      | 0F      | CHANGE      | -           | -
-drumParams(Part1+2)       | F0 00    12    val  F7      | (0-127)    | (1-7F)      | 10      | CHANGE      | -           | -
-drumParams(waveguidesend) | F0 00    13    val  F7      | (0-127)    | (1-7F)      | 67      | CHANGE      | -           | -       | # TODO
 isLatch                   | F0 11    14    val  F7      | (0-1)      | (0-1)       | 00      | VIEW CHANGE | VIEW        | -       | # TODO
-pitchQuantize             |                             |            |             |         |             |             |         | # TODO
 padMode                   |                             |            |             |         |             |             |         | # TODO
 phraseVal                 | F0 CC    index val1 val2 F7 | (-127-127) | (1-7F)      | 00 00   | -           | VIEW CHANGE | VIEW
 
@@ -109,6 +111,20 @@ NOTE tempo is an exception here because when the lighting is sent from xtouch, i
 3. lighting should only be sent at knob release if the knob which is being turned does not already have code in xtouch that sends lighting for it (i.e. tempo) (the lighting change will be blocked otherwise)
 
 # SCRAPS
+
+currentChannel            | F0 FC    00    val  F7      | (0-15)     | (0-F)       | 00      | VIEW        | CHANGE      | VIEW
+
+tempoModeMod              | F0 00    04    val  F7      | (0-3)      | (0-3)       | 00      | VIEW CHANGE | -           | -
+
+gateModeMod               | F0 00    06    val  F7      | (0-5)      | (0-5)       | 00      | VIEW CHANGE | -           | -
+
+waveguideToggle           | F0 00    0F    val  F7      | (0-1)      | (0-1)       | 00      | VIEW CHANGE | -           | -
+drumParams(Part1)         | F0 00    10    val  F7      | (0-127)    | (1-7F)      | 0E      | CHANGE      | -           | -
+drumParams(Part2)         | F0 00    11    val  F7      | (0-127)    | (1-7F)      | 0F      | CHANGE      | -           | -
+drumParams(Part1+2)       | F0 00    12    val  F7      | (0-127)    | (1-7F)      | 10      | CHANGE      | -           | -
+drumParams(waveguidesend) | F0 00    13    val  F7      | (0-127)    | (1-7F)      | 67      | CHANGE      | -           | -       | # TODO
+pitchQuantize             |                             |            |             |         |             |             |         | # TODO
+
 
 # allow for drumParams to pass
 IF M0 == B0

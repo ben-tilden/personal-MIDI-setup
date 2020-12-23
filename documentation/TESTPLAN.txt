@@ -72,6 +72,11 @@
 
 # ensure that if a drum param button is pressed while drum param push control is occuring that nothing happens
 
+# ensure setLfo is toggling
+# ensure lfoVal is correctly set for any knob that's pressed, and that nothing is negatively impacted by it
+# ensure lfoType changes accordingly
+# ensure lfoNum changes accordingly
+
 ###
 # launchkey mini
 ###

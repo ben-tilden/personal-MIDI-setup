@@ -2,6 +2,7 @@
 
 # TEST NOTES
 # TODO / NOTE - likely easier to actually have push control be via a button as opposed to the knob buttons
+# TODO ensure setLfo is reset when channel is changed (if it's on and blinking)
 
 
 
@@ -104,6 +105,11 @@ IF LOAD
   ALIAS I1C channelNoteOff # TODO
   ALIAS I1D lfoRate # TODO
   ALIAS I1E lfoDepth # TODO
+  ALIAS I1F lfoType
+  ALIAS I20 lfoTypeMod
+  ALIAS I21 lfoNum
+  ALIAS I22 lfoNumMod
+  ALIAS I23 lfoVal
 
   ALIAS J0 currentChannel # TODO in all files - deprecated
   ALIAS J2 arpPhraseToggle
@@ -147,6 +153,14 @@ IF LOAD
   ALIAS K15 waveguideDecay
   ALIAS K16 waveguideBody
   ALIAS K17 waveguideTune
+  ALIAS K18 knob1Rate
+  ALIAS K18 knob2Rate
+  ALIAS K18 knob3Rate
+  ALIAS K18 knob4Rate
+  ALIAS K18 knob1Depth
+  ALIAS K18 knob2Depth
+  ALIAS K18 knob3Depth
+  ALIAS K18 knob4Depth
 
   # assign local
 
@@ -166,6 +180,10 @@ IF LOAD
   ASS gateFactor = 1
   ASS lfoRate = 0
   ASS lfoDepth = 0
+  # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
+  ASS lfoType = 0
+  # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
+  ASS lfoNum = 0
 
   ASS knob1Push = 0
   ASS knob1Turn = 0
@@ -242,6 +260,10 @@ IF M0 == F0
     ASS gateFactor = 1
     ASS lfoRate = 0
     ASS lfoDepth = 0
+    # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
+    ASS lfoType = 0
+    # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
+    ASS lfoNum = 0
 
     ASS knob1Push = 0
     ASS knob1Turn = 0
@@ -467,7 +489,7 @@ IF M0 == F0
       END
     END
 
-    # send gate lighting # TODO
+    # send gate lighting
     MATH gateTemp = gate / gateFactor
     SEND F0 0F FF BA 02 gateTemp F7 +F
     
@@ -757,6 +779,24 @@ IF MT == 90
     # END TEST
   END
 
+  # if it is a button 11 set lfo # TODO
+  IF M1 == 12 7F
+    IF setLfo == 0
+      ASS setLfo = 1
+    ELSE
+      ASS setLfo = 0
+    END
+    # TEST
+    # ensure setLfo is toggling
+    IF setLfo == 0
+      LOG LFO_SET_OFF
+    END
+    IF isLatch == 1
+      LOG LFO_SET_ON
+    END
+    # END TEST
+  END
+
   # if it is a button 4 push toggle padMode
   IF M1 == 0B 7F
     # isBeats
@@ -786,7 +826,7 @@ IF MT == 90
   # if it is channel 1-6
   IF currentChannel < 6
 
-    # 
+    # TODO
     IF M1 == 13 7F
       IF waveguideToggle == 0
         ASS waveguideToggle = 1
@@ -810,6 +850,10 @@ IF MT == 90
 
     # if knob is pressed and a drumParam is changed, the value in the L array will not match up correctly
     # NOTE monitor for actions that this may be blocking that are unrelated to drum
+    IF groupKnobPush == 1
+      BLOCK
+      EXIT
+    END
     IF knob6Push == 1
       BLOCK
       EXIT
@@ -1047,10 +1091,79 @@ END
 # if it is a button note-off (important for lighting)
 IF MT == 80
 
+  # if it's a knobPush (and / or knobTurn) and we're trying to set lfo we need to ignore other associated functionality
+  # TODO add functionality to (1) assign different lfo's to different values and (2) restart the lfo
+  # TODO check to see if midi clock changes mozaic at all
+  IF M1 < 8
+    IF setLfo == 1
+      ASS lfoKnob = M1
+      # SEND SYSEX
+      SEND F0 01 EE lfoNumMod lfoKnob F7 +F # TODO send to mosaic sysex value to determine target of knob output; add to key
+      # END SYSEX
+      # TODO while loop
+      IF knob1Push == 1
+        ASS knob1Push = 0
+      END
+      IF knob2Push == 1
+        ASS knob2Push = 0
+      END
+      IF knob3Push == 1
+        ASS knob3Push = 0
+      END
+      IF knob4Push == 1
+        ASS knob4Push = 0
+      END
+      IF knob5Push == 1
+        ASS knob5Push = 0
+      END
+      IF knob6Push == 1
+        ASS knob6Push = 0
+      END
+      IF knob7Push == 1
+        ASS knob7Push = 0
+      END
+      IF knob8Push == 1
+        ASS knob8Push = 0
+      END
+      IF knob1Turn == 1
+        ASS knob1Turn = 0
+      END
+      IF knob2Turn == 1
+        ASS knob2Turn = 0
+      END
+      IF knob3Turn == 1
+        ASS knob3Turn = 0
+      END
+      IF knob4Turn == 1
+        ASS knob4Turn = 0
+      END
+      IF knob5Turn == 1
+        ASS knob5Turn = 0
+      END
+      IF knob6Turn == 1
+        ASS knob6Turn = 0
+      END
+      IF knob7Turn == 1
+        ASS knob7Turn = 0
+      END
+      IF knob8Turn == 1
+        ASS knob8Turn = 0
+      END
+      ASS setLfo = 0
+      SEND F0 0F FF 90 0A 00 F7 +F
+      # TEST
+      # ensure lfoKnob is correctly set for any knob that's pressed, and that nothing is negatively impacted by it
+      LOG lfoKnob lfoKnob
+      LOG lfoKnob_SYSEX_SENT
+      # END TEST
+      BLOCK
+      EXIT
+    END
+  END
+
   # push control
   # NOTE / TODO if we add a button which will set global push control (for all knobs), we'll need to likely copy the if statements below into a large if statement on press/release
   # additionally, when the button is pressed it will just set all 8 knob pushes to on, and send lighting on release if on
-  # NOTE does not function for knobs 4 and 5 (lfo) because there's no action to change L3 and L4
 
   # TODO may be able to turn this into a while loop
   IF M1 == 00 00
@@ -1069,7 +1182,7 @@ IF MT == 80
       # tempoPulse
       LOG M1 M1
       LOG LM1 LM1
-      LOG knob1Push knob1Turn
+      LOG knob1Push knob1Push
       LOG knob1Turn knob1Turn
       # END TEST
       # if using push control, releasing the knob button should not have any effect
@@ -1100,7 +1213,7 @@ IF MT == 80
       # gate
       LOG M1 M1
       LOG LM1 LM1
-      LOG knob2Push knob2Turn
+      LOG knob2Push knob2Push
       LOG knob2Turn knob2Turn
       # END TEST
       # if using push control, releasing the knob button should not have any effect
@@ -1131,7 +1244,7 @@ IF MT == 80
       # velocity
       LOG M1 M1
       LOG LM1 LM1
-      LOG knob3Push knob3Turn
+      LOG knob3Push knob3Push
       LOG knob3Turn knob3Turn
       # END TEST
       # if using push control, releasing the knob button should not have any effect
@@ -1162,7 +1275,7 @@ IF MT == 80
       # lfo rate
       LOG M1 M1
       LOG LM1 LM1
-      LOG knob4Push knob4Turn
+      LOG knob4Push knob4Push
       LOG knob4Turn knob4Turn
       # END TEST
       # if using push control, releasing the knob button should not have any effect
@@ -1193,7 +1306,7 @@ IF MT == 80
       # lfo depth
       LOG M1 M1
       LOG LM1 LM1
-      LOG knob5Push knob5Turn
+      LOG knob5Push knob5Push
       LOG knob5Turn knob5Turn
       # END TEST
       # if using push control, releasing the knob button should not have any effect
@@ -1224,7 +1337,7 @@ IF MT == 80
       # drumParam1
       LOG M1 M1
       LOG LM1 LM1
-      LOG knob6Push knob6Turn
+      LOG knob6Push knob6Push
       LOG knob6Turn knob6Turn
       # END TEST
       # if using push control, releasing the knob button should not have any effect
@@ -1255,7 +1368,7 @@ IF MT == 80
       # drumParam2
       LOG M1 M1
       LOG LM1 LM1
-      LOG knob7Push knob7Turn
+      LOG knob7Push knob7Push
       LOG knob7Turn knob7Turn
       # END TEST
       # if using push control, releasing the knob button should not have any effect
@@ -1286,7 +1399,7 @@ IF MT == 80
       # drumParam3
       LOG M1 M1
       LOG LM1 LM1
-      LOG knob8Push knob8Turn
+      LOG knob8Push knob8Push
       LOG knob8Turn knob8Turn
       # END TEST
       # if using push control, releasing the knob button should not have any effect
@@ -1303,7 +1416,7 @@ IF MT == 80
   # end push control
 
   # if it is a knob 1 button release, increase tempo mode
-  # if variable is too high, reset
+  # if variable is too high, reset # TODO
   IF M1 == 00 00
     MATH tempoMode = tempoMode + 1
     # set tempo mode to variable modulo 4
@@ -1365,7 +1478,7 @@ IF MT == 80
   # if variable is too high, reset
   IF M1 == 01 00
     MATH gateMode = gateMode + 1
-    # set tempo mode to variable modulo 6
+    # set gate mode to variable modulo 6
     # NOTE preventing the light from sending will change the length more quickly, more easily
     # NOTE will be testing with live to see best setup here
     MATH gateModeMod = gateMode % 6
@@ -1424,6 +1537,106 @@ IF MT == 80
     # END TEST
   END
 
+  # if it is a knob 3 button release, turn on lfo sync
+  IF M1 == 02 00
+    # SEND SYSEX
+    SEND F0 01 EE lfoNumMod XX F7 +F # TODO replace XX with signal for lfo sync
+    # END SYSEX
+
+    # TEST
+    # ensure lfoType changes accordingly
+    LOG lfoNum lfoNumMod
+    LOG lfoSync_SYSEX_SENT
+    # END TEST
+  END
+
+  # if it is a knob 4 button release, change lfo type
+  # if variable is too high, reset
+  IF M1 == 03 00
+    MATH lfoType = lfoType + 1
+    # set tempo mode to variable modulo 4
+    MATH lfoTypeMod = lfoType % 4
+    # SEND SYSEX
+    SEND F0 01 EE lfoNumMod lfoType F7 +F # TODO
+    # END SYSEX
+
+    # TEST
+    # ensure lfoType changes accordingly
+    LOG lfoType lfoTypeMod
+    LOG lfoType_SYSEX_SENT
+    # END TEST
+  END
+
+  # if it is a knob 5 button release, change lfo num (the lfo that's being edited)
+  # if variable is too high, reset # TODO
+  IF M1 == 04 00
+    # this will cause issues if groupKnobPush is on due to the values in l array
+    IF groupKnobPush == 1
+      BLOCK
+      EXIT
+    END
+    MATH lfoNum = lfoNum + 1
+    # set tempo mode to variable modulo 4
+    MATH lfoNumMod = lfoNum % 4
+
+    IF lfoNumMode == 0
+      # send lighting for lfo1Rate and depth
+      SEND F0 0F FF BA 03 lfo1Rate F7 +F
+      SEND F0 0F FF BA 04 lfo1Depth F7 +F
+      # TEST
+      LOG lfo1Rate lfo1Rate
+      LOG lfo1Depth lfo1Depth
+      # END TEST
+    END
+    IF lfoNumMode == 1
+      # send lighting for lfo2Rate and depth
+      SEND F0 0F FF BA 03 lfo2Rate F7 +F
+      SEND F0 0F FF BA 04 lfo2Depth F7 +F
+      # TEST
+      LOG lfo2Rate lfo2Rate
+      LOG lfo2Depth lfo2Depth
+      # END TEST
+    END
+    IF lfoNumMode == 2
+      # send lighting for lfo3Rate and depth
+      SEND F0 0F FF BA 03 lfo3Rate F7 +F
+      SEND F0 0F FF BA 04 lfo3Depth F7 +F
+      # TEST
+      LOG lfo3Rate lfo3Rate
+      LOG lfo3Depth lfo3Depth
+      # END TEST
+    END
+    IF lfoNumMode == 3
+      # send lighting for lfo4Rate and depth
+      SEND F0 0F FF BA 03 lfo4Rate F7 +F
+      SEND F0 0F FF BA 04 lfo4Depth F7 +F
+      # TEST
+      LOG lfo4Rate lfo4Rate
+      LOG lfo4Depth lfo4Depth
+      # END TEST
+    END
+
+    # TEST
+    # ensure lfoNum changes accordingly
+    LOG lfoNum lfoNumMod
+    LOG lfoNum_SYSEX_SENT
+    # END TEST
+  END
+
+  # TODO add double tap to reset all lfos
+  # if it is a knob 6 button release, restart current lfo
+  IF M1 == 05 00
+    # SEND SYSEX
+    SEND F0 01 EE lfoNumMod 00 F7 +F # TODO
+    # END SYSEX
+
+    # TEST
+    # ensure lfoNum changes accordingly
+    LOG lfoNum lfoNumMod
+    LOG lfo_RESTART_SYSEX_SENT
+    # END TEST
+  END
+
   IF M1 == 08 00
     IF arpPhraseToggle == 1
       IF setPhrase == 1
@@ -1462,22 +1675,276 @@ IF MT == 80
     END
   END
 
+  IF M1 == 12 00
+    IF setLfo == 1
+      SEND F0 0F FF 90 0A 02 F7 +F
+    END
+  END
+
+  IF M1 == 13 00
+    IF groupPushKnob == 1
+      SEND F0 0F FF 90 0B 01 F7 +F
+    # reset all knobs to L values if turning off
+    ELSE
+      IF knob1Turn == 1
+        ASS knobTemp = 1
+        # injection makes sure the parameters are changed correctly
+        SEND BA knobTemp L0 +I
+        # no need to send lighting here, since tempo sends its own on injection
+        ASS knob1Push = 0
+        ASS knob1Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # tempoPulse
+        LOG L0 L0
+        LOG knob1Push knob1Push
+        LOG knob1Turn knob1Turn
+        # END TEST
+        # if using push control, releasing the knob button should not have any effect
+        BLOCK
+        EXIT
+      ELSE
+        ASS knob1Push = 0
+        # TEST
+        LOG knob1Push_RESET
+        # END TEST
+      END
+
+      IF knob2Turn == 1
+        ASS knobTemp = 2
+        # injection makes sure the parameters are changed correctly
+        SEND BA knobTemp L1 +I
+        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
+        SEND F0 0F FF BA knobTemp L1 F7 +F
+        ASS knob2Push = 0
+        ASS knob2Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # gate
+        LOG L1 L1
+        LOG knob2Push knob2Push
+        LOG knob2Turn knob2Turn
+        # END TEST
+        # if using push control, releasing the knob button should not have any effect
+        BLOCK
+        EXIT
+      ELSE
+        ASS knob2Push = 0
+        # TEST
+        LOG knob2Push_RESET
+        # END TEST
+      END
+
+      IF knob3Turn == 1
+        ASS knobTemp = 3
+        # injection makes sure the parameters are changed correctly
+        SEND BA knobTemp L2 +I
+        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
+        SEND F0 0F FF BA knobTemp L2 F7 +F
+        ASS knob3Push = 0
+        ASS knob3Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # velocity
+        LOG L2 L2
+        LOG knob3Push knob3Push
+        LOG knob3Turn knob3Turn
+        # END TEST
+        # if using push control, releasing the knob button should not have any effect
+        BLOCK
+        EXIT
+      ELSE
+        ASS knob3Push = 0
+        # TEST
+        LOG knob3Push_RESET
+        # END TEST
+      END
+
+      IF knob4Turn == 1
+        ASS knobTemp = 4
+        # injection makes sure the parameters are changed correctly
+        SEND BA knobTemp L3 +I
+        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
+        SEND F0 0F FF BA knobTemp L3 F7 +F
+        ASS knob4Push = 0
+        ASS knob4Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # lfo rate
+        LOG L3 L3
+        LOG knob4Push knob4Push
+        LOG knob4Turn knob4Turn
+        # END TEST
+        # if using push control, releasing the knob button should not have any effect
+        BLOCK
+        EXIT
+      ELSE
+        ASS knob4Push = 0
+        # TEST
+        LOG knob4Push_RESET
+        # END TEST
+      END
+
+      IF knob5Turn == 1
+        ASS knobTemp = 5
+        # injection makes sure the parameters are changed correctly
+        SEND BA knobTemp L4 +I
+        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
+        SEND F0 0F FF BA knobTemp L4 F7 +F
+        ASS knob5Push = 0
+        ASS knob5Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # lfo depth
+        LOG L4 L4
+        LOG knob5Push knob5Push
+        LOG knob5Turn knob5Turn
+        # END TEST
+        # if using push control, releasing the knob button should not have any effect
+        BLOCK
+        EXIT
+      ELSE
+        ASS knob5Push = 0
+        # TEST
+        LOG knob5Push_RESET
+        # END TEST
+      END
+
+      IF knob6Turn == 1
+        ASS knobTemp = 6
+        # injection makes sure the parameters are changed correctly
+        SEND BA knobTemp L5 +I
+        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
+        SEND F0 0F FF BA knobTemp L5 F7 +F
+        ASS knob6Push = 0
+        ASS knob6Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # drumParam1
+        LOG L5 L5
+        LOG knob6Push knob6Push
+        LOG knob6Turn knob6Turn
+        # END TEST
+        # if using push control, releasing the knob button should not have any effect
+        BLOCK
+        EXIT
+      ELSE
+        ASS knob6Push = 0
+        # TEST
+        LOG knob6Push_RESET
+        # END TEST
+      END
+
+      IF knob7Turn == 1
+        ASS knobTemp = 7
+        # injection makes sure the parameters are changed correctly
+        SEND BA knobTemp L6 +I
+        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
+        SEND F0 0F FF BA knobTemp L6 F7 +F
+        ASS knob7Push = 0
+        ASS knob7Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # drumParam2
+        LOG L6 L6
+        LOG knob7Push knob7Push
+        LOG knob7Turn knob7Turn
+        # END TEST
+        # if using push control, releasing the knob button should not have any effect
+        BLOCK
+        EXIT
+      ELSE
+        ASS knob7Push = 0
+        # TEST
+        LOG knob7Push_RESET
+        # END TEST
+      END
+
+      IF knob8Turn == 1
+        ASS knobTemp = 8
+        # injection makes sure the parameters are changed correctly
+        SEND BA knobTemp L7 +I
+        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
+        SEND F0 0F FF BA knobTemp L7 F7 +F
+        ASS knob8Push = 0
+        ASS knob8Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # drumParam3
+        LOG L7 L7
+        LOG knob8Push knob8Push
+        LOG knob8Turn knob8Turn
+        # END TEST
+        # if using push control, releasing the knob button should not have any effect
+        BLOCK
+        EXIT
+      ELSE
+        ASS knob8Push = 0
+        # TEST
+        LOG knob8Push_RESET
+        # END TEST
+      END
+    END
+  END
+
   # if it is channel 1-6
   IF currentChannel < 6
 
-    IF M1 == 13 00
-      IF waveguideToggle == 1
-        SEND F0 0F FF 90 0B 01 F7 +F
+    # if it is a knob 7 button release, toggle waveguide
+    IF M1 == 06 00
+      IF waveguideToggle == 0
+        ASS waveguideToggle = 1
+        # NOTE / TODO unsure if this is correct as of now
+        SEND F0 11 FF channelCC $116 7F F7
+      ELSE
+        ASS waveguideToggle = 0
+        # NOTE / TODO unsure if this is correct as of now
+        SEND F0 11 FF channelCC $116 00 F7
       END
+      # TEST
+      # ensure waveguide is toggled properly
+      IF waveguideToggle == 0
+        LOG WAVEGUIDE_STRING
+      END
+      IF waveguideToggle == 1
+        LOG WAVEGUIDE_TUBE
+      END
+      # END TEST
     END
 
-    IF M1 == 07 00 # TODO fix this - should be sending to launchkey, not xtouch
+    IF M1 == 07 00
       IF pitchQuantize == 0
         ASS pitchQuantize = 1
-        SEND F0 0F FF B0 $53 7F F7 +F
+        # NOTE / TODO unsure if this is correct as of now
+        SEND F0 11 FF channelCC $53 7F F7 +F
       ELSE
         ASS pitchQuantize = 0
-        SEND F0 0F FF B0 $53 00 F7 +F
+        # NOTE / TODO unsure if this is correct as of now
+        SEND F0 11 FF channelCC $53 00 F7 +F
       END
       # TEST
       # ensure pitchQuantize is toggled properly
@@ -2369,33 +2836,75 @@ IF MT == B0
   END
   # if knob is 4 (lfo rate)
   IF M1 == 4
-    ASS lfoRate = M2
-    # SEND SYSEX
-    SEND F0 01 EE BA XX lfoRate F7 +F # TODO
-    # END SYSEX
+    # needs to be sent out
+    # assign for push control
     IF knob4Push == 0
       ASS L3 = M2
     END
     # TEST
     # ensure lfoRate aligns with lfoRate
-    LOG lfoRate lfoRate
     LOG L3 L3
     # END TEST
+    IF lfoNumMod == 0
+      # SEND SYSEX
+      SEND F0 01 EE lfoNumMod lfo1Rate F7 +F # TODO
+      # END SYSEX
+      ASS lfo1Rate = M2
+    END
+    IF lfoNumMod == 1
+      # SEND SYSEX
+      SEND F0 01 EE lfoNumMod lfo2Rate F7 +F # TODO
+      # END SYSEX
+      ASS lfo2Rate = M2
+    END
+    IF lfoNumMod == 2
+      # SEND SYSEX
+      SEND F0 01 EE lfoNumMod lfo3Rate F7 +F # TODO
+      # END SYSEX
+      ASS lfo3Rate = M2
+    END
+    IF lfoNumMod == 3
+      # SEND SYSEX
+      SEND F0 01 EE lfoNumMod lfo4Rate F7 +F # TODO
+      # END SYSEX
+      ASS lfo4Rate = M2
+    END
   END
   # if knob is 5 (lfo depth)
   IF M1 == 5
-    ASS lfoDepth = M2
-    # SEND SYSEX
-    SEND F0 01 EE BA XX lfoDepth F7 +F # TODO
-    # END SYSEX
+    # needs to be sent out
+    # assign for push control
     IF knob5Push == 0
       ASS L4 = M2
     END
     # TEST
     # ensure lfoDepth aligns with lfoDepth
-    LOG lfoDepth lfoDepth
     LOG L4 L4
     # END TEST
+    IF lfoNumMod == 0
+      # SEND SYSEX
+      SEND F0 01 EE lfoNumMod lfo1Depth F7 +F # TODO
+      # END SYSEX
+      ASS lfo1Depth = M2
+    END
+    IF lfoNumMod == 1
+      # SEND SYSEX
+      SEND F0 01 EE lfoNumMod lfo2Depth F7 +F # TODO
+      # END SYSEX
+      ASS lfo2Depth = M2
+    END
+    IF lfoNumMod == 2
+      # SEND SYSEX
+      SEND F0 01 EE lfoNumMod lfo3Depth F7 +F # TODO
+      # END SYSEX
+      ASS lfo3Depth = M2
+    END
+    IF lfoNumMod == 3
+      # SEND SYSEX
+      SEND F0 01 EE lfoNumMod lfo4Depth F7 +F # TODO
+      # END SYSEX
+      ASS lfo4Depth = M2
+    END
   END
   # if knob is 6 (drumParam 1)
   IF M1 == 6

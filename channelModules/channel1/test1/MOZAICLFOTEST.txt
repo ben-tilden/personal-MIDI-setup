@@ -1,0 +1,63 @@
+
+//63.5 * sin(2pi * r1x) * (.5 * sin(2pi * r2x) + .5) + 63.5
+//        rate of modulated      rate of modulating
+
+//(63.5 * sin(2pi * r1x) + 63.5) * (.5 * sin(2pi * r2x) + .5)
+//        rate of modulated      rate of modulating
+
+
+@OnHostStart 
+  // set up lfos
+  //TODO reset lfos?
+  for lfo = 0 to 2
+    SetupLFO lfo, 0, 0, no, 0
+  endfor 
+@End 
+
+@Onload
+  SetMetroPPQN 20
+  SetKnobValue 0, 0
+  SetKnobValue 1, 0
+  LabelKnob 0, {Rate 1}
+  LabelKnob 1, {Rate 2}
+  SetLFOType 0, {sine}
+  SetLFOType 1, {sine}
+  SetupLFO 0, 0, 0, no, 0
+  SetupLFO 1, 0, 0, no, 0
+@End
+
+@OnMetroPulse
+  value0 = 0
+  value1 = 0
+  depthPercentage = 1
+  value0 = ((GetLFOValue 0) / 63.5) * 2 * depthPercentage
+  if value0 > 0
+    SetupLFO 1, 0, 127, no, value0 
+  else
+    SetupLFO 1, 0, 127, no, ( GetKnobValue 1 ) / 31.75
+  endif
+  value1 = GetLFOValue 1
+  SetXYValues 64, value1
+  //SendMIDICC 0, 13, value
+@End
+
+@OnKnobChange 
+  // update lfos
+  log {NEW_GET---------------------------------}
+  for lfo = 0 to 2
+    value = ( GetKnobValue lfo ) / 31.75 // rate
+    if value = 0
+      SetupLFO lfo, 0, 0, no, value
+    else
+      SetupLFO lfo, 0, 127, no, value
+    endif
+    log {LFO_ENTRY}
+    log lfo
+    log GetKnobValue lfo
+    log value
+    if value = 0
+      resetLFO lfo
+      log {lfoValue reset}
+    endif
+  endfor 
+@End 
