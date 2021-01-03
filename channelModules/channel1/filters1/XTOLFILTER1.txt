@@ -1,22 +1,32 @@
 # xtouch to launchkey filter
 
-# filter out messages that don't have 11 or C1 as their routing (CC, 0F)
+# filter out messages that don't have 11 or C1 as their routing (01, CC, 0F)
 
 # messages expected:   
 
-# ALLOW | F0 11 FF 2E 57 F7 - rest, sent from xtouch to launchkey
+# ALLOW | F0 11 16 2E F7 - rest, sent from xtouch to launchkey
 # BLOCK | F0 0F EE M0 M1 M2 F7 - message sent from xtouch to xtouch filter to send lighting back to xtouch (CC and note messages)
 # ALLOW | F0 11 EE M0 M1 M2 F7 - message sent from xtouch to launchkey for CC output
-# BLOCK | F0 01 EE M0 M1 M2 F7 - message sent from xtouch to lfo auv3 for CC output
 
-# ALLOW | F0 C1    02    val  F7      arpPhraseToggle
-# ALLOW | F0 C1    03    val  F7      arpPhraseOnOffToggle
-# BLOCK | F0 CC    05    val  F7      tempoPulse
-# BLOCK | F0 CC    07    val1 val2 F7 gate
-# ALLOW | F0 C1    08    val  F7      velocity
-# ALLOW | F0 C1    09    val  F7      arpValueModeMod
-# BLOCK | F0 CC/FF 0E    val  F7      gateOpened
-# ALLOW | F0 11    14    val  F7      isLatch
+# ALLOW | F0 C1    01    val  F7      arpPhraseToggle
+# ALLOW | F0 C1    02    val  F7      arpPhraseOnOffToggle
+# BLOCK | F0 CC    03    val  F7      tempoPulse
+# BLOCK | F0 CC    04    val1 val2 F7 gate
+# ALLOW | F0 C1    05    val  F7      velocity
+# ALLOW | F0 C1    06    val  F7      arpValueModeMod
+# ALLOW | F0 11/FF 07    val  F7      setPhrase
+# ALLOW | F0 11    0B    val  F7      latch
+# ALLOW | F0 11    0C    val  F7      padMode
+# BLOCK | F0 CC/FF 15    60   F7      gateOpened
+
+# BLOCK | F0 01    0D    val  F7      lfoNum
+# BLOCK | F0 01    0E    val1 val2 F7 lfoKnob
+# BLOCK | F0 01    0F    val  F7      lfoSync
+# BLOCK | F0 01    10    val1 val2 F7 lfoType
+# BLOCK | F0 01    11    val  F7      lfoReset
+# BLOCK | F0 01    12    00   F7      lfoResetAll
+# BLOCK | F0 01    13    val1 val2 F7 lfoRate
+# BLOCK | F0 01    14    val1 val2 F7 lfoDepth
 
 IF M0 == F0
   IF M1 > C1
@@ -39,4 +49,4 @@ IF M0 == F0
   END
 END
 
-NX = XX +B
+NX = XX +B # TODO don't believe this is necessary

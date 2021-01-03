@@ -5,6 +5,8 @@
 //(63.5 * sin(2pi * r1x) + 63.5) * (.5 * sin(2pi * r2x) + .5)
 //        rate of modulated      rate of modulating
 
+// sysex messages sent here: F0 01 EE  F7
+
 
 @OnHostStart 
   // set up lfos

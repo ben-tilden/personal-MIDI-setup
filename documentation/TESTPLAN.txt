@@ -1,6 +1,13 @@
 # test plan
 # regex for code:( +# TEST\n(.+\n)+? +# END TEST\n)|( +# TEST LIVE\n(.+\n)+? +# END TEST LIVE\n)
 
+# TODO
+ensure update of individual filter input messages
+
+ensure that all buttons pressed actually function as expected
+ensure that switching channel properly sends expected values back and forth from xtouch
+ensure that hardware input filtering happening correctly
+
 ###
 # filters
 ###

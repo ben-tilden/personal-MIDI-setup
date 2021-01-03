@@ -1,6 +1,5 @@
 # TODO IDEAS
 
-# global pushknob
 # create mozaic lfo file
 # ensure lighting still functions properly xtouch to xtouch
 # global reset X on hold
@@ -31,15 +30,6 @@
 
 # parts we can map that have not been mapped yet
 
-Best based on channel - 1-8, 10-12 (layer A)
-----------------------------------
-LFO on (button)
-LFO tempo (knob)
-LFO type (button)
-LFO sync (button)
-
-Scenes and Tracks for live sets (modstep) (less feasible)
-
 OMNI mode (layer B)
 ---------
 Map based on what is used a lot
@@ -63,5 +53,3 @@ Might be interesting to have ARP and PHRASE sync options to try ARP and PHRASE w
 if you pass a variable into a recursive function by reference is will almost always change mid function
 Midifire can remain open in front of modstep, but modstep will be doing most of the sequencing
 Fugue Machine can be used to reverse, invert, bounce phrase
-
-Micron and MicroBrute will be incorporated eventually
