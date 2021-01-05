@@ -38,9 +38,11 @@
 
   # ensure latch is toggling
 
-  # ensure setLfo is toggling # TODO LFO
+  # ensure setLfo is toggling
 
-  # ensure padMode is toggled properly # TODO padMode
+  # ensure padMode is toggling
+
+  # ensure groupKnobPush is toggling
 
   # ensure drumParams can't be changed when groupKnobPush on
   # ensure drumParams can't be changed when knob6Push on
@@ -78,14 +80,14 @@
 
   # ensure gateModeMod changes accordingly and gate correlates
 
-  # ensure lfoSync sent correctly # TODO LFO
+  # ensure lfoSync sent correctly
   # ensure lfoType changes accordingly # TODO LFO
   # ensure lfoNum changes accordingly # TODO LFO
-  # ensure lfoNum restarts accordingly # TODO LFO
+  # ensure lfoNum restarts accordingly
 
   # ensure groupKnobPush turned on accordingly
 
-  # ensure groupKnobPush release handled correctly
+  # ensure groupKnobPush release handled correctly # TODO does not work - seems to only do one knob at a time (due to BLOCK and EXIT), and resets knobs that shouldn't be reset (tempoPulse was a specific example)
     # ensure lighting matches with L array
     # ensure L array matches with previous value
     # ensure parameter associated with knob lighting also changed
@@ -108,16 +110,14 @@
 
   # ensure velocity aligns with velocity
 
-  # ensure lfoRate aligns with lfoRate # TODO LFO
+  # ensure lfoRate aligns with lfoRate
 
-  # ensure lfoDepth aligns with lfoDepth # TODO LFO
+  # ensure lfoDepth aligns with lfoDepth
 
   # ensure correct drumParam sent on knob turn
   # ensure drumParam changed to the correct value
 
-  # ensure L value correctly changed
-
-# misc
+# misc # TODO
 
   # confirm the following:
     # groupPushKnob and pushKnob:

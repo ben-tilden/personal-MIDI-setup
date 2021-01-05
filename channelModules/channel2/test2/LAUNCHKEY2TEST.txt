@@ -96,7 +96,7 @@ IF LOAD
 
   # constant
 
-  ALIAS 00 channelVal # channel specific (obviously)
+  ALIAS 01 channelVal # channel specific (obviously)
   ALIAS 20 arpIndexOffset
   ALIAS C8 latchInterval
 
@@ -158,9 +158,9 @@ IF LOAD
   # assign local
 
   # these are only defined here, since they are essentially constants - will not change past this
-  MATH channelCC = B0 + channelVal
-  MATH channelNoteOn = 90 + channelVal
-  MATH channelNoteOff = 80 + channelVal
+  ASS channelCC = B0 + channelVal
+  ASS channelNoteOn = 90 + channelVal
+  ASS channelNoteOff = 80 + channelVal
 
   ASS K20 = 00 00 00 00 00 00 00 00 00 00
 
@@ -364,6 +364,11 @@ IF MT == B0
     # END TEST
 
     # reset local
+
+    # these are only defined here, since they are essentially constants - will not change past this
+    ASS channelCC = B0 + channelVal
+    ASS channelNoteOn = 90 + channelVal
+    ASS channelNoteOff = 80 + channelVal
 
     ASS K20 = 00 00 00 00 00 00 00 00 00 00
 

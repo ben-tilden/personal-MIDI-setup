@@ -2,6 +2,7 @@
 
 # TEST NOTES
 # TODO waveGuide send not implemented anywhere
+# NOTE at this point, there's inconsistency in testing between button press and button release - might at some point go back and smooth out
 
 
 
@@ -78,7 +79,7 @@ IF LOAD
 
   # constant
 
-  ALIAS 00 channelVal # channel specific (obviously)
+  ALIAS 01 channelVal # channel specific (obviously)
 
   # local
 
@@ -86,36 +87,35 @@ IF LOAD
   ALIAS I1 channelNoteOn
   ALIAS I2 channelNoteOff
   ALIAS I3 tempoMode
-  ALIAS I4 tempoModeMod
+  ALIAS J4 tempoModeMod
   ALIAS I5 arpValueMode
   ALIAS I6 previousDrumVal
   ALIAS I7 gateMode
-  ALIAS I8 gateModeMod
+  ALIAS J8 gateModeMod
   ALIAS I9 gateFactor
   ALIAS IA gateTemp
-  ALIAS IB setLfo
-  ALIAS IC lfoType
-  ALIAS ID lfoNum
-  ALIAS IE resetIndex
-  ALIAS IF resetIndexMinusOne
-  ALIAS I10 knob1Push
-  ALIAS I11 knob1Turn
-  ALIAS I12 knob2Push
-  ALIAS I13 knob2Turn
-  ALIAS I14 knob3Push
-  ALIAS I15 knob3Turn
-  ALIAS I16 knob4Push
-  ALIAS I17 knob4Turn
-  ALIAS I18 knob5Push
-  ALIAS I19 knob5Turn
-  ALIAS I1A knob6Push
-  ALIAS I1B knob6Turn
-  ALIAS I1C knob7Push
-  ALIAS I1D knob7Turn
-  ALIAS I1E knob8Push
-  ALIAS I1F knob8Turn
-  ALIAS I20 knobTemp
-  ALIAS I21 groupKnobPush
+  ALIAS IB lfoType
+  ALIAS IC lfoNum
+  ALIAS ID resetIndex
+  ALIAS IE resetIndexMinusOne
+  ALIAS IF knob1Push
+  ALIAS I10 knob1Turn
+  ALIAS I11 knob2Push
+  ALIAS I12 knob2Turn
+  ALIAS I13 knob3Push
+  ALIAS I14 knob3Turn
+  ALIAS I15 knob4Push
+  ALIAS I16 knob4Turn
+  ALIAS I17 knob5Push
+  ALIAS I18 knob5Turn
+  ALIAS I19 knob6Push
+  ALIAS I1A knob6Turn
+  ALIAS I1B knob7Push
+  ALIAS I1C knob7Turn
+  ALIAS I1D knob8Push
+  ALIAS I1E knob8Turn
+  ALIAS I1F knobTemp
+  ALIAS I20 groupKnobPush
 
   # sysex
 
@@ -174,9 +174,9 @@ IF LOAD
   # assign local
 
   # these are only defined here, since they are essentially constants - will not change past this
-  MATH channelCC = B0 + channelVal
-  MATH channelNoteOn = 90 + channelVal
-  MATH channelNoteOff = 80 + channelVal
+  ASS channelCC = B0 + channelVal
+  ASS channelNoteOn = 90 + channelVal
+  ASS channelNoteOff = 80 + channelVal
 
   # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
   ASS tempoMode = 0
@@ -241,7 +241,7 @@ IF M0 == F0
     ASS arpModeSwitched = M3
     # TEST
     # ensure xtouch receives gateOpened
-    LOG gateOpened_SYSEX_RECEIVED arpModeSwitched
+    LOG gateOpened_SYSEX_RECEIVED gateOpened
     # END TEST
     BLOCK
     EXIT
@@ -408,9 +408,9 @@ IF M0 == F0
     LOG CHANNEL_SWITCH_LIGHTING
     LOG setPhrase setPhrase
     LOG arpPhraseToggle arpPhraseToggle
-    LOG arpPhraseOnOffToggle arpPhraseOnOffToggle
+    LOG arpPhraseToggleOnOff arpPhraseToggleOnOff
     LOG latch latch
-    LOG setLfo setLfo
+    LOG lfo lfo
     LOG padMode padMode
     LOG groupKnobPush groupKnobPush
     LOG previousDrumVal previousDrumVal
@@ -570,42 +570,42 @@ IF M0 == F0
       LOG lfo4Rate lfo4Rate
       LOG lfo4Depth lfo4Depth
     END
-    IF drumParams == $14
+    IF drumParams = $14
       LOG select1 select1
       LOG select2 select2
       LOG selectBoth selectBoth
     END
-    IF drumParams == $17
+    IF drumParams = $17
       LOG level1 level1
       LOG level2 level2
       LOG levelBoth levelBoth
     END
-    IF drumParams == $20
+    IF drumParams = $20
       LOG attack1 attack1
       LOG attack2 attack2
       LOG attackBoth attackBoth
     END
-    IF drumParams == $23
+    IF drumParams = $23
       LOG release1 release1
       LOG release2 release2
       LOG releaseBoth releaseBoth
     END
-    IF drumParams == $26
+    IF drumParams = $26
       LOG pitch1 pitch1
       LOG pitch2 pitch2
       LOG pitchBoth pitchBoth
     END
-    IF drumParams == $29
+    IF drumParams = $29
       LOG modAmount1 modAmount1
       LOG modAmount2 modAmount2
       LOG modAmountBoth modAmountBoth
     END
-    IF drumParams == $46
+    IF drumParams = $46
       LOG modRate1 modRate1
       LOG modRate2 modRate2
       LOG modRateBoth modRateBoth
     END
-    IF drumParams == $117
+    IF drumParams = $117
       LOG waveguideDecay waveguideDecay
       LOG waveguideBody waveguideBody
       LOG waveguideTune waveguideTune
@@ -617,42 +617,42 @@ IF M0 == F0
     # send drum lighting
     SEND F0 0F EE 90 previousDrumVal 01 F7 +F
 
-    IF drumParams == $14
+    IF drumParams = $14
       SEND F0 0F EE BA 06 select1 F7 +F
       SEND F0 0F EE BA 07 select2 F7 +F
       SEND F0 0F EE BA 08 selectBoth F7 +F
     END
-    IF drumParams == $17
+    IF drumParams = $17
       SEND F0 0F EE BA 06 level1 F7 +F
       SEND F0 0F EE BA 07 level2 F7 +F
       SEND F0 0F EE BA 08 levelBoth F7 +F
     END
-    IF drumParams == $20
+    IF drumParams = $20
       SEND F0 0F EE BA 06 attack1 F7 +F
       SEND F0 0F EE BA 07 attack2 F7 +F
       SEND F0 0F EE BA 08 attackBoth F7 +F
     END
-    IF drumParams == $23
+    IF drumParams = $23
       SEND F0 0F EE BA 06 release1 F7 +F
       SEND F0 0F EE BA 07 release2 F7 +F
       SEND F0 0F EE BA 08 releaseBoth F7 +F
     END
-    IF drumParams == $26
+    IF drumParams = $26
       SEND F0 0F EE BA 06 pitch1 F7 +F
       SEND F0 0F EE BA 07 pitch2 F7 +F
       SEND F0 0F EE BA 08 pitchBoth F7 +F
     END
-    IF drumParams == $29
+    IF drumParams = $29
       SEND F0 0F EE BA 06 modAmount1 F7 +F
       SEND F0 0F EE BA 07 modAmount2 F7 +F
       SEND F0 0F EE BA 08 modAmountBoth F7 +F
     END
-    IF drumParams == $46
+    IF drumParams = $46
       SEND F0 0F EE BA 06 modRate1 F7 +F
       SEND F0 0F EE BA 07 modRate2 F7 +F
       SEND F0 0F EE BA 08 modRateBoth F7 +F
     END
-    IF drumParams == $117
+    IF drumParams = $117
       SEND F0 0F EE BA 06 waveguideDecay F7 +F
       SEND F0 0F EE BA 07 waveguideBody F7 +F
       SEND F0 0F EE BA 08 waveguideTune F7 +F
@@ -681,83 +681,81 @@ IF MT == 90
   # ensure push control does not work when setLfo is on
   IF setLfo == 1
     IF M1 < 8
-      LOG NO_PUSH_CONTROL
-      LOG setLfo_ON
+      LOG NO_PUSH_CONTROL_setLfo_ON
     END
   END
   # END TEST
   IF setLfo == 0
-    # assign knob1Push to true when knob1 is pushed - for push control
-    IF M1 == 0
-      ASS knob1Push = 1
-      # TEST
-      # ensure knobPush turned on accordingly
-      LOG knob1Push knob1Push
-      # END TEST
-    END
+  # assign knob1Push to true when knob1 is pushed - for push control
+  IF M1 == 0
+    ASS knob1Push = 1
+    # TEST
+    # ensure knobPush turned on accordingly
+    LOG knob1Push knob1Push
+    # END TEST
+  END
 
-    # assign knob2Push to true when knob2 is pushed - for push control
-    IF M1 == 1 
-      ASS knob2Push = 1
-      # TEST
-      # ensure knobPush turned on accordingly
-      LOG knob2Push knob2Push
-      # END TEST
-    END
+  # assign knob2Push to true when knob2 is pushed - for push control
+  IF M1 == 1 
+    ASS knob2Push = 1
+    # TEST
+    # ensure knobPush turned on accordingly
+    LOG knob2Push knob2Push
+    # END TEST
+  END
 
-    # assign knob3Push to true when knob3 is pushed - for push control
-    IF M1 == 2
-      ASS knob3Push = 1
-      # TEST
-      # ensure knobPush turned on accordingly
-      LOG knob3Push knob3Push
-      # END TEST
-    END
+  # assign knob3Push to true when knob3 is pushed - for push control
+  IF M1 == 2
+    ASS knob3Push = 1
+    # TEST
+    # ensure knobPush turned on accordingly
+    LOG knob3Push knob3Push
+    # END TEST
+  END
 
-    # assign knob4Push to true when knob4 is pushed - for push control
-    IF M1 == 3
-      ASS knob4Push = 1
-      # TEST
-      # ensure knobPush turned on accordingly
-      LOG knob4Push knob4Push
-      # END TEST
-    END
+  # assign knob4Push to true when knob4 is pushed - for push control
+  IF M1 == 3
+    ASS knob4Push = 1
+    # TEST
+    # ensure knobPush turned on accordingly
+    LOG knob4Push knob4Push
+    # END TEST
+  END
 
-    # assign knob5Push to true when knob5 is pushed - for push control
-    IF M1 == 4
-      ASS knob5Push = 1
-      # TEST
-      # ensure knobPush turned on accordingly
-      LOG knob5Push knob5Push
-      # END TEST
-    END
+  # assign knob5Push to true when knob5 is pushed - for push control
+  IF M1 == 4
+    ASS knob5Push = 1
+    # TEST
+    # ensure knobPush turned on accordingly
+    LOG knob5Push knob5Push
+    # END TEST
+  END
 
-    # assign knob6Push to true when knob6 is pushed - for push control
-    IF M1 == 5
-      ASS knob6Push = 1
-      # TEST
-      # ensure knobPush turned on accordingly
-      LOG knob6Push knob6Push
-      # END TEST
-    END
+  # assign knob6Push to true when knob6 is pushed - for push control
+  IF M1 == 5
+    ASS knob6Push = 1
+    # TEST
+    # ensure knobPush turned on accordingly
+    LOG knob6Push knob6Push
+    # END TEST
+  END
 
-    # assign knob7Push to true when knob7 is pushed - for push control
-    IF M1 == 6
-      ASS knob7Push = 1
-      # TEST
-      # ensure knobPush turned on accordingly
-      LOG knob7Push knob7Push
-      # END TEST
-    END
+  # assign knob7Push to true when knob7 is pushed - for push control
+  IF M1 == 6
+    ASS knob7Push = 1
+    # TEST
+    # ensure knobPush turned on accordingly
+    LOG knob7Push knob7Push
+    # END TEST
+  END
 
-    # assign knob8Push to true when knob8 is pushed - for push control
-    IF M1 == 7
-      ASS knob8Push = 1
-      # TEST
-      # ensure knobPush turned on accordingly
-      LOG knob8Push knob8Push
-      # END TEST
-    END
+  # assign knob8Push to true when knob8 is pushed - for push control
+  IF M1 == 7
+    ASS knob8Push = 1
+    # TEST
+    # ensure knobPush turned on accordingly
+    LOG knob8Push knob8Push
+    # END TEST
   END
 
   # if it is a button 1 push
@@ -911,7 +909,7 @@ IF MT == 90
     IF setLfo == 0
       LOG LFO_SET_OFF
     END
-    IF setLfo == 1
+    IF latch == 1
       LOG LFO_SET_ON
     END
     # END TEST
@@ -922,15 +920,15 @@ IF MT == 90
     # isBeats
     IF padMode == 0
       ASS padMode = 1
-      # SEND SYSEX
-      SEND F0 11 0C padMode F7 +F
-      # END SYSEX
+      # # SEND SYSEX
+      SEND 11 0C padMode F7 +F
+      # # END SYSEX
     # isSample
     ELSE
       ASS padMode = 0
-      # SEND SYSEX
+      # # SEND SYSEX
       SEND F0 11 0C padMode F7 +F
-      # END SYSEX
+      # # END SYSEX
     END
     # TEST
     # ensure padMode is toggling
@@ -941,27 +939,6 @@ IF MT == 90
       LOG SAMPLE_PAD
     END
     # END TEST
-  END
-
-  # if it is a button 12 push toggle groupKnobPush
-  IF M1 == 13 7F
-    IF groupKnobPush == 0
-      ASS groupKnobPush = 1
-    ELSE
-      ASS groupKnobPush = 0
-    END
-    # TEST
-    # ensure groupKnobPush is toggling
-    IF groupKnobPush == 0
-      LOG groupKnobPush_OFF
-    END
-    IF groupKnobPush == 1
-      LOG groupKnobPush_ON
-    END
-    # END TEST
-    # NOTE currently when turning on and off, this exits during the following conditionals, which can be inconsistent
-    # the main point is that once this action is complete, there should be no need for further action anyway
-    # might be good at some point to BLOCK and EXIT out of all of the conditional statements in each section
   END
 
   # channel specific
@@ -1678,46 +1655,37 @@ IF MT == 80
     # set tempo mode to variable modulo 4
     MATH lfoNumMod = lfoNum % 4
 
-    # TODO bookmark
-    # add testing here for 'ensure'ing lighting and changing lfoType
-    # create different variables for lfoType
-    # additionally will likely need different L array storage - similar to drumParams
-
-    IF lfoNumMod == 0
-      # TODO ASS lfoType = lfo1Type
+    IF lfoNumMode == 0
       # send lighting for lfo1Rate and depth
-      SEND F0 0F EE BA 04 lfo1Rate F7 +F
-      SEND F0 0F EE BA 05 lfo1Depth F7 +F
+      SEND F0 0F EE BA 03 lfo1Rate F7 +F
+      SEND F0 0F EE BA 04 lfo1Depth F7 +F
       # TEST
       LOG lfo1Rate lfo1Rate
       LOG lfo1Depth lfo1Depth
       # END TEST
     END
-    IF lfoNumMod == 1
-      # TODO ASS lfoType = lfo2Type
+    IF lfoNumMode == 1
       # send lighting for lfo2Rate and depth
-      SEND F0 0F EE BA 04 lfo2Rate F7 +F
-      SEND F0 0F EE BA 05 lfo2Depth F7 +F
+      SEND F0 0F EE BA 03 lfo2Rate F7 +F
+      SEND F0 0F EE BA 04 lfo2Depth F7 +F
       # TEST
       LOG lfo2Rate lfo2Rate
       LOG lfo2Depth lfo2Depth
       # END TEST
     END
-    IF lfoNumMod == 2
-      # TODO ASS lfoType = lfo3Type
+    IF lfoNumMode == 2
       # send lighting for lfo3Rate and depth
-      SEND F0 0F EE BA 04 lfo3Rate F7 +F
-      SEND F0 0F EE BA 05 lfo3Depth F7 +F
+      SEND F0 0F EE BA 03 lfo3Rate F7 +F
+      SEND F0 0F EE BA 04 lfo3Depth F7 +F
       # TEST
       LOG lfo3Rate lfo3Rate
       LOG lfo3Depth lfo3Depth
       # END TEST
     END
-    IF lfoNumMod == 3
-      # TODO ASS lfoType = lfo4Type
+    IF lfoNumMode == 3
       # send lighting for lfo4Rate and depth
-      SEND F0 0F EE BA 04 lfo4Rate F7 +F
-      SEND F0 0F EE BA 05 lfo4Depth F7 +F
+      SEND F0 0F EE BA 03 lfo4Rate F7 +F
+      SEND F0 0F EE BA 04 lfo4Depth F7 +F
       # TEST
       LOG lfo4Rate lfo4Rate
       LOG lfo4Depth lfo4Depth
@@ -2048,11 +2016,11 @@ IF MT == 80
     IF waveguideToggle == 0
       ASS waveguideToggle = 1
       # NOTE / TODO unsure if this is correct as of now
-      SEND F0 11 EE channelCC $116 7F F7 +F
+      SEND F0 11 EE channelCC $116 7F F7
     ELSE
       ASS waveguideToggle = 0
       # NOTE / TODO unsure if this is correct as of now
-      SEND F0 11 EE channelCC $116 00 F7 +F
+      SEND F0 11 EE channelCC $116 00 F7
     END
     # TEST
     # ensure waveguide is toggled properly
@@ -2974,8 +2942,6 @@ IF MT == B0
     END
     # TEST
     # ensure lfoRate aligns with lfoRate
-    LOG lfoNum lfoNum
-    LOG lfoRate M2
     LOG L3 L3
     # END TEST
     IF lfoNumMod == 0
@@ -3012,8 +2978,6 @@ IF MT == B0
     END
     # TEST
     # ensure lfoDepth aligns with lfoDepth
-    LOG lfoNum lfoNum
-    LOG lfoDepth M2
     LOG L4 L4
     # END TEST
     IF lfoNumMod == 0
@@ -3056,42 +3020,42 @@ IF MT == B0
     # END TEST
     # if drumParams are 'select'
     IF drumParams == $14 $15 $16
-      SEND F0 11 EE channelCC $14 M2 F7 +F
+      SEND F0 11 EE channelCC $14 M2 F7
       ASS select1 = M2
     END
     # if drumParams are 'level'
     IF drumParams == $17 $18 $19
-      SEND F0 11 EE channelCC $17 M2 F7 +F
+      SEND F0 11 EE channelCC $17 M2 F7
       ASS level1 = M2
     END
     # if drumParams are 'attack'
     IF drumParams == $20 $21 $22
-      SEND F0 11 EE channelCC $20 M2 F7 +F
+      SEND F0 11 EE channelCC $20 M2 F7
       ASS attack1 = M2
     END
     # if drumParams are 'release'
     IF drumParams == $23 $24 $25
-      SEND F0 11 EE channelCC $23 M2 F7 +F
+      SEND F0 11 EE channelCC $23 M2 F7
       ASS release1 = M2
     END
     # if drumParams are 'pitch'
     IF drumParams == $26 $27 $28
-      SEND F0 11 EE channelCC $26 M2 F7 +F
+      SEND F0 11 EE channelCC $26 M2 F7
       ASS pitch1 = M2
     END
     # if drumParams are 'modAmount'
     IF drumParams == $29 $30 $31
-      SEND F0 11 EE channelCC $29 M2 F7 +F
+      SEND F0 11 EE channelCC $29 M2 F7
       ASS modAmount1 = M2
     END
     # if drumParams are 'modRate'
     IF drumParams == $46 $47 $48
-      SEND F0 11 EE channelCC $46 M2 F7 +F
+      SEND F0 11 EE channelCC $46 M2 F7
       ASS modRate1 = M2
     END
     # if drumParams are 'waveguide'
     IF drumParams == $117 $118 $119
-      SEND F0 11 EE channelCC $117 M2 F7 +F
+      SEND F0 11 EE channelCC $117 M2 F7
       ASS waveguideDecay = M2
     END
   END
@@ -3107,42 +3071,42 @@ IF MT == B0
     # END TEST
     # if drumParams are 'select'
     IF drumParams == $14 $15 $16
-      SEND F0 11 EE channelCC $15 M2 F7 +F
+      SEND F0 11 EE channelCC $15 M2 F7
       ASS select2 = M2
     END
     # if drumParams are 'level'
     IF drumParams == $17 $18 $19
-      SEND F0 11 EE channelCC $18 M2 F7 +F
+      SEND F0 11 EE channelCC $18 M2 F7
       ASS level2 = M2
     END
     # if drumParams are 'attack'
     IF drumParams == $20 $21 $22
-      SEND F0 11 EE channelCC $21 M2 F7 +F
+      SEND F0 11 EE channelCC $21 M2 F7
       ASS attack2 = M2
     END
     # if drumParams are 'release'
     IF drumParams == $23 $24 $25
-      SEND F0 11 EE channelCC $24 M2 F7 +F
+      SEND F0 11 EE channelCC $24 M2 F7
       ASS release2 = M2
     END
     # if drumParams are 'pitch'
     IF drumParams == $26 $27 $28
-      SEND F0 11 EE channelCC $27 M2 F7 +F
+      SEND F0 11 EE channelCC $27 M2 F7
       ASS pitch2 = M2
     END
     # if drumParams are 'modAmount'
     IF drumParams == $29 $30 $31
-      SEND F0 11 EE channelCC $30 M2 F7 +F
+      SEND F0 11 EE channelCC $30 M2 F7
       ASS modAmount2 = M2
     END
     # if drumParams are 'modRate'
     IF drumParams == $46 $47 $48
-      SEND F0 11 EE channelCC $47 M2 F7 +F
+      SEND F0 11 EE channelCC $47 M2 F7
       ASS modRate2 = M2
     END
     # if drumParams are 'waveguide'
     IF drumParams == $117 $118 $119
-      SEND F0 11 EE channelCC $118 M2 F7 +F
+      SEND F0 11 EE channelCC $118 M2 F7
       ASS waveguideBody = M2
     END
   END
@@ -3158,42 +3122,42 @@ IF MT == B0
     # END TEST
     # if drumParams are 'select'
     IF drumParams == $14 $15 $16
-      SEND F0 11 EE channelCC $16 M2 F7 +F
+      SEND F0 11 EE channelCC $16 M2 F7
       ASS selectBoth = M2
     END
     # if drumParams are 'level'
     IF drumParams == $17 $18 $19
-      SEND F0 11 EE channelCC $19 M2 F7 +F
+      SEND F0 11 EE channelCC $19 M2 F7
       ASS levelBoth = M2
     END
     # if drumParams are 'attack'
     IF drumParams == $20 $21 $22
-      SEND F0 11 EE channelCC $22 M2 F7 +F
+      SEND F0 11 EE channelCC $22 M2 F7
       ASS attackBoth = M2
     END
     # if drumParams are 'release'
     IF drumParams == $23 $24 $25
-      SEND F0 11 EE channelCC $25 M2 F7 +F
+      SEND F0 11 EE channelCC $25 M2 F7
       ASS releaseBoth = M2
     END
     # if drumParams are 'pitch'
     IF drumParams == $26 $27 $28
-      SEND F0 11 EE channelCC $28 M2 F7 +F
+      SEND F0 11 EE channelCC $28 M2 F7
       ASS pitchBoth = M2
     END
     # if drumParams are 'modAmount'
     IF drumParams == $29 $30 $31
-      SEND F0 11 EE channelCC $31 M2 F7 +F
+      SEND F0 11 EE channelCC $31 M2 F7
       ASS modAmountBoth = M2
     END
     # if drumParams are 'modRate'
     IF drumParams == $46 $47 $48
-      SEND F0 11 EE channelCC $48 M2 F7 +F
+      SEND F0 11 EE channelCC $48 M2 F7
       ASS modRateBoth = M2
     END
     # if drumParams are 'waveguide'
     IF drumParams == $117 $118 $119
-      SEND F0 11 EE channelCC $119 M2 F7 +F
+      SEND F0 11 EE channelCC $119 M2 F7
       ASS waveguideTune = M2
     END
   END
@@ -3211,6 +3175,17 @@ IF MT == B0
 
   # end channel specific
 
+END
+
+# assign values to L array for push control
+IF MT == B0
+  IF M1 < 9
+    ASS LM1 = M2
+    # TEST
+    # ensure L value correctly changed
+    LOG LM1 LM1
+    # END TEST
+  END
 END
 
 BX = XX +B
