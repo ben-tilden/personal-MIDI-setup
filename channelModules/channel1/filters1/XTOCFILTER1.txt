@@ -36,4 +36,3 @@ IF M0 == F0
 END
 
 NX = XX +B
-BX = XX +B # TODO don't believe this is necessary

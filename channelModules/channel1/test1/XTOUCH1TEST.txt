@@ -2,7 +2,7 @@
 
 # TEST NOTES
 # TODO waveGuide send not implemented anywhere
-
+# NOTE at this point, there's inconsistency in testing between button press and button release - might at some point go back and smooth out
 
 
 
@@ -63,6 +63,15 @@
 # button 9 will increase arp type / add rest as part of phrase
 # button 2 will toggle arp / phrase
 # button 10 will turn arp / phrase on or off
+
+# NOTE compatible and incompatible functionality
+# groupPushKnob and pushKnob:
+  # with groupPushKnob on, pushKnob will not do anything
+  # with pushKnob on, groupPushKnob will prevent knob release from doing anything
+# groupPushKnob / pushKnob and drumParams
+  # with either on (knob # 6, 7, and 8 for pushKnob), drumParams will not be able to be changed
+# groupPushKnob / pushKnob and lfoNum
+  # with either on (knob # 4 for pushKnob), lfoNum will not be able to be changed
 
 IF LOAD
 
@@ -357,8 +366,6 @@ IF M0 == F0
   # Send lights when channel change sysex received
   IF M2 == 19 CC
 
-    # TODO need to set L array values to those sent to lighting? or would that already be correct?
-
     ASS resetIndex = 0
     # need to reset lights from other channel
     # loop until this is done for all sixteen buttons
@@ -393,6 +400,19 @@ IF M0 == F0
     IF padMode == 1
       SEND F0 0F EE 90 03 01 F7 +F
     END
+
+    # TEST
+    # ensure setPhrase, arpPhraseToggle, arpPhraseToggleOnOff, latch, lfo, padMode, groupKnobPush lighting resets
+    LOG CHANNEL_SWITCH_LIGHTING
+    LOG setPhrase setPhrase
+    LOG arpPhraseToggle arpPhraseToggle
+    LOG arpPhraseToggleOnOff arpPhraseToggleOnOff
+    LOG latch latch
+    LOG lfo lfo
+    LOG padMode padMode
+    LOG groupKnobPush groupKnobPush
+    LOG previousDrumVal previousDrumVal
+    # END TEST
 
     # send tempo lighting
     IF tempoModeMod == 0
@@ -526,6 +546,70 @@ IF M0 == F0
       SEND F0 0F EE BA 05 lfo4Depth F7 +F
     END
 
+    # TEST
+    # ensure knob lighting resets
+    LOG CHANNEL_SWITCH_LIGHTING
+    LOG tempoPulse tempoPulse
+    LOG gate gate
+    LOG velocity velocity
+    IF lfoNumMod == 0
+      LOG lfo1Rate lfo1Rate
+      LOG lfo1Depth lfo1Depth
+    END
+    IF lfoNumMod == 1
+      LOG lfo2Rate lfo2Rate
+      LOG lfo2Depth lfo2Depth
+    END
+    IF lfoNumMod == 2
+      LOG lfo3Rate lfo3Rate
+      LOG lfo3Depth lfo3Depth
+    END
+    IF lfoNumMod == 3
+      LOG lfo4Rate lfo4Rate
+      LOG lfo4Depth lfo4Depth
+    END
+    IF drumParams = $14
+      LOG select1 select1
+      LOG select2 select2
+      LOG selectBoth selectBoth
+    END
+    IF drumParams = $17
+      LOG level1 level1
+      LOG level2 level2
+      LOG levelBoth levelBoth
+    END
+    IF drumParams = $20
+      LOG attack1 attack1
+      LOG attack2 attack2
+      LOG attackBoth attackBoth
+    END
+    IF drumParams = $23
+      LOG release1 release1
+      LOG release2 release2
+      LOG releaseBoth releaseBoth
+    END
+    IF drumParams = $26
+      LOG pitch1 pitch1
+      LOG pitch2 pitch2
+      LOG pitchBoth pitchBoth
+    END
+    IF drumParams = $29
+      LOG modAmount1 modAmount1
+      LOG modAmount2 modAmount2
+      LOG modAmountBoth modAmountBoth
+    END
+    IF drumParams = $46
+      LOG modRate1 modRate1
+      LOG modRate2 modRate2
+      LOG modRateBoth modRateBoth
+    END
+    IF drumParams = $117
+      LOG waveguideDecay waveguideDecay
+      LOG waveguideBody waveguideBody
+      LOG waveguideTune waveguideTune
+    END
+    # END TEST
+
     # channel specific
 
     # send drum lighting
@@ -575,7 +659,7 @@ IF M0 == F0
     # end channel specific
 
     # TEST
-    # ensure lights change on channel change
+    # ensure xtouch lighting changes properly when channel changed
     LOG LIGHTS_SYSEX_RECEIVED
     LOG CHANNEL_CHANGE_SYSEX_RECEIVED
     # END TEST
@@ -590,8 +674,18 @@ END
 # if it is a button push
 IF MT == 90
 
+  # don't assign if setting lfo - this prevents push control issues when setting lfo
+  # TEST
+  # ensure push control does not work when setLfo is on
+  IF setLfo == 1
+    IF M1 < 8
+      LOG NO_PUSH_CONTROL_setLfo_ON
+    END
+  END
+  # END TEST
+  IF setLfo == 0
   # assign knob1Push to true when knob1 is pushed - for push control
-  IF M1 == 0 
+  IF M1 == 0
     ASS knob1Push = 1
     # TEST
     # ensure knobPush turned on accordingly
@@ -850,18 +944,34 @@ IF MT == 90
   # if knob is pressed and a drumParam is changed, the value in the L array will not match up correctly
   # NOTE monitor for actions that this may be blocking that are unrelated to drum
   IF groupKnobPush == 1
+    # TEST
+    # ensure drumParams can't be changed when groupKnobPush on
+    LOG groupKnobPush groupKnobPush
+    # END TEST
     BLOCK
     EXIT
   END
   IF knob6Push == 1
+    # TEST
+    # ensure drumParams can't be changed when knob6Push on
+    LOG knob6Push knob6Push
+    # END TEST
     BLOCK
     EXIT
   END
   IF knob7Push == 1
+    # TEST
+    # ensure drumParams can't be changed when knob7Push on
+    LOG knob7Push knob7Push
+    # END TEST
     BLOCK
     EXIT
   END
   IF knob8Push == 1
+    # TEST
+    # ensure drumParams can't be changed when knob8Push on
+    LOG knob8Push knob8Push
+    # END TEST
     BLOCK
     EXIT
   END
@@ -1099,62 +1209,15 @@ IF MT == 80
       # SEND SYSEX
       SEND F0 01 0E lfoNumMod lfoKnob F7 +F
       # END SYSEX
-      # TODO while loop
-      # no need to do this if groupKnobPush is on, since it prevents reading of L array until it is turned off
-      IF groupKnobPush == 0
-        IF knob1Push == 1
-          ASS knob1Push = 0
-        END
-        IF knob2Push == 1
-          ASS knob2Push = 0
-        END
-        IF knob3Push == 1
-          ASS knob3Push = 0
-        END
-        IF knob4Push == 1
-          ASS knob4Push = 0
-        END
-        IF knob5Push == 1
-          ASS knob5Push = 0
-        END
-        IF knob6Push == 1
-          ASS knob6Push = 0
-        END
-        IF knob7Push == 1
-          ASS knob7Push = 0
-        END
-        IF knob8Push == 1
-          ASS knob8Push = 0
-        END
-        IF knob1Turn == 1
-          ASS knob1Turn = 0
-        END
-        IF knob2Turn == 1
-          ASS knob2Turn = 0
-        END
-        IF knob3Turn == 1
-          ASS knob3Turn = 0
-        END
-        IF knob4Turn == 1
-          ASS knob4Turn = 0
-        END
-        IF knob5Turn == 1
-          ASS knob5Turn = 0
-        END
-        IF knob6Turn == 1
-          ASS knob6Turn = 0
-        END
-        IF knob7Turn == 1
-          ASS knob7Turn = 0
-        END
-        IF knob8Turn == 1
-          ASS knob8Turn = 0
-        END
-      END
       ASS setLfo = 0
       SEND F0 0F EE 90 0A 00 F7 +F
       # TEST
       # ensure lfoKnob is correctly set for any knob that's pressed, and that nothing is negatively impacted by it
+      # ensure sequence setLfo on, then groupKnobPush on causes no issues
+        # setLfo on and buttons should function as expected
+        # setLfo on and knob turns should function as expected (values change, L array values only change if groupKnobPush is off)
+      # ensure sequence groupKnobPush on, then setLfo on causes no issues
+        # because this has no involvement or mutation of groupKnobPush functionality, this should  function as expected
       LOG lfoKnob lfoKnob
       LOG lfoKnob_SYSEX_SENT
       # END TEST
@@ -1165,6 +1228,8 @@ IF MT == 80
 
   # push control
   # NOTE these conditionals are separate from other knob push conditionals below - likely better to consolidate at some point
+  # NOTE currently pushing a knob, then pressing groupKnobPush, then releasing the knob will not reset, which is expected at this point
+  # NOTE if groupKnobPush is active, any knob push will result in the standard functionality, even if the knob is turned
 
   # ignore knobPush changes if groupKnobPush is on
   IF groupKnobPush == 0
@@ -1549,7 +1614,7 @@ IF MT == 80
     # END SYSEX
 
     # TEST
-    # ensure lfoType changes accordingly
+    # ensure lfoSync sent correctly
     LOG lfoNum lfoNumMod
     LOG lfoSync_SYSEX_SENT
     # END TEST
@@ -1575,8 +1640,12 @@ IF MT == 80
   # if it is a knob 5 button release, change lfo num (the lfo that's being edited)
   # NOTE if variable is too high, reset (not implemented)
   IF M1 == 04 00
-    # this will cause issues if groupKnobPush is on due to the values in L array
+    # this will cause issues if groupKnobPush or knob4Push is on due to the values in L array
     IF groupKnobPush == 1
+      BLOCK
+      EXIT
+    END
+    IF knob4Push == 1
       BLOCK
       EXIT
     END
@@ -1636,7 +1705,7 @@ IF MT == 80
     # END SYSEX
 
     # TEST
-    # ensure lfoNum changes accordingly
+    # ensure lfoNum restarts accordingly
     LOG lfoNum lfoNumMod
     LOG lfo_RESTART_SYSEX_SENT
     # END TEST
@@ -3092,7 +3161,9 @@ IF MT == B0
   END
   # TEST
   # ensure correct drumParam sent on knob turn
+  # ensure drumParam changed to the correct value
   IF M1 > 5
+    LOG ASSIGNED_VALUE M2
     LOG drumParams1 K1A
     LOG drumParams2 K1B
     LOG drumParamsBoth K1C
@@ -3109,6 +3180,7 @@ IF MT == B0
   IF M1 < 9
     ASS LM1 = M2
     # TEST
+    # ensure L value correctly changed
     LOG LM1 LM1
     # END TEST
   END

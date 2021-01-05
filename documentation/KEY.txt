@@ -161,6 +161,57 @@ drumParams(Part1+2)       | F0 00    12    val  F7      | (0-127)    | (1-7F)   
 drumParams(waveguidesend) | F0 00    13    val  F7      | (0-127)    | (1-7F)      | 67      | CHANGE      | -           | -       | # TODO
 pitchQuantize             |                             |            |             |         |             |             |         | # TODO
 
+      IF groupKnobPush == 0
+        IF knob1Push == 1
+          ASS knob1Push = 0
+        END
+        IF knob2Push == 1
+          ASS knob2Push = 0
+        END
+        IF knob3Push == 1
+          ASS knob3Push = 0
+        END
+        IF knob4Push == 1
+          ASS knob4Push = 0
+        END
+        IF knob5Push == 1
+          ASS knob5Push = 0
+        END
+        IF knob6Push == 1
+          ASS knob6Push = 0
+        END
+        IF knob7Push == 1
+          ASS knob7Push = 0
+        END
+        IF knob8Push == 1
+          ASS knob8Push = 0
+        END
+        IF knob1Turn == 1
+          ASS knob1Turn = 0
+        END
+        IF knob2Turn == 1
+          ASS knob2Turn = 0
+        END
+        IF knob3Turn == 1
+          ASS knob3Turn = 0
+        END
+        IF knob4Turn == 1
+          ASS knob4Turn = 0
+        END
+        IF knob5Turn == 1
+          ASS knob5Turn = 0
+        END
+        IF knob6Turn == 1
+          ASS knob6Turn = 0
+        END
+        IF knob7Turn == 1
+          ASS knob7Turn = 0
+        END
+        IF knob8Turn == 1
+          ASS knob8Turn = 0
+        END
+      END
+
   # TODO
   IF M1 == 13 7F
     IF waveguideToggle == 0

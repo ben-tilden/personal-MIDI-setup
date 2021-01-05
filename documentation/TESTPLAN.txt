@@ -1,12 +1,6 @@
 # test plan
 # regex for code:( +# TEST\n(.+\n)+? +# END TEST\n)|( +# TEST LIVE\n(.+\n)+? +# END TEST LIVE\n)
 
-# TODO
-ensure update of individual filter input messages
-
-ensure that all buttons pressed actually function as expected
-ensure that switching channel properly sends expected values back and forth from xtouch
-ensure that hardware input filtering happening correctly
 
 ###
 # filters
@@ -14,75 +8,125 @@ ensure that hardware input filtering happening correctly
 
 # ensure hardware messages only send to the correct modules
 
+# ensure that hardware input filtering happening correctly # TODO hardware filter
+
 ###
 # x touch
 ###
+
+# ensure lights turn off on init
 
 # ensure xtouch lighting changes properly when channel changed
   # ensure setPhrase, arpPhraseToggle, arpPhraseToggleOnOff, latch, lfo, padMode, groupKnobPush lighting resets
   # ensure knob lighting resets
 # ensure xtouch receives setPhrase
-# ensure xtouch receives gateOpened # optional implementation not exercised yet
+# ensure xtouch receives gateOpened # optional implementation not exercised yet # TODO channel change
 
-# ensure lights turn off on init
+# button push
 
-# ensure tempoModeMod changes accordingly and tempoPulse correlates
+  # ensure knobPush turned on accordingly (for all -8- knobs) # TODO
 
-# ensure tempo lighting functions as expected
+  # ensure push control does not work when setLfo is on
 
-# ensure gateModeMod changes accordingly and gate correlates
+  # ensure arpValueModeMod changes accordingly or setPhrase changes
 
-# ensure arpValueModeMod changes accordingly or setPhrase changes
+  # ensure arp and phrase are toggling and setPhrase is turned off (if on) when switched to arp
 
-# ensure rest sent
+  # ensure rest sent
 
-# ensure arp and phrase are toggling and setPhrase is turned off (if on) when switched to arp
+  # ensure arp/phrase module is turned off or on
 
-# ensure arp/phrase module is turned off or on
+  # ensure latch is toggling
 
-# ensure latch is toggling
+  # ensure setLfo is toggling # TODO LFO
 
-# ensure waveguide is toggled properly
-# ensure pitchQuantize is toggled properly
-# ensure padMode is toggled properly
+  # ensure padMode is toggled properly # TODO padMode
 
-# ensure drumparams are assigned according to correct buttons
+  # ensure drumParams can't be changed when groupKnobPush on
+  # ensure drumParams can't be changed when knob6Push on
+  # ensure drumParams can't be changed when knob7Push on
+  # ensure drumParams can't be changed when knob8Push on
+  # (ensure that if a drum param button is pressed while drum param push control is occuring that nothing happens)
 
-# ensure 'select' lighting sent to knobs
-# ensure 'level' lighting sent to knobs
-# ensure 'attack' lighting sent to knobs
-# ensure 'release' lighting sent to knobs
-# ensure 'pitch' lighting sent to knobs
-# ensure 'modAmount' lighting sent to knobs
-# ensure 'modRate' lighting sent to knobs
-# ensure 'waveguide' lighting sent to knobs
+  # ensure drumparams are assigned according to correct buttons
 
-# ensure correct drumParam sent on knob turn
+  # ensure 'select' lighting sent to knobs
+  # ensure 'level' lighting sent to knobs
+  # ensure 'attack' lighting sent to knobs
+  # ensure 'release' lighting sent to knobs
+  # ensure 'pitch' lighting sent to knobs
+  # ensure 'modAmount' lighting sent to knobs
+  # ensure 'modRate' lighting sent to knobs
+  # ensure 'waveguide' lighting sent to knobs
 
-# ensure tempoPulse aligns with tempoMode
+# button release
 
-# ensure gate aligns with gate
-# ensure gateFactor is correct
+  # ensure lfoKnob is correctly set for any knob that's pressed, and that nothing is negatively impacted by it
+    # ensure sequence setLfo on, then groupKnobPush on causes no issues
+    # ensure sequence groupKnobPush on, then setLfo on causes no issues
 
-# ensure velocity aligns with velocity
+  # ensure push control release handled correctly
+    # ensure lighting matches with L array
+    # ensure L array matches with previous value
+    # ensure parameter associated with knob lighting also changed
+    # tempoPulse, gate, velocity, drumParam1, drumParam2, drumParam3
+    # ensure knobPush reset if no knob has been turned
 
-# ensure knobPush turned on accordingly
+  # ensure tempoModeMod changes accordingly and tempoPulse correlates
 
-# ensure push control release handled correctly
-  # ensure lighting matches with L array
-  # ensure L array matches with previous value
-  # ensure parameter associated with knob lighting also changed
-  # tempoPulse, gate, velocity, drumParam1, drumParam2, drumParam3
-  # ensure knobPush reset if no knob has been turned
+  # ensure tempo lighting functions as expected
 
-# ensure that if knob is turned while knob is pressed, knob turn is set to true
+  # ensure gateModeMod changes accordingly and gate correlates
 
-# ensure that if a drum param button is pressed while drum param push control is occuring that nothing happens
+  # ensure lfoSync sent correctly # TODO LFO
+  # ensure lfoType changes accordingly # TODO LFO
+  # ensure lfoNum changes accordingly # TODO LFO
+  # ensure lfoNum restarts accordingly # TODO LFO
 
-# ensure setLfo is toggling
-# ensure lfoVal is correctly set for any knob that's pressed, and that nothing is negatively impacted by it
-# ensure lfoType changes accordingly
-# ensure lfoNum changes accordingly
+  # ensure groupKnobPush turned on accordingly
+
+  # ensure groupKnobPush release handled correctly
+    # ensure lighting matches with L array
+    # ensure L array matches with previous value
+    # ensure parameter associated with knob lighting also changed
+    # tempoPulse, gate, velocity, drumParam1, drumParam2, drumParam3
+    # ensure knobPush reset if no knob has been turned
+
+  # ensure waveguide is toggled properly
+  # ensure pitchQuantize is toggled properly
+
+# knob turn
+
+  # ensure that if knob is turned while knob is pressed, knob turn is set to true
+
+  # ensure tempo lighting functions as expected
+
+  # ensure tempoPulse aligns with tempoMode
+
+  # ensure gate aligns with gate
+  # ensure gateFactor is correct
+
+  # ensure velocity aligns with velocity
+
+  # ensure lfoRate aligns with lfoRate # TODO LFO
+
+  # ensure lfoDepth aligns with lfoDepth # TODO LFO
+
+  # ensure correct drumParam sent on knob turn
+  # ensure drumParam changed to the correct value
+
+  # ensure L value correctly changed
+
+# misc
+
+  # confirm the following:
+    # groupPushKnob and pushKnob:
+      # with groupPushKnob on, pushKnob will not do anything
+      # with pushKnob on, groupPushKnob will prevent knob release from doing anything
+    # groupPushKnob / pushKnob and drumParams
+      # with either on (knob # 6, 7, and 8 for pushKnob), drumParams will not be able to be changed
+    # groupPushKnob / pushKnob and lfoNum
+      # with either on (knob # 4 for pushKnob), lfoNum will not be able to be changed
 
 ###
 # launchkey mini
@@ -93,7 +137,7 @@ ensure that hardware input filtering happening correctly
 # ensure launchkey receives velocity
 # ensure launchkey receives arpValueModeMod
 # ensure launchkey receives setPhrase
-# ensure launchkey receives isLatch
+# ensure launchkey receives latch
 
 # ensure global array reset (with locals)
 # ensure xtouch reset (with locals)
