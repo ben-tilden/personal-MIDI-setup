@@ -81,13 +81,13 @@
   # ensure gateModeMod changes accordingly and gate correlates
 
   # ensure lfoSync sent correctly
-  # ensure lfoType changes accordingly # TODO LFO
-  # ensure lfoNum changes accordingly # TODO LFO
+  # ensure lfoType changes accordingly
+  # ensure lfoNum changes accordingly and lighting corresponds
   # ensure lfoNum restarts accordingly
 
   # ensure groupKnobPush turned on accordingly
 
-  # ensure groupKnobPush release handled correctly # TODO does not work - seems to only do one knob at a time (due to BLOCK and EXIT), and resets knobs that shouldn't be reset (tempoPulse was a specific example)
+  # ensure groupKnobPush release handled correctly
     # ensure lighting matches with L array
     # ensure L array matches with previous value
     # ensure parameter associated with knob lighting also changed
@@ -117,7 +117,7 @@
   # ensure correct drumParam sent on knob turn
   # ensure drumParam changed to the correct value
 
-# misc # TODO
+# misc
 
   # confirm the following:
     # groupPushKnob and pushKnob:

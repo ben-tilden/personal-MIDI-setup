@@ -8,14 +8,6 @@
 // sysex messages sent here: F0 01 EE  F7
 
 
-@OnHostStart 
-  // set up lfos
-  //TODO reset lfos?
-  for lfo = 0 to 2
-    SetupLFO lfo, 0, 0, no, 0
-  endfor 
-@End 
-
 @Onload
   SetMetroPPQN 20
   SetKnobValue 0, 0

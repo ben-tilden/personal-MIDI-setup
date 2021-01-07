@@ -2,6 +2,7 @@
 
 # TEST NOTES
 # TODO waveGuide send not implemented anywhere
+# NOTE on first knob1Push, there may still be one unconfirmed bug where the knob lighting resets to zero when it should be reset to $14 (or whatever lighting corresponds to 24)
 
 
 
@@ -94,28 +95,31 @@ IF LOAD
   ALIAS I9 gateFactor
   ALIAS IA gateTemp
   ALIAS IB setLfo
-  ALIAS IC lfoType
-  ALIAS ID lfoNum
-  ALIAS IE resetIndex
-  ALIAS IF resetIndexMinusOne
-  ALIAS I10 knob1Push
-  ALIAS I11 knob1Turn
-  ALIAS I12 knob2Push
-  ALIAS I13 knob2Turn
-  ALIAS I14 knob3Push
-  ALIAS I15 knob3Turn
-  ALIAS I16 knob4Push
-  ALIAS I17 knob4Turn
-  ALIAS I18 knob5Push
-  ALIAS I19 knob5Turn
-  ALIAS I1A knob6Push
-  ALIAS I1B knob6Turn
-  ALIAS I1C knob7Push
-  ALIAS I1D knob7Turn
-  ALIAS I1E knob8Push
-  ALIAS I1F knob8Turn
-  ALIAS I20 knobTemp
-  ALIAS I21 groupKnobPush
+  ALIAS IC lfo1Type
+  ALIAS ID lfo2Type
+  ALIAS IE lfo3Type
+  ALIAS IF lfo4Type
+  ALIAS I10 lfoNum
+  ALIAS I11 resetIndex
+  ALIAS I12 resetIndexMinusOne
+  ALIAS I13 knob1Push
+  ALIAS I14 knob1Turn
+  ALIAS I15 knob2Push
+  ALIAS I16 knob2Turn
+  ALIAS I17 knob3Push
+  ALIAS I18 knob3Turn
+  ALIAS I19 knob4Push
+  ALIAS I1A knob4Turn
+  ALIAS I1B knob5Push
+  ALIAS I1C knob5Turn
+  ALIAS I1D knob6Push
+  ALIAS I1E knob6Turn
+  ALIAS I1F knob7Push
+  ALIAS I20 knob7Turn
+  ALIAS I21 knob8Push
+  ALIAS I22 knob8Turn
+  ALIAS I23 knobTemp
+  ALIAS I24 groupKnobPush
 
   # sysex
 
@@ -132,14 +136,18 @@ IF LOAD
   ALIAS JE lfoKnob
   ALIAS J10 lfoTypeMod
   ALIAS J15 arpModeSwitched # NOTE gateOpened
-  ALIAS J20 lfo1Rate
-  ALIAS J21 lfo1Depth
-  ALIAS J22 lfo2Rate
-  ALIAS J23 lfo2Depth
-  ALIAS J24 lfo3Rate
-  ALIAS J25 lfo3Depth
-  ALIAS J26 lfo4Rate
-  ALIAS J27 lfo4Depth
+  #ALIAS J20 lfo1Type
+  ALIAS J21 lfo1Rate
+  ALIAS J22 lfo1Depth
+  #ALIAS J23 lfo2Type
+  ALIAS J24 lfo2Rate
+  ALIAS J25 lfo2Depth
+  #ALIAS J26 lfo3Type
+  ALIAS J27 lfo3Rate
+  ALIAS J28 lfo3Depth
+  #ALIAS J29 lfo4Type
+  ALIAS J2A lfo4Rate
+  ALIAS J2B lfo4Depth
 
   # channel specific
 
@@ -184,8 +192,11 @@ IF LOAD
   ASS arpValueMode = 8004
   # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
   ASS gateMode = 0
-  # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
-  ASS lfoType = 0
+  # NOTE if these aren't reset on each 'install', then it's technically possible they could increase to the value max
+  ASS lfo1Type = 0
+  ASS lfo2Type = 0
+  ASS lfo3Type = 0
+  ASS lfo4Type = 0
   # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
   ASS lfoNum = 0
   # NOTE this is set to 'select' on initial load
@@ -316,8 +327,11 @@ IF M0 == F0
     ASS arpValueMode = 8004
     # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
     ASS gateMode = 0
-    # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
-    ASS lfoType = 0
+    # NOTE if these aren't reset on each 'install', then it's technically possible they could increase to the value max
+    ASS lfo1Type = 0
+    ASS lfo2Type = 0
+    ASS lfo3Type = 0
+    ASS lfo4Type = 0
     # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
     ASS lfoNum = 0
     # NOTE this is set to 'select' on initial load
@@ -1647,17 +1661,61 @@ IF MT == 80
 
   # if it is a knob 4 button release, change lfo type
   # NOTE if variable is too high, reset (not implemented)
+  # NOTE could add testing which reported the actual lfo type rather than a number
   IF M1 == 03 00
-    MATH lfoType = lfoType + 1
-    # set tempo mode to variable modulo 4
-    MATH lfoTypeMod = lfoType % 4
-    # SEND SYSEX
-    SEND F0 01 10 lfoNumMod lfoType F7 +F
-    # END SYSEX
+
+    IF lfoNumMod == 0
+      MATH lfo1Type = lfo1Type + 1
+      # set tempo mode to variable modulo 4
+      MATH lfoTypeMod = lfo1Type % 4
+      # SEND SYSEX
+      SEND F0 01 10 lfoNumMod lfoTypeMod F7 +F
+      # END SYSEX
+      # TEST
+      # ensure lfoType changes accordingly
+      LOG lfo1Type lfoTypeMod
+      # END TEST
+    END
+    IF lfoNumMod == 1
+      MATH lfo2Type = lfo2Type + 1
+      # set tempo mode to variable modulo 4
+      MATH lfoTypeMod = lfo2Type % 4
+      # SEND SYSEX
+      SEND F0 01 10 lfoNumMod lfoTypeMod F7 +F
+      # END SYSEX
+      # TEST
+      # ensure lfoType changes accordingly
+      LOG lfo2Type lfoTypeMod
+      # END TEST
+    END
+    IF lfoNumMod == 2
+      MATH lfo3Type = lfo3Type + 1
+      # set tempo mode to variable modulo 4
+      MATH lfoTypeMod = lfo3Type % 4
+      # SEND SYSEX
+      SEND F0 01 10 lfoNumMod lfoTypeMod F7 +F
+      # END SYSEX
+      # TEST
+      # ensure lfoType changes accordingly
+      LOG lfo3Type lfoTypeMod
+      # END TEST
+    END
+    IF lfoNumMod == 3
+      MATH lfo4Type = lfo4Type + 1
+      # set tempo mode to variable modulo 4
+      MATH lfoTypeMod = lfo4Type % 4
+      # SEND SYSEX
+      SEND F0 01 10 lfoNumMod lfoTypeMod F7 +F
+      # END SYSEX
+      # TEST
+      # ensure lfoType changes accordingly
+      LOG lfo4Type lfoTypeMod
+      # END TEST
+    END
 
     # TEST
     # ensure lfoType changes accordingly
-    LOG lfoType lfoTypeMod
+    LOG lfoNum lfoNumMod
     LOG lfoType_SYSEX_SENT
     # END TEST
   END
@@ -1678,46 +1736,45 @@ IF MT == 80
     # set tempo mode to variable modulo 4
     MATH lfoNumMod = lfoNum % 4
 
-    # TODO bookmark
-    # add testing here for 'ensure'ing lighting and changing lfoType
-    # create different variables for lfoType
-    # additionally will likely need different L array storage - similar to drumParams
-
     IF lfoNumMod == 0
-      # TODO ASS lfoType = lfo1Type
       # send lighting for lfo1Rate and depth
       SEND F0 0F EE BA 04 lfo1Rate F7 +F
       SEND F0 0F EE BA 05 lfo1Depth F7 +F
+      ASS L3 = lfo1Rate
+      ASS L4 = lfo1Depth
       # TEST
       LOG lfo1Rate lfo1Rate
       LOG lfo1Depth lfo1Depth
       # END TEST
     END
     IF lfoNumMod == 1
-      # TODO ASS lfoType = lfo2Type
       # send lighting for lfo2Rate and depth
       SEND F0 0F EE BA 04 lfo2Rate F7 +F
       SEND F0 0F EE BA 05 lfo2Depth F7 +F
+      ASS L3 = lfo2Rate
+      ASS L4 = lfo2Depth
       # TEST
       LOG lfo2Rate lfo2Rate
       LOG lfo2Depth lfo2Depth
       # END TEST
     END
     IF lfoNumMod == 2
-      # TODO ASS lfoType = lfo3Type
       # send lighting for lfo3Rate and depth
       SEND F0 0F EE BA 04 lfo3Rate F7 +F
       SEND F0 0F EE BA 05 lfo3Depth F7 +F
+      ASS L3 = lfo3Rate
+      ASS L4 = lfo3Depth
       # TEST
       LOG lfo3Rate lfo3Rate
       LOG lfo3Depth lfo3Depth
       # END TEST
     END
     IF lfoNumMod == 3
-      # TODO ASS lfoType = lfo4Type
       # send lighting for lfo4Rate and depth
       SEND F0 0F EE BA 04 lfo4Rate F7 +F
       SEND F0 0F EE BA 05 lfo4Depth F7 +F
+      ASS L3 = lfo4Rate
+      ASS L4 = lfo4Depth
       # TEST
       LOG lfo4Rate lfo4Rate
       LOG lfo4Depth lfo4Depth
@@ -1725,13 +1782,13 @@ IF MT == 80
     END
 
     # TEST
-    # ensure lfoNum changes accordingly
+    # ensure lfoNum changes accordingly and lighting corresponds
     LOG lfoNum lfoNumMod
     LOG lfoNum_SYSEX_SENT
     # END TEST
   END
 
-  # TODO add double tap to reset all lfos
+  # TODO add double tap to restart all lfos
   # if it is a knob 6 button release, restart current lfo
   IF M1 == 05 00
     # SEND SYSEX
@@ -1833,9 +1890,6 @@ IF MT == 80
         LOG knob1Push knob1Push
         LOG knob1Turn knob1Turn
         # END TEST
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
       ELSE
         ASS knob1Push = 0
         # TEST
@@ -1861,9 +1915,6 @@ IF MT == 80
         LOG knob2Push knob2Push
         LOG knob2Turn knob2Turn
         # END TEST
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
       ELSE
         ASS knob2Push = 0
         # TEST
@@ -1889,9 +1940,6 @@ IF MT == 80
         LOG knob3Push knob3Push
         LOG knob3Turn knob3Turn
         # END TEST
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
       ELSE
         ASS knob3Push = 0
         # TEST
@@ -1917,9 +1965,6 @@ IF MT == 80
         LOG knob4Push knob4Push
         LOG knob4Turn knob4Turn
         # END TEST
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
       ELSE
         ASS knob4Push = 0
         # TEST
@@ -1945,9 +1990,6 @@ IF MT == 80
         LOG knob5Push knob5Push
         LOG knob5Turn knob5Turn
         # END TEST
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
       ELSE
         ASS knob5Push = 0
         # TEST
@@ -1973,9 +2015,6 @@ IF MT == 80
         LOG knob6Push knob6Push
         LOG knob6Turn knob6Turn
         # END TEST
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
       ELSE
         ASS knob6Push = 0
         # TEST
@@ -2001,9 +2040,6 @@ IF MT == 80
         LOG knob7Push knob7Push
         LOG knob7Turn knob7Turn
         # END TEST
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
       ELSE
         ASS knob7Push = 0
         # TEST
@@ -2029,15 +2065,15 @@ IF MT == 80
         LOG knob8Push knob8Push
         LOG knob8Turn knob8Turn
         # END TEST
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
       ELSE
         ASS knob8Push = 0
         # TEST
         LOG knob8Push_RESET
         # END TEST
       END
+      # if using group push control, releasing the knob button should not have any effect (not that it does here)
+      BLOCK
+      EXIT
     END
   END
 
@@ -2088,15 +2124,40 @@ IF MT == 80
 
   # if knob is pressed and a drumParam is changed, the value in the L array will not match up correctly
   # NOTE monitor for actions that this may be blocking that are unrelated to drum
+  # send lighting if drumParam is the same so that the light doesn't just turn off
   IF knob6Push == 1
+    IF M1 >= 0C
+      IF M1 <= 17
+        MATH knobTemp = M1 - previousDrumVal
+        IF knobTemp == 8
+          SEND F0 0F EE 90 previousDrumVal 01 F7 +F
+        END
+      END
+    END
     BLOCK
     EXIT
   END
   IF knob7Push == 1
+    IF M1 >= 0C
+      IF M1 <= 17
+        MATH knobTemp = M1 - previousDrumVal
+        IF knobTemp == 8
+          SEND F0 0F EE 90 previousDrumVal 01 F7 +F
+        END
+      END
+    END
     BLOCK
     EXIT
   END
   IF knob8Push == 1
+    IF M1 >= 0C
+      IF M1 <= 17
+        MATH knobTemp = M1 - previousDrumVal
+        IF knobTemp == 8
+          SEND F0 0F EE 90 previousDrumVal 01 F7 +F
+        END
+      END
+    END
     BLOCK
     EXIT
   END
