@@ -913,22 +913,25 @@ IF MT == 90
     # END TEST
   END
 
-  # if it is a button 11 set lfo
+  # if it is a button 11 push toggle groupKnobPush
   IF M1 == 12 7F
-    IF setLfo == 0
-      ASS setLfo = 1
+    IF groupKnobPush == 0
+      ASS groupKnobPush = 1
     ELSE
-      ASS setLfo = 0
+      ASS groupKnobPush = 0
     END
     # TEST
-    # ensure setLfo is toggling
-    IF setLfo == 0
-      LOG LFO_SET_OFF
+    # ensure groupKnobPush is toggling
+    IF groupKnobPush == 0
+      LOG groupKnobPush_OFF
     END
-    IF setLfo == 1
-      LOG LFO_SET_ON
+    IF groupKnobPush == 1
+      LOG groupKnobPush_ON
     END
     # END TEST
+    # NOTE currently when turning on and off, this exits during the following conditionals, which can be inconsistent
+    # the main point is that once this action is complete, there should be no need for further action anyway
+    # might be good at some point to BLOCK and EXIT out of all of the conditional statements in each section
   END
 
   # if it is a button 4 push toggle padMode
@@ -957,25 +960,22 @@ IF MT == 90
     # END TEST
   END
 
-  # if it is a button 12 push toggle groupKnobPush
+  # if it is a button 12 set lfo
   IF M1 == 13 7F
-    IF groupKnobPush == 0
-      ASS groupKnobPush = 1
+    IF setLfo == 0
+      ASS setLfo = 1
     ELSE
-      ASS groupKnobPush = 0
+      ASS setLfo = 0
     END
     # TEST
-    # ensure groupKnobPush is toggling
-    IF groupKnobPush == 0
-      LOG groupKnobPush_OFF
+    # ensure setLfo is toggling
+    IF setLfo == 0
+      LOG LFO_SET_OFF
     END
-    IF groupKnobPush == 1
-      LOG groupKnobPush_ON
+    IF setLfo == 1
+      LOG LFO_SET_ON
     END
     # END TEST
-    # NOTE currently when turning on and off, this exits during the following conditionals, which can be inconsistent
-    # the main point is that once this action is complete, there should be no need for further action anyway
-    # might be good at some point to BLOCK and EXIT out of all of the conditional statements in each section
   END
 
   # channel specific
@@ -1840,14 +1840,8 @@ IF MT == 80
   END
 
   IF M1 == 12 00
-    IF setLfo == 1
-      SEND F0 0F EE 90 0A 02 F7 +F
-    END
-  END
-
-  IF M1 == 13 00
     IF groupKnobPush == 1
-      SEND F0 0F EE 90 0B 01 F7 +F
+      SEND F0 0F EE 90 0A 01 F7 +F
 
       # turn on knobPush for all knobs
       ASS knob1Push = 1
@@ -2074,6 +2068,12 @@ IF MT == 80
       # if using group push control, releasing the knob button should not have any effect (not that it does here)
       BLOCK
       EXIT
+    END
+  END
+
+  IF M1 == 13 00
+    IF setLfo == 1
+      SEND F0 0F EE 90 0B 02 F7 +F
     END
   END
 
