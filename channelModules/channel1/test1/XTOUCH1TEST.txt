@@ -1666,8 +1666,8 @@ IF MT == 80
 
     IF lfoNumMod == 0
       MATH lfo1Type = lfo1Type + 1
-      # set tempo mode to variable modulo 4
-      MATH lfoTypeMod = lfo1Type % 4
+      # set tempo mode to variable modulo 7
+      MATH lfoTypeMod = lfo1Type % 7
       # SEND SYSEX
       SEND F0 01 10 lfoNumMod lfoTypeMod F7 +F
       # END SYSEX
@@ -1679,7 +1679,7 @@ IF MT == 80
     IF lfoNumMod == 1
       MATH lfo2Type = lfo2Type + 1
       # set tempo mode to variable modulo 4
-      MATH lfoTypeMod = lfo2Type % 4
+      MATH lfoTypeMod = lfo2Type % 7
       # SEND SYSEX
       SEND F0 01 10 lfoNumMod lfoTypeMod F7 +F
       # END SYSEX
@@ -1691,7 +1691,7 @@ IF MT == 80
     IF lfoNumMod == 2
       MATH lfo3Type = lfo3Type + 1
       # set tempo mode to variable modulo 4
-      MATH lfoTypeMod = lfo3Type % 4
+      MATH lfoTypeMod = lfo3Type % 7
       # SEND SYSEX
       SEND F0 01 10 lfoNumMod lfoTypeMod F7 +F
       # END SYSEX
@@ -1703,7 +1703,7 @@ IF MT == 80
     IF lfoNumMod == 3
       MATH lfo4Type = lfo4Type + 1
       # set tempo mode to variable modulo 4
-      MATH lfoTypeMod = lfo4Type % 4
+      MATH lfoTypeMod = lfo4Type % 7
       # SEND SYSEX
       SEND F0 01 10 lfoNumMod lfoTypeMod F7 +F
       # END SYSEX

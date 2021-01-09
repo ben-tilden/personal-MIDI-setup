@@ -19,7 +19,6 @@
 # ALLOW | F0 11    0C    val  F7      padMode
 # BLOCK | F0 CC/FF 15    60   F7      gateOpened
 
-# BLOCK | F0 01    0D    val  F7      lfoNum
 # BLOCK | F0 01    0E    val1 val2 F7 lfoKnob
 # BLOCK | F0 01    0F    val  F7      lfoSync
 # BLOCK | F0 01    10    val1 val2 F7 lfoType

@@ -7,8 +7,111 @@
 
 // sysex messages sent here: F0 01 EE  F7
 
+// ALLOW | F0 01    0E    val1 val2 F7 lfoKnob
+// ALLOW | F0 01    0F    val  F7      lfoSync
+// ALLOW | F0 01    10    val1 val2 F7 lfoType
+// ALLOW | F0 01    11    val  F7      lfoReset
+// ALLOW | F0 01    12    00   F7      lfoResetAll
+// ALLOW | F0 01    13    val1 val2 F7 lfoRate
+// ALLOW | F0 01    14    val1 val2 F7 lfoDepth
 
-@Onload
+// sendmidiout / sendmidicc
+// ResetLFO <lfo> [,<startphase>]
+// <result> = GetLFOValue <lfo>
+
+// SetupLFO <lfo>, <minimum>, <maximum>, <sync>, <frequency>
+// SetLFOType <lfo>, {type}
+// ResetLFO <lfo> [,<phase>]
+// <var> = GetLFOValue <lfo>
+
+// current actions which need to be reassigned:
+// lfoType - toggle through
+// lfoSync - toggle
+// lfoBase - toggle
+// lfoOnOff - toggle
+// (opt) lfoOnOffAll - toggle
+// lfoRestart - instantaneous
+// lfoRestartAll - instantaneous
+
+@OnSysex
+  ReceiveSysex data
+  // NOTE - no possibility for 'bottom' lfo - only 'middle' / could implement later if desired
+  // setting knob for lfo to modulate
+  // TODO add testing
+  // TODO correct sysex message information for 13 (on/off), 15 (bottom / middle), 17 (restart), and 18 (restart all)
+  // TODO lfo sync was a different parameter from lfo reset - is on / off even necessary?
+
+  // turn off or on lfo
+  if data[1] = 13
+
+
+  // set target knob for lfo
+  elseif data[1] = 14
+    if data[2] = 0
+      lfo1TargetKnob = data[3]
+    elseif data[2] = 1
+      lfo2TargetKnob = data[3]
+    elseif data[3] = 1
+      lfo3TargetKnob = data[3]
+    elseif data[4] = 1
+      lfo4TargetKnob = data[3]
+    endif
+
+  // set lfo to bottom / middle
+  elseif data[1] = 15
+
+
+  // setting lfo type
+  // TODO setting cosine with phase pi/2 negates sin, which could be nice - also just -sin (same w square and tri?)
+  elseif data[1] = 16
+    if data[3] = 0
+      setLFOType data[2], {Sine}
+    elseif data[3] = 1
+      setLFOType data[2], {Cosine}
+    elseif data[3] = 2
+      setLFOType data[2], {Square}
+    elseif data[3] = 3
+      setLFOType data[2], {Triangle}
+    elseif data[3] = 4
+      setLFOType data[2], {RampUp}
+    elseif data[3] = 5
+      setLFOType data[2], {RampDown}
+    elseif data[3] = 6
+      setLFOType data[2], {SH}
+    endif
+
+  // restarting lfo
+  elseif data[1] = 17
+    ResetLfo data[2]
+
+  // restarting all lfos
+  elseif data[1] = 18
+    for lfo = 0 to 3
+      ResetLfo num
+    endfor
+
+  // update lfo rate
+  elseif data[1] = 19 // TODO if lfo is on (add conditional)
+    // NOTE could likely avoid these if statements by creating a frequency array
+      lfoFrequency[data[2]] = data[3] / 31.75
+      SetupLFO data[2], 0, 127, lfoSync[data[2]], (lfoFrequency[data[2]] * lfoDepth[data[2]]) // TODO lfoSync will likely fail here (0 or 1?), requiring further if statements
+
+  // update lfo depth
+  elseif data[1] = 20
+    //if value = 0
+    //  resetLFO lfo
+    //  log {lfoValue reset}
+    //endif
+
+    lfoFrequency = (data[3] / 127) * lfo1Frequency
+    SetupLFO data[2], 0, 127, lfoSync[data[2]], (lfoFrequency[data[2]] * lfoDepth[data[2]]) // TODO lfoSync will likely fail here (0 or 1?), requiring further if statements
+  endif
+@End
+
+// worst we can do is lfo1 modulating lfo2 modulating lfo3 modulating lfo4
+// if lfoTargetKnob = 4 or 5 set lfo differently
+
+@Onload // TODO
   SetMetroPPQN 20
   SetKnobValue 0, 0
   SetKnobValue 1, 0
@@ -20,10 +123,17 @@
   SetupLFO 1, 0, 0, no, 0
 @End
 
-@OnMetroPulse
+@OnMetroPulse // TODO
+  //SetMetroPPQN if necessary
   value0 = 0
   value1 = 0
   depthPercentage = 1
+  //lfo 1
+  //if lfo1RateModulated
+  //endif
+  //if lfo1DepthModulated
+  //endif
+  //
   value0 = ((GetLFOValue 0) / 63.5) * 2 * depthPercentage
   if value0 > 0
     SetupLFO 1, 0, 127, no, value0 
@@ -34,6 +144,17 @@
   SetXYValues 64, value1
   //SendMIDICC 0, 13, value
 @End
+
+
+
+
+
+
+
+
+
+
+//SCRAPS
 
 @OnKnobChange 
   // update lfos

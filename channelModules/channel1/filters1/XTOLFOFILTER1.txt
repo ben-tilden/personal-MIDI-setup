@@ -19,7 +19,6 @@
 # BLOCK | F0 11    0C    val  F7      padMode
 # BLOCK | F0 CC/FF 15    60   F7      gateOpened
 
-# ALLOW | F0 01    0D    val  F7      lfoNum
 # ALLOW | F0 01    0E    val1 val2 F7 lfoKnob
 # ALLOW | F0 01    0F    val  F7      lfoSync
 # ALLOW | F0 01    10    val1 val2 F7 lfoType
@@ -29,9 +28,8 @@
 # ALLOW | F0 01    14    val1 val2 F7 lfoDepth
 
 IF M0 == F0
-  IF M1 == 01 EE
-    ASS M0 = M3 M4 M5
+  IF M1 != 01
+    BLOCK
+    EXIT
   END
 END
-
-FX = XX +B
