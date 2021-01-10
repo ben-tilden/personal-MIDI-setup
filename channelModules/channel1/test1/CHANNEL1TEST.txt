@@ -205,7 +205,7 @@ IF M0 == F0
     EXIT
   END
 
-  IF M2 == 15
+  IF M2 == 17
     ASS gateOpened = 1
     # TEST
     # ensure channel receives gateOpened
@@ -282,7 +282,7 @@ IF M0 == F0
   END
 
   # reset channel when init sysex received
-  IF M2 == 18 00
+  IF M2 == 1A 00
     # (re)set sysex variables
     # NOTE could move this also into the init load for completeness (or remove local from init load?)
 

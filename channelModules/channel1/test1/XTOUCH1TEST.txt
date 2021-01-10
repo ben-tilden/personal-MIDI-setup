@@ -259,7 +259,7 @@ IF M0 == F0
   END
 
   # Turn off lights when init sysex received
-  IF M2 == 17 00
+  IF M2 == 19 00
     # TEST
     # uncomment to turn on all lights on xtouch
     # IF LOAD
@@ -380,7 +380,7 @@ IF M0 == F0
   END
 
   # Send lights when channel change sysex received
-  IF M2 == 19 CC
+  IF M2 == 1B CC
 
     ASS resetIndex = 0
     # need to reset lights from other channel
@@ -820,7 +820,7 @@ IF MT == 90
     # if phrase then add rest to phrase sequence
     ELSE
       IF setPhrase == 1
-        SEND F0 11 16 2E F7 +F
+        SEND F0 11 18 2E F7 +F
         # NOTE not currently planning on handling this, but there may is likely a race condition between rest and note that could cause issues
         # TEST
         # ensure rest sent
@@ -1246,7 +1246,7 @@ IF MT == 80
     IF setLfo == 1
       ASS lfoKnob = M1
       # SEND SYSEX
-      SEND F0 01 0E lfoNumMod lfoKnob F7 +F
+      SEND F0 01 0D lfoNumMod lfoKnob F7 +F
       # END SYSEX
       ASS setLfo = 0
       SEND F0 0F EE 90 0A 00 F7 +F
@@ -1649,7 +1649,7 @@ IF MT == 80
   # if it is a knob 3 button release, turn on lfo sync
   IF M1 == 02 00
     # SEND SYSEX
-    SEND F0 01 0F lfoNumMod F7 +F
+    SEND F0 01 0E lfoNumMod F7 +F
     # END SYSEX
 
     # TEST
@@ -1669,7 +1669,7 @@ IF MT == 80
       # set tempo mode to variable modulo 7
       MATH lfoTypeMod = lfo1Type % 7
       # SEND SYSEX
-      SEND F0 01 10 lfoNumMod lfoTypeMod F7 +F
+      SEND F0 01 12 lfoNumMod lfoTypeMod F7 +F
       # END SYSEX
       # TEST
       # ensure lfoType changes accordingly
@@ -1681,7 +1681,7 @@ IF MT == 80
       # set tempo mode to variable modulo 4
       MATH lfoTypeMod = lfo2Type % 7
       # SEND SYSEX
-      SEND F0 01 10 lfoNumMod lfoTypeMod F7 +F
+      SEND F0 01 12 lfoNumMod lfoTypeMod F7 +F
       # END SYSEX
       # TEST
       # ensure lfoType changes accordingly
@@ -1693,7 +1693,7 @@ IF MT == 80
       # set tempo mode to variable modulo 4
       MATH lfoTypeMod = lfo3Type % 7
       # SEND SYSEX
-      SEND F0 01 10 lfoNumMod lfoTypeMod F7 +F
+      SEND F0 01 12 lfoNumMod lfoTypeMod F7 +F
       # END SYSEX
       # TEST
       # ensure lfoType changes accordingly
@@ -1705,7 +1705,7 @@ IF MT == 80
       # set tempo mode to variable modulo 4
       MATH lfoTypeMod = lfo4Type % 7
       # SEND SYSEX
-      SEND F0 01 10 lfoNumMod lfoTypeMod F7 +F
+      SEND F0 01 12 lfoNumMod lfoTypeMod F7 +F
       # END SYSEX
       # TEST
       # ensure lfoType changes accordingly
@@ -1792,7 +1792,7 @@ IF MT == 80
   # if it is a knob 6 button release, restart current lfo
   IF M1 == 05 00
     # SEND SYSEX
-    SEND F0 01 11 lfoNumMod F7 +F
+    SEND F0 01 13 lfoNumMod F7 +F
     # END SYSEX
 
     # TEST
@@ -3041,25 +3041,25 @@ IF MT == B0
     # END TEST
     IF lfoNumMod == 0
       # SEND SYSEX
-      SEND F0 01 13 lfoNumMod lfo1Rate F7 +F
+      SEND F0 01 15 lfoNumMod lfo1Rate F7 +F
       # END SYSEX
       ASS lfo1Rate = M2
     END
     IF lfoNumMod == 1
       # SEND SYSEX
-      SEND F0 01 13 lfoNumMod lfo2Rate F7 +F
+      SEND F0 01 15 lfoNumMod lfo2Rate F7 +F
       # END SYSEX
       ASS lfo2Rate = M2
     END
     IF lfoNumMod == 2
       # SEND SYSEX
-      SEND F0 01 13 lfoNumMod lfo3Rate F7 +F
+      SEND F0 01 15 lfoNumMod lfo3Rate F7 +F
       # END SYSEX
       ASS lfo3Rate = M2
     END
     IF lfoNumMod == 3
       # SEND SYSEX
-      SEND F0 01 13 lfoNumMod lfo4Rate F7 +F
+      SEND F0 01 15 lfoNumMod lfo4Rate F7 +F
       # END SYSEX
       ASS lfo4Rate = M2
     END
@@ -3079,25 +3079,25 @@ IF MT == B0
     # END TEST
     IF lfoNumMod == 0
       # SEND SYSEX
-      SEND F0 01 14 lfoNumMod lfo1Depth F7 +F
+      SEND F0 01 16 lfoNumMod lfo1Depth F7 +F
       # END SYSEX
       ASS lfo1Depth = M2
     END
     IF lfoNumMod == 1
       # SEND SYSEX
-      SEND F0 01 14 lfoNumMod lfo2Depth F7 +F
+      SEND F0 01 16 lfoNumMod lfo2Depth F7 +F
       # END SYSEX
       ASS lfo2Depth = M2
     END
     IF lfoNumMod == 2
       # SEND SYSEX
-      SEND F0 01 14 lfoNumMod lfo3Depth F7 +F
+      SEND F0 01 16 lfoNumMod lfo3Depth F7 +F
       # END SYSEX
       ASS lfo3Depth = M2
     END
     IF lfoNumMod == 3
       # SEND SYSEX
-      SEND F0 01 14 lfoNumMod lfo4Depth F7 +F
+      SEND F0 01 16 lfoNumMod lfo4Depth F7 +F
       # END SYSEX
       ASS lfo4Depth = M2
     END

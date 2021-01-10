@@ -172,14 +172,14 @@ IF LOAD
   ASS initLatch = 1
 
   # reset xtouch lighting and params
-  SEND F0 FF 17 00 F7 +F
+  SEND F0 FF 19 00 F7 +F
   # TEST
   # ensure xtouch reset
   LOG XTOUCH_RESET
   # END TEST
 
   # reset channel information
-  SEND F0 CC 18 00 F7 +F
+  SEND F0 CC 1A 00 F7 +F
   # TEST
   # ensure channel information reset (will need to be done on individual files)
   LOG CHANNELS_RESET
@@ -197,7 +197,7 @@ IF M0 == F0
     IF arpPhraseOnOffToggle == 1
       # need to open gate so that there's a smooth transition here
       # SEND SYSEX
-      SEND F0 CC 15 60 F7 +F
+      SEND F0 CC 17 60 F7 +F
       # END SYSEX
     END
     # TEST
@@ -221,7 +221,7 @@ IF M0 == F0
         END
         # need to open gate so that there's a smooth transition here
         # SEND SYSEX
-        SEND F0 CC 15 60 F7 +F
+        SEND F0 CC 17 60 F7 +F
         # END SYSEX
       ELSE
         ASS iter = arpIndexOffset
@@ -323,7 +323,7 @@ IF MT == B0
 
     # send channel change sysex
     # SEND SYSEX
-    SEND F0 FF 19 CC F7 +F
+    SEND F0 FF 1B CC F7 +F
     # END SYSEX
 
     # change channel variable here
@@ -375,14 +375,14 @@ IF MT == B0
     ASS initLatch = 1
 
     # reset xtouch lighting and params
-    SEND F0 FF 17 00 F7 +F
+    SEND F0 FF 19 00 F7 +F
     # TEST
     # ensure xtouch reset
     LOG XTOUCH_RESET
     # END TEST
 
     # reset channel information
-    SEND F0 CC 18 00 F7 +F
+    SEND F0 CC 1A 00 F7 +F
     # TEST
     # ensure channel information reset (will need to be done on individual files)
     LOG CHANNELS_RESET
@@ -559,7 +559,7 @@ IF MT == 90
   IF numPressed == 1
     # gateOpened
     # SEND SYSEX
-    SEND F0 CC 15 60 F7 +F
+    SEND F0 CC 17 60 F7 +F
     # END SYSEX
   END
   # TEST TRY
@@ -791,7 +791,7 @@ IF setPhrase == 1
     MATH phraseIndex = phraseIndex + 1
   END
   # if phraseRest is sent
-  IF M2 == 16 2E
+  IF M2 == 18 2E
     # assign value to 2E57, indicating a rest
     ASS JJ9 = 2E57
     # NOTE could remove math and hard code in 2E57
