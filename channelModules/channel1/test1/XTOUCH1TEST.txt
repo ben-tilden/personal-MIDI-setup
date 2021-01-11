@@ -3,6 +3,7 @@
 # TEST NOTES
 # TODO waveGuide send not implemented anywhere
 # NOTE on first knob1Push, there may still be one unconfirmed bug where the knob lighting resets to zero when it should be reset to $14 (or whatever lighting corresponds to 24)
+# NOTE switching modes on the xtouch (from 'A' to 'B' or otherwise) while a button is currently physically pushed down will cause an issue if that button is released after mode switch
 
 
 
@@ -95,52 +96,44 @@ IF LOAD
   ALIAS I9 gateFactor
   ALIAS IA gateTemp
   ALIAS IB setLfo
-  ALIAS IC lfo1Type
-  ALIAS ID lfo2Type
-  ALIAS IE lfo3Type
-  ALIAS IF lfo4Type
-  ALIAS I10 lfoNum
-  ALIAS I1D programChange # TODO
-  ALIAS I11 resetIndex
-  ALIAS I12 resetIndexMinusOne
-  ALIAS I13 knob1Push
-  ALIAS I14 knob1Turn
-  ALIAS I15 knob2Push
-  ALIAS I16 knob2Turn
-  ALIAS I17 knob3Push
-  ALIAS I18 knob3Turn
-  ALIAS I19 knob4Push
-  ALIAS I1A knob4Turn
-  ALIAS I1B knob5Push
-  ALIAS I1C knob5Turn
-
-  ALIAS I13 knob6Push # TODO
-  ALIAS I14 knob6Turn # TODO
-  ALIAS I15 knob7Push # TODO
-  ALIAS I16 knob7Turn # TODO
-  ALIAS I17 knob8Push # TODO
-  ALIAS I18 knob8Turn # TODO
-
-  ALIAS I1D knob9Push
-  ALIAS I1E knob9Turn
-  ALIAS I1F knob10Push
-  ALIAS I20 knob10Turn
-  ALIAS I21 knob11Push
-  ALIAS I22 knob11Turn
-
-  ALIAS I13 knob12Push # TODO
-  ALIAS I14 knob12Turn # TODO
-  ALIAS I15 knob13Push # TODO
-  ALIAS I16 knob13Turn # TODO
-  ALIAS I17 knob14Push # TODO
-  ALIAS I18 knob14Turn # TODO
-  ALIAS I19 knob15Push # TODO
-  ALIAS I1A knob15Turn # TODO
-  ALIAS I1B knob16Push # TODO
-  ALIAS I1C knob16Turn # TODO
-
-  ALIAS I23 knobTemp
-  ALIAS I24 groupKnobPush
+  ALIAS IC lfoNum
+  ALIAS ID programChange
+  ALIAS IE resetIndex
+  ALIAS IF resetIndexTemp
+  ALIAS I10 knob1Push
+  ALIAS I11 knob1Turn
+  ALIAS I12 knob2Push
+  ALIAS I13 knob2Turn
+  ALIAS I14 knob3Push
+  ALIAS I15 knob3Turn
+  ALIAS I16 knob4Push
+  ALIAS I17 knob4Turn
+  ALIAS I18 knob5Push
+  ALIAS I19 knob5Turn
+  ALIAS I1A knob6Push
+  ALIAS I1B knob6Turn
+  ALIAS I1C knob7Push
+  ALIAS I1D knob7Turn
+  ALIAS I1E knob8Push
+  ALIAS I1F knob8Turn
+  ALIAS I20 knob9Push
+  ALIAS I21 knob9Turn
+  ALIAS I22 knob10Push
+  ALIAS I23 knob10Turn
+  ALIAS I24 knob11Push
+  ALIAS I25 knob11Turn
+  ALIAS I26 knob12Push
+  ALIAS I27 knob12Turn
+  ALIAS I28 knob13Push
+  ALIAS I29 knob13Turn
+  ALIAS I2A knob14Push
+  ALIAS I2B knob14Turn
+  ALIAS I2C knob15Push
+  ALIAS I2D knob15Turn
+  ALIAS I2E knob16Push
+  ALIAS I2F knob16Turn
+  ALIAS I30 knobTemp
+  ALIAS I31 groupKnobPush
 
   # sysex
 
@@ -157,18 +150,35 @@ IF LOAD
   ALIAS JE lfoKnob
   ALIAS J10 lfoTypeMod
   ALIAS J15 arpModeSwitched # NOTE gateOpened
-  #ALIAS J20 lfo1Type TODO
+  ALIAS J20 lfo1Type
   ALIAS J21 lfo1Rate
   ALIAS J22 lfo1Depth
-  #ALIAS J23 lfo2Type TODO
+  ALIAS J23 lfo2Type
   ALIAS J24 lfo2Rate
   ALIAS J25 lfo2Depth
-  #ALIAS J26 lfo3Type TODO
+  ALIAS J26 lfo3Type
   ALIAS J27 lfo3Rate
   ALIAS J28 lfo3Depth
-  #ALIAS J29 lfo4Type TODO
+  ALIAS J29 lfo4Type
   ALIAS J2A lfo4Rate
   ALIAS J2B lfo4Depth
+  ALIAS J2C lfo1OnOffToggle
+  ALIAS J2D lfo2OnOffToggle
+  ALIAS J2E lfo3OnOffToggle
+  ALIAS J2F lfo4OnOffToggle
+  ALIAS J30 lfoMuteAll
+  ALIAS J31 lfo1Sync
+  ALIAS J32 lfo2Sync
+  ALIAS J33 lfo3Sync
+  ALIAS J34 lfo4Sync
+  ALIAS J35 lfo1Base
+  ALIAS J36 lfo2Base
+  ALIAS J37 lfo3Base
+  ALIAS J38 lfo4Base
+  ALIAS J39 lfo1Invert
+  ALIAS J3A lfo2Invert
+  ALIAS J3B lfo3Invert
+  ALIAS J3C lfo4Invert
 
   # channel specific
 
@@ -223,6 +233,7 @@ IF LOAD
   # NOTE this is set to 'select' on initial load
   ASS previousDrumVal = 00
   ASS gateFactor = 1
+  ASS programChange = 0
 
   # TODO while loop
   ASS knob1Push = 0
@@ -297,41 +308,62 @@ IF M0 == F0
   END
 
   # Turn off lights when init sysex received
-  IF M2 == 19 00
+  IF M2 == 1A 00
     # TEST
     # uncomment to turn on all lights on xtouch
     # IF LOAD
     #   ALIAS I0 resetIndex
-    #   ALIAS I1 resetIndexMinusOne
+    #   ALIAS I1 resetIndexTemp
     #   ASS resetIndex = 1
     #   WHILE resetIndex < 11
-    #     MATH resetIndexMinusOne = resetIndex - 1
+    #     MATH resetIndexTemp = resetIndex - 1
     #     # these should only go up to eight
     #     IF resetIndex < 9
     #       # reset lighting on knobs
     #       SEND F0 0F EE BA resetIndex 7F F7 +F
     #     END
     #     # reset button lighting
-    #     SEND F0 0F EE 90 resetIndexMinusOne 01 F7 +F
+    #     SEND F0 0F EE 90 resetIndexTemp 01 F7 +F
     #     MATH resetIndex = resetIndex + 1
     #   END
     # END
     # END TEST
-    ASS resetIndex = 1
+    ASS resetIndex = 0
     # loop until this is done for all sixteen buttons
-    WHILE resetIndex < 11
-      MATH resetIndexMinusOne = resetIndex - 1
+    WHILE resetIndex < 10
+      MATH resetIndexTemp = resetIndex + 1
       # these should only go up to eight
-      IF resetIndex < 9
+      IF resetIndex < 8
         # reset lighting on knobs
-        SEND F0 0F EE BA resetIndex 00 F7 +F
+        SEND F0 0F EE BA resetIndexTemp 00 F7 +F
         # set lighting to 'pan'
-        SEND F0 0F EE B0 resetIndex 02 F7 +F
+        SEND F0 0F EE B0 resetIndexTemp 02 F7 +F
       END
       # reset button lighting
-      SEND F0 0F EE 90 resetIndexMinusOne 00 F7 +F
+      SEND F0 0F EE 90 resetIndex 00 F7 +F
       MATH resetIndex = resetIndex + 1
     END
+
+    # reset lights for mode 'B'
+    SEND C0 01
+
+    ASS resetIndex = 0
+    # loop until this is done for all sixteen buttons
+    WHILE resetIndex < 10
+      MATH resetIndexTemp = resetIndex + B
+      # these should only go up to eight
+      IF resetIndex < 8
+        # reset lighting on knobs
+        SEND F0 0F EE BA resetIndexTemp 00 F7 +F
+        # set lighting to 'pan'
+        SEND F0 0F EE B0 resetIndexTemp 02 F7 +F
+      END
+      # reset button lighting
+      SEND F0 0F EE 90 resetIndex 00 F7 +F
+      MATH resetIndex = resetIndex + 1
+    END
+
+    SEND C0 00
 
     # (re)set sysex variables
     # NOTE could move this also into the init load for completeness (or remove local from init load?)
@@ -357,6 +389,23 @@ IF M0 == F0
     ASS lfo3Depth = 0
     ASS lfo4Rate = 0
     ASS lfo4Depth = 0
+    ASS lfo1OnOffToggle = 0
+    ASS lfo2OnOffToggle = 0
+    ASS lfo3OnOffToggle = 0
+    ASS lfo4OnOffToggle = 0
+    ASS lfoMuteAll = 0
+    ASS lfo1Sync = 0
+    ASS lfo2Sync = 0
+    ASS lfo3Sync = 0
+    ASS lfo4Sync = 0
+    ASS lfo1Base = 0
+    ASS lfo2Base = 0
+    ASS lfo3Base = 0
+    ASS lfo4Base = 0
+    ASS lfo1Invert = 0
+    ASS lfo2Invert = 0
+    ASS lfo3Invert = 0
+    ASS lfo4Invert = 0
 
     # reset necessary local variables
     # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
@@ -375,6 +424,7 @@ IF M0 == F0
     # NOTE this is set to 'select' on initial load
     ASS previousDrumVal = 00
     ASS gateFactor = 1
+    ASS programChange = 0
 
     # TODO while loop
     ASS knob1Push = 0
@@ -435,7 +485,7 @@ IF M0 == F0
   END
 
   # Send lights when channel change sysex received
-  IF M2 == 1B CC
+  IF M2 == 1C CC
 
     ASS resetIndex = 0
     # need to reset lights from other channel
@@ -471,9 +521,65 @@ IF M0 == F0
     IF padMode == 1
       SEND F0 0F EE 90 03 01 F7 +F
     END
+    IF lfoNumMod == 0
+      IF lfo1OnOffToggle == 1
+        SEND F0 0F EE 90 04 01 F7 +F
+      END
+      IF lfo1Sync == 1
+        SEND F0 0F EE 90 06 01 F7 +F
+      END
+      IF lfo1Base == 1
+        SEND F0 0F EE 90 0E 01 F7 +F
+      END
+      IF lfo1Invert == 1
+        SEND F0 0F EE 90 07 01 F7 +F
+      END
+    END
+    IF lfoNumMod == 1
+      IF lfo2OnOffToggle == 1
+        SEND F0 0F EE 90 04 01 F7 +F
+      END
+      IF lfo2Sync == 1
+        SEND F0 0F EE 90 06 01 F7 +F
+      END
+      IF lfo2Base == 1
+        SEND F0 0F EE 90 0E 01 F7 +F
+      END
+      IF lfo2Invert == 1
+        SEND F0 0F EE 90 07 01 F7 +F
+      END
+    END
+    IF lfoNumMod == 2
+      IF lfo3OnOffToggle == 1
+        SEND F0 0F EE 90 04 01 F7 +F
+      END
+      IF lfo3Sync == 1
+        SEND F0 0F EE 90 06 01 F7 +F
+      END
+      IF lfo3Base == 1
+        SEND F0 0F EE 90 0E 01 F7 +F
+      END
+      IF lfo3Invert == 1
+        SEND F0 0F EE 90 07 01 F7 +F
+      END
+    END
+    IF lfoNumMod == 3
+      IF lfo4OnOffToggle == 1
+        SEND F0 0F EE 90 04 01 F7 +F
+      END
+      IF lfo4Sync == 1
+        SEND F0 0F EE 90 06 01 F7 +F
+      END
+      IF lfo4Base == 1
+        SEND F0 0F EE 90 0E 01 F7 +F
+      END
+      IF lfo4Invert == 1
+        SEND F0 0F EE 90 07 01 F7 +F
+      END
+    END
 
     # TEST
-    # ensure setPhrase, arpPhraseToggle, arpPhraseToggleOnOff, latch, lfo, padMode, groupKnobPush lighting resets
+    # ensure setPhrase, arpPhraseToggle, arpPhraseToggleOnOff, latch, lfo, padMode, groupKnobPush, lfo (4 vars) lighting resets
     LOG CHANNEL_SWITCH_LIGHTING
     LOG setPhrase setPhrase
     LOG arpPhraseToggle arpPhraseToggle
@@ -482,6 +588,30 @@ IF M0 == F0
     LOG setLfo setLfo
     LOG padMode padMode
     LOG groupKnobPush groupKnobPush
+    IF lfoNumMod == 0
+      LOG lfo1OnOffToggle lfo1OnOffToggle
+      LOG lfo1Sync lfo1Sync
+      LOG lfo1Base lfo1Base
+      LOG lfo1Invert lfo1Invert
+    END
+    IF lfoNumMod == 1
+      LOG lfo2OnOffToggle lfo2OnOffToggle
+      LOG lfo2Sync lfo2Sync
+      LOG lfo2Base lfo2Base
+      LOG lfo2Invert lfo2Invert
+    END
+    IF lfoNumMod == 2
+      LOG lfo3OnOffToggle lfo3OnOffToggle
+      LOG lfo3Sync lfo3Sync
+      LOG lfo3Base lfo3Base
+      LOG lfo3Invert lfo3Invert
+    END
+    IF lfoNumMod == 3
+      LOG lfo4OnOffToggle lfo4OnOffToggle
+      LOG lfo4Sync lfo4Sync
+      LOG lfo4Base lfo4Base
+      LOG lfo4Invert lfo4Invert
+    END
     LOG previousDrumVal previousDrumVal
     # END TEST
 
@@ -681,51 +811,57 @@ IF M0 == F0
     END
     # END TEST
 
-    # channel specific # TODO need to send program change here before sending lighting - is side B only channel specific?
+    # channel specific
+
+    # change program to send lighting to 'B' mode
+    SEND C0 01
 
     # send drum lighting
     SEND F0 0F EE 90 previousDrumVal 01 F7 +F
 
     IF drumParams == $14
-      SEND F0 0F EE BA 06 select1 F7 +F
-      SEND F0 0F EE BA 07 select2 F7 +F
-      SEND F0 0F EE BA 08 selectBoth F7 +F
+      SEND F0 0F EE BA 0B select1 F7 +F
+      SEND F0 0F EE BA 0C select2 F7 +F
+      SEND F0 0F EE BA 0D selectBoth F7 +F
     END
     IF drumParams == $17
-      SEND F0 0F EE BA 06 level1 F7 +F
-      SEND F0 0F EE BA 07 level2 F7 +F
-      SEND F0 0F EE BA 08 levelBoth F7 +F
+      SEND F0 0F EE BA 0B level1 F7 +F
+      SEND F0 0F EE BA 0C level2 F7 +F
+      SEND F0 0F EE BA 0D levelBoth F7 +F
     END
     IF drumParams == $20
-      SEND F0 0F EE BA 06 attack1 F7 +F
-      SEND F0 0F EE BA 07 attack2 F7 +F
-      SEND F0 0F EE BA 08 attackBoth F7 +F
+      SEND F0 0F EE BA 0B attack1 F7 +F
+      SEND F0 0F EE BA 0C attack2 F7 +F
+      SEND F0 0F EE BA 0D attackBoth F7 +F
     END
     IF drumParams == $23
-      SEND F0 0F EE BA 06 release1 F7 +F
-      SEND F0 0F EE BA 07 release2 F7 +F
-      SEND F0 0F EE BA 08 releaseBoth F7 +F
+      SEND F0 0F EE BA 0B release1 F7 +F
+      SEND F0 0F EE BA 0C release2 F7 +F
+      SEND F0 0F EE BA 0D releaseBoth F7 +F
     END
     IF drumParams == $26
-      SEND F0 0F EE BA 06 pitch1 F7 +F
-      SEND F0 0F EE BA 07 pitch2 F7 +F
-      SEND F0 0F EE BA 08 pitchBoth F7 +F
+      SEND F0 0F EE BA 0B pitch1 F7 +F
+      SEND F0 0F EE BA 0C pitch2 F7 +F
+      SEND F0 0F EE BA 0D pitchBoth F7 +F
     END
     IF drumParams == $29
-      SEND F0 0F EE BA 06 modAmount1 F7 +F
-      SEND F0 0F EE BA 07 modAmount2 F7 +F
-      SEND F0 0F EE BA 08 modAmountBoth F7 +F
+      SEND F0 0F EE BA 0B modAmount1 F7 +F
+      SEND F0 0F EE BA 0C modAmount2 F7 +F
+      SEND F0 0F EE BA 0D modAmountBoth F7 +F
     END
     IF drumParams == $46
-      SEND F0 0F EE BA 06 modRate1 F7 +F
-      SEND F0 0F EE BA 07 modRate2 F7 +F
-      SEND F0 0F EE BA 08 modRateBoth F7 +F
+      SEND F0 0F EE BA 0B modRate1 F7 +F
+      SEND F0 0F EE BA 0C modRate2 F7 +F
+      SEND F0 0F EE BA 0D modRateBoth F7 +F
     END
     IF drumParams == $117
-      SEND F0 0F EE BA 06 waveguideDecay F7 +F
-      SEND F0 0F EE BA 07 waveguideBody F7 +F
-      SEND F0 0F EE BA 08 waveguideTune F7 +F
+      SEND F0 0F EE BA 0B waveguideDecay F7 +F
+      SEND F0 0F EE BA 0C waveguideBody F7 +F
+      SEND F0 0F EE BA 0D waveguideTune F7 +F
     END
+
+    # change program back to 'A'
+    SEND C0 00
 
     # end channel specific
 
@@ -948,7 +1084,7 @@ IF MT == 90
     # if phrase then add rest to phrase sequence
     ELSE
       IF setPhrase == 1
-        SEND F0 11 18 2E F7 +F
+        SEND F0 11 19 2E F7 +F
         # NOTE not currently planning on handling this, but there may is likely a race condition between rest and note that could cause issues
         # TEST
         # ensure rest sent
@@ -1106,6 +1242,338 @@ IF MT == 90
     # END TEST
   END
 
+  # if it is a button 5 push toggle current lfo
+  IF M1 == 0C 7F
+    IF lfoNumMod == 0
+      SEND F0 01 11 lfoNumMod lfo1OnOffToggle F7 +F
+      IF lfo1OnOffToggle == 0
+        ASS lfo1OnOffToggle = 1
+      ELSE
+        ASS lfo1OnOffToggle = 0
+      END
+      # TEST
+      # ensure lfo1OnOffToggle is toggling
+      IF lfo1OnOffToggle == 0
+        LOG LFO_OFF lfoNumMod
+      END
+      IF lfo1OnOffToggle == 1
+        LOG LFO_ON lfoNumMod
+      END
+      # END TEST
+    END
+    IF lfoNumMod == 1
+      SEND F0 01 11 lfoNumMod lfo2OnOffToggle F7 +F
+      IF lfo2OnOffToggle == 0
+        ASS lfo2OnOffToggle = 1
+      ELSE
+        ASS lfo2OnOffToggle = 0
+      END
+      # TEST
+      # ensure lfo2OnOffToggle is toggling
+      IF lfo2OnOffToggle == 0
+        LOG LFO_OFF lfoNumMod
+      END
+      IF lfo2OnOffToggle == 1
+        LOG LFO_ON lfoNumMod
+      END
+      # END TEST
+    END
+    IF lfoNumMod == 2
+      SEND F0 01 11 lfoNumMod lfo3OnOffToggle F7 +F
+      IF lfo3OnOffToggle == 0
+        ASS lfo3OnOffToggle = 1
+      ELSE
+        ASS lfo3OnOffToggle = 0
+      END
+      # TEST
+      # ensure lfo3OnOffToggle is toggling
+      IF lfo3OnOffToggle == 0
+        LOG LFO_OFF lfoNumMod
+      END
+      IF lfo3OnOffToggle == 1
+        LOG LFO_ON lfoNumMod
+      END
+      # END TEST
+    END
+    IF lfoNumMod == 3
+      SEND F0 01 11 lfoNumMod lfo4OnOffToggle F7 +F
+      IF lfo4OnOffToggle == 0
+        ASS lfo4OnOffToggle = 1
+      ELSE
+        ASS lfo4OnOffToggle = 0
+      END
+      # TEST
+      # ensure lfo4OnOffToggle is toggling
+      IF lfo4OnOffToggle == 0
+        LOG LFO_OFF lfoNumMod
+      END
+      IF lfo4OnOffToggle == 1
+        LOG LFO_ON lfoNumMod
+      END
+      # END TEST
+    END
+  END
+
+  # if it is a button 13 push toggle mute of all lfos
+  IF M1 == 14 7F
+    SEND F0 01 12 lfoMuteAll F7 +F
+    IF lfoMuteAll == 0
+      ASS lfoMuteAll = 1
+    ELSE
+      ASS lfoMuteAll = 0
+    END
+    # TEST
+    # ensure lfoMuteAll is toggling
+    IF lfoMuteAll == 0
+      LOG lfoMuteAll_OFF
+    END
+    IF lfoMuteAll == 1
+      LOG lfoMuteAll_ON
+    END
+    # END TEST
+  END
+
+  # if it is a button 6 push restart lfo
+  IF M1 == 0D 7F
+    # SEND SYSEX
+    SEND F0 01 14 lfoNumMod F7 +F
+    # END SYSEX
+
+    # TEST
+    # ensure lfoNum restarts accordingly on lfoReset
+    LOG lfoNum lfoNumMod
+    LOG LFO_RESTART_SYSEX_SENT
+    # END TEST
+  END
+
+  # if it is a button 14 push restart all lfos
+  IF M1 == 15 7F
+    # SEND SYSEX
+    SEND F0 01 15 00 F7 +F
+    # END SYSEX
+
+    # TEST
+    # ensure all lfos restart on lfoResetAll
+    LOG LFO_ALL_RESTART_SYSEX_SENT
+    # END TEST
+  END
+
+  # if it is a button 7 push sync lfo to tempo
+  IF M1 == 0E 7F
+    IF lfoNumMod == 0
+      SEND F0 01 0E lfoNumMod lfo1Sync F7 +F
+      IF lfo1Sync == 0
+        ASS lfo1Sync = 1
+      ELSE
+        ASS lfo1Sync = 0
+      END
+      # TEST
+      # ensure lfo1Sync is toggling
+      IF lfo1Sync == 0
+        LOG LFO_SYNC_OFF lfoNumMod
+      END
+      IF lfo1Sync == 1
+        LOG LFO_SYNC_ON lfoNumMod
+      END
+      # END TEST
+    END
+    IF lfoNumMod == 1
+      SEND F0 01 0E lfoNumMod lfo2Sync F7 +F
+      IF lfo2Sync == 0
+        ASS lfo2Sync = 1
+      ELSE
+        ASS lfo2Sync = 0
+      END
+      # TEST
+      # ensure lfo2Sync is toggling
+      IF lfo2Sync == 0
+        LOG LFO_SYNC_OFF lfoNumMod
+      END
+      IF lfo2Sync == 1
+        LOG LFO_SYNC_ON lfoNumMod
+      END
+      # END TEST
+    END
+    IF lfoNumMod == 2
+      SEND F0 01 0E lfoNumMod lfo3Sync F7 +F
+      IF lfo3Sync == 0
+        ASS lfo3Sync = 1
+      ELSE
+        ASS lfo3Sync = 0
+      END
+      # TEST
+      # ensure lfo3Sync is toggling
+      IF lfo3Sync == 0
+        LOG LFO_SYNC_OFF lfoNumMod
+      END
+      IF lfo3Sync == 1
+        LOG LFO_SYNC_ON lfoNumMod
+      END
+      # END TEST
+    END
+    IF lfoNumMod == 3
+      SEND F0 01 0E lfoNumMod lfo4Sync F7 +F
+      IF lfo4Sync == 0
+        ASS lfo4Sync = 1
+      ELSE
+        ASS lfo4Sync = 0
+      END
+      # TEST
+      # ensure lfo4Sync is toggling
+      IF lfo4Sync == 0
+        LOG LFO_SYNC_OFF lfoNumMod
+      END
+      IF lfo4Sync == 1
+        LOG LFO_SYNC_ON lfoNumMod
+      END
+      # END TEST
+    END
+  END
+
+  # if it is a button 15 push toggle lfo base (1: middle or 0: bottom)
+  IF M1 == 16 7F
+    IF lfoNumMod == 0
+      SEND F0 01 0F lfoNumMod lfo1Base F7 +F
+      IF lfo1Base == 0
+        ASS lfo1Base = 1
+      ELSE
+        ASS lfo1Base = 0
+      END
+      # TEST
+      # ensure lfo1Base is toggling
+      IF lfo1Base == 0
+        LOG LFO_BASE_MIDDLE lfoNumMod
+      END
+      IF lfo1Base == 1
+        LOG LFO_BASE_BOTTOM lfoNumMod
+      END
+      # END TEST
+    END
+    IF lfoNumMod == 1
+      SEND F0 01 0F lfoNumMod lfo2Base F7 +F
+      IF lfo2Base == 0
+        ASS lfo2Base = 1
+      ELSE
+        ASS lfo2Base = 0
+      END
+      # TEST
+      # ensure lfo2Base is toggling
+      IF lfo2Base == 0
+        LOG LFO_BASE_MIDDLE lfoNumMod
+      END
+      IF lfo2Base == 1
+        LOG LFO_BASE_BOTTOM lfoNumMod
+      END
+      # END TEST
+    END
+    IF lfoNumMod == 2
+      SEND F0 01 0F lfoNumMod lfo3Base F7 +F
+      IF lfo3Base == 0
+        ASS lfo3Base = 1
+      ELSE
+        ASS lfo3Base = 0
+      END
+      # TEST
+      # ensure lfo3Base is toggling
+      IF lfo3Base == 0
+        LOG LFO_BASE_MIDDLE lfoNumMod
+      END
+      IF lfo3Base == 1
+        LOG LFO_BASE_BOTTOM lfoNumMod
+      END
+      # END TEST
+    END
+    IF lfoNumMod == 3
+      SEND F0 01 0F lfoNumMod lfo4Base F7 +F
+      IF lfo4Base == 0
+        ASS lfo4Base = 1
+      ELSE
+        ASS lfo4Base = 0
+      END
+      # TEST
+      # ensure lfo4Base is toggling
+      IF lfo4Base == 0
+        LOG LFO_BASE_MIDDLE lfoNumMod
+      END
+      IF lfo4Base == 1
+        LOG LFO_BASE_BOTTOM lfoNumMod
+      END
+      # END TEST
+    END
+  END
+
+  # if it is a button 15 push toggle lfo inversion
+  IF M1 == 0F 7F
+    IF lfoNumMod == 0
+      SEND F0 01 10 lfoNumMod lfo1Invert F7 +F
+      IF lfo1Invert == 0
+        ASS lfo1Invert = 1
+      ELSE
+        ASS lfo1Invert = 0
+      END
+      # TEST
+      # ensure lfo1Invert is toggling
+      IF lfo1Invert == 0
+        LOG LFO_INVERT_OFF lfoNumMod
+      END
+      IF lfo1Invert == 1
+        LOG LFO_INVERT_ON lfoNumMod
+      END
+      # END TEST
+    END
+    IF lfoNumMod == 1
+      SEND F0 01 10 lfoNumMod lfo2Invert F7 +F
+      IF lfo2Invert == 0
+        ASS lfo2Invert = 1
+      ELSE
+        ASS lfo2Invert = 0
+      END
+      # TEST
+      # ensure lfo2Invert is toggling
+      IF lfo2Invert == 0
+        LOG LFO_INVERT_OFF lfoNumMod
+      END
+      IF lfo2Invert == 1
+        LOG LFO_INVERT_ON lfoNumMod
+      END
+      # END TEST
+    END
+    IF lfoNumMod == 2
+      SEND F0 01 10 lfoNumMod lfo3Invert F7 +F
+      IF lfo3Invert == 0
+        ASS lfo3Invert = 1
+      ELSE
+        ASS lfo3Invert = 0
+      END
+      # TEST
+      # ensure lfo3Invert is toggling
+      IF lfo3Invert == 0
+        LOG LFO_INVERT_OFF lfoNumMod
+      END
+      IF lfo3Invert == 1
+        LOG LFO_INVERT_ON lfoNumMod
+      END
+      # END TEST
+    END
+    IF lfoNumMod == 3
+      SEND F0 01 10 lfoNumMod lfo4Invert F7 +F
+      IF lfo4Invert == 0
+        ASS lfo4Invert = 1
+      ELSE
+        ASS lfo4Invert = 0
+      END
+      # TEST
+      # ensure lfo4Invert is toggling
+      IF lfo4Invert == 0
+        LOG LFO_INVERT_OFF lfoNumMod
+      END
+      IF lfo4Invert == 1
+        LOG LFO_INVERT_ON lfoNumMod
+      END
+      # END TEST
+    END
+  END
+
   # channel specific
 
   # if knob is pressed and a drumParam is changed, the value in the L array will not match up correctly
@@ -1144,7 +1612,7 @@ IF MT == 90
   END
 
 # for all except the last, order is part 1, part 2, part 1 and 2
-  # if it is button 5 - knobs control 'select'
+  # if it is button 1 - knobs control 'select'
   IF M1 == 20 7F
     ASS drumParams = $14 $15 $16
     IF previousDrumVal != 00
@@ -1171,7 +1639,7 @@ IF MT == 90
     LOG drumParams drumParams
     # END TEST
   END
-  # if it is button 6 - knobs control 'level'
+  # if it is button 2 - knobs control 'level'
   IF M1 == 21 7F
     ASS drumParams = $17 $18 $19
     IF previousDrumVal != 01
@@ -1198,7 +1666,7 @@ IF MT == 90
     LOG drumParams drumParams
     # END TEST
   END
-  # if it is button 7 - knobs control 'attack'
+  # if it is button 3 - knobs control 'attack'
   IF M1 == 22 7F
     ASS drumParams = $20 $21 $22
     IF previousDrumVal != 02
@@ -1225,7 +1693,7 @@ IF MT == 90
     LOG drumParams drumParams
     # END TEST
   END
-  # if it is button 8 - knobs control 'release'
+  # if it is button 4 - knobs control 'release'
   IF M1 == 23 7F
     ASS drumParams = $23 $24 $25
     IF previousDrumVal != 03
@@ -1252,7 +1720,7 @@ IF MT == 90
     LOG drumParams drumParams
     # END TEST
   END
-  # if it is button 13 - knobs control 'pitch'
+  # if it is button 9 - knobs control 'pitch'
   IF M1 == 28 7F
     ASS drumParams = $26 $27 $28
     IF previousDrumVal != 08
@@ -1279,7 +1747,7 @@ IF MT == 90
     LOG drumParams drumParams
     # END TEST
   END
-  # if it is button 14 - knobs control 'modAmount'
+  # if it is button 10 - knobs control 'modAmount'
   IF M1 == 29 7F
     ASS drumParams = $29 $30 $31
     IF previousDrumVal != 09
@@ -1306,7 +1774,7 @@ IF MT == 90
     LOG drumParams drumParams
     # END TEST
   END
-  # if it is button 15 - knobs control 'modRate'
+  # if it is button 11 - knobs control 'modRate'
   IF M1 == 2A 7F
     ASS drumParams = $46 $47 $48
     IF previousDrumVal != 0A
@@ -1334,7 +1802,7 @@ IF MT == 90
     # END TEST
   END
   # order is decay, body, tune, send
-  # if it is button 16 - knobs control 'waveguide'
+  # if it is button 12 - knobs control 'waveguide'
   IF M1 == 2B 7F
     ASS drumParams = $117 $118 $119
     IF previousDrumVal != 0B
@@ -2022,19 +2490,6 @@ IF MT == 80
     # END TEST
   END
 
-  # if it is a knob 3 button release, turn on lfo sync
-  IF M1 == 02 00
-    # SEND SYSEX
-    SEND F0 01 0E lfoNumMod F7 +F
-    # END SYSEX
-
-    # TEST
-    # ensure lfoSync sent correctly
-    LOG lfoNum lfoNumMod
-    LOG lfoSync_SYSEX_SENT
-    # END TEST
-  END
-
   # if it is a knob 4 button release, change lfo type
   # NOTE if variable is too high, reset (not implemented)
   # NOTE could add testing which reported the actual lfo type rather than a number
@@ -2045,7 +2500,7 @@ IF MT == 80
       # set tempo mode to variable modulo 7
       MATH lfoTypeMod = lfo1Type % 7
       # SEND SYSEX
-      SEND F0 01 12 lfoNumMod lfoTypeMod F7 +F
+      SEND F0 01 13 lfoNumMod lfoTypeMod F7 +F
       # END SYSEX
       # TEST
       # ensure lfoType changes accordingly
@@ -2057,7 +2512,7 @@ IF MT == 80
       # set tempo mode to variable modulo 4
       MATH lfoTypeMod = lfo2Type % 7
       # SEND SYSEX
-      SEND F0 01 12 lfoNumMod lfoTypeMod F7 +F
+      SEND F0 01 13 lfoNumMod lfoTypeMod F7 +F
       # END SYSEX
       # TEST
       # ensure lfoType changes accordingly
@@ -2069,7 +2524,7 @@ IF MT == 80
       # set tempo mode to variable modulo 4
       MATH lfoTypeMod = lfo3Type % 7
       # SEND SYSEX
-      SEND F0 01 12 lfoNumMod lfoTypeMod F7 +F
+      SEND F0 01 13 lfoNumMod lfoTypeMod F7 +F
       # END SYSEX
       # TEST
       # ensure lfoType changes accordingly
@@ -2081,7 +2536,7 @@ IF MT == 80
       # set tempo mode to variable modulo 4
       MATH lfoTypeMod = lfo4Type % 7
       # SEND SYSEX
-      SEND F0 01 12 lfoNumMod lfoTypeMod F7 +F
+      SEND F0 01 13 lfoNumMod lfoTypeMod F7 +F
       # END SYSEX
       # TEST
       # ensure lfoType changes accordingly
@@ -2096,7 +2551,7 @@ IF MT == 80
     # END TEST
   END
 
-  # if it is a knob 5 button release, change lfo num (the lfo that's being edited)
+  # if it is a knob 5 button release, change lfo num (the lfo that's being edited) # TODO add OnOff, Base, Invert, Sync lighting
   # NOTE if variable is too high, reset (not implemented)
   IF M1 == 04 00
     # this will cause issues if groupKnobPush or knob4Push is on due to the values in L array
@@ -2122,6 +2577,27 @@ IF MT == 80
       LOG lfo1Rate lfo1Rate
       LOG lfo1Depth lfo1Depth
       # END TEST
+      # send lighting for lfo1OnOff, lfo1Sync, lfo1Base, and lfo1Invert
+      IF lfo1OnOffToggle == 1
+        SEND F0 0F EE 90 04 01 F7
+      ELSE
+        SEND F0 0F EE 90 04 00 F7
+      END
+      IF lfo1Sync == 1
+        SEND F0 0F EE 90 06 01 F7
+      ELSE
+        SEND F0 0F EE 90 06 00 F7
+      END
+      IF lfo1Base == 1
+        SEND F0 0F EE 90 0E 01 F7
+      ELSE
+        SEND F0 0F EE 90 0E 00 F7
+      END
+      IF lfo1Invert == 1
+        SEND F0 0F EE 90 07 01 F7
+      ELSE
+        SEND F0 0F EE 90 07 00 F7
+      END
     END
     IF lfoNumMod == 1
       # send lighting for lfo2Rate and depth
@@ -2133,6 +2609,27 @@ IF MT == 80
       LOG lfo2Rate lfo2Rate
       LOG lfo2Depth lfo2Depth
       # END TEST
+        # send lighting for lfo2OnOff, lfo2Sync, lfo2Base, and lfo2Invert
+      IF lfo2OnOffToggle == 1
+        SEND F0 0F EE 90 04 01 F7
+      ELSE
+        SEND F0 0F EE 90 04 00 F7
+      END
+      IF lfo2Sync == 1
+        SEND F0 0F EE 90 06 01 F7
+      ELSE
+        SEND F0 0F EE 90 06 00 F7
+      END
+      IF lfo2Base == 1
+        SEND F0 0F EE 90 0E 01 F7
+      ELSE
+        SEND F0 0F EE 90 0E 00 F7
+      END
+      IF lfo2Invert == 1
+        SEND F0 0F EE 90 07 01 F7
+      ELSE
+        SEND F0 0F EE 90 07 00 F7
+      END
     END
     IF lfoNumMod == 2
       # send lighting for lfo3Rate and depth
@@ -2144,6 +2641,27 @@ IF MT == 80
       LOG lfo3Rate lfo3Rate
       LOG lfo3Depth lfo3Depth
       # END TEST
+      # send lighting for lfo3OnOff, lfo3Sync, lfo3Base, and lfo3Invert
+      IF lfo3OnOffToggle == 1
+        SEND F0 0F EE 90 04 01 F7
+      ELSE
+        SEND F0 0F EE 90 04 00 F7
+      END
+      IF lfo3Sync == 1
+        SEND F0 0F EE 90 06 01 F7
+      ELSE
+        SEND F0 0F EE 90 06 00 F7
+      END
+      IF lfo3Base == 1
+        SEND F0 0F EE 90 0E 01 F7
+      ELSE
+        SEND F0 0F EE 90 0E 00 F7
+      END
+      IF lfo3Invert == 1
+        SEND F0 0F EE 90 07 01 F7
+      ELSE
+        SEND F0 0F EE 90 07 00 F7
+      END
     END
     IF lfoNumMod == 3
       # send lighting for lfo4Rate and depth
@@ -2155,26 +2673,33 @@ IF MT == 80
       LOG lfo4Rate lfo4Rate
       LOG lfo4Depth lfo4Depth
       # END TEST
+      # send lighting for lfo4OnOff, lfo4Sync, lfo4Base, and lfo4Invert
+      IF lfo4OnOffToggle == 1
+        SEND F0 0F EE 90 04 01 F7
+      ELSE
+        SEND F0 0F EE 90 04 00 F7
+      END
+      IF lfo4Sync == 1
+        SEND F0 0F EE 90 06 01 F7
+      ELSE
+        SEND F0 0F EE 90 06 00 F7
+      END
+      IF lfo4Base == 1
+        SEND F0 0F EE 90 0E 01 F7
+      ELSE
+        SEND F0 0F EE 90 0E 00 F7
+      END
+      IF lfo4Invert == 1
+        SEND F0 0F EE 90 07 01 F7
+      ELSE
+        SEND F0 0F EE 90 07 00 F7
+      END
     END
 
     # TEST
     # ensure lfoNum changes accordingly and lighting corresponds
     LOG lfoNum lfoNumMod
     LOG lfoNum_SYSEX_SENT
-    # END TEST
-  END
-
-  # TODO add double tap to restart all lfos
-  # if it is a knob 6 button release, restart current lfo
-  IF M1 == 05 00
-    # SEND SYSEX
-    SEND F0 01 13 lfoNumMod F7 +F
-    # END SYSEX
-
-    # TEST
-    # ensure lfoNum restarts accordingly
-    LOG lfoNum lfoNumMod
-    LOG lfo_RESTART_SYSEX_SENT
     # END TEST
   END
 
@@ -2726,6 +3251,105 @@ IF MT == 80
   IF M1 == 13 00
     IF setLfo == 1
       SEND F0 0F EE 90 0B 02 F7 +F
+    END
+  END
+
+  IF M1 == 0C 00
+    IF lfoNumMod == 0
+      IF lfo1OnOffToggle == 1
+        SEND F0 0F EE 90 04 01 F7 +F
+      END
+    END
+    IF lfoNumMod == 1
+      IF lfo2OnOffToggle == 1
+        SEND F0 0F EE 90 04 01 F7 +F
+      END
+    END
+    IF lfoNumMod == 2
+      IF lfo3OnOffToggle == 1
+        SEND F0 0F EE 90 04 01 F7 +F
+      END
+    END
+    IF lfoNumMod == 3
+      IF lfo4OnOffToggle == 1
+        SEND F0 0F EE 90 04 01 F7 +F
+      END
+    END
+  END
+
+  IF M1 == 14 00
+    IF lfoMuteAll == 1
+      SEND F0 0F EE 90 0C 01 F7 +F
+    END
+  END
+
+  IF M1 == 0E 7F
+    IF lfoNumMod == 0
+      IF lfo1Sync == 1
+        SEND F0 0F EE 90 06 01 F7 +F
+      END
+    END
+    IF lfoNumMod == 1
+      IF lfo2Sync == 1
+        SEND F0 0F EE 90 06 01 F7 +F
+      END
+    END
+    IF lfoNumMod == 2
+      IF lfo3Sync == 1
+        SEND F0 0F EE 90 06 01 F7 +F
+      END
+    END
+    IF lfoNumMod == 3
+      IF lfo4Sync == 1
+        SEND F0 0F EE 90 06 01 F7 +F
+      END
+    END
+  END
+
+  IF M1 == 16 7F
+    IF lfoNumMod == 0
+      IF lfo1Base == 1
+        SEND F0 0F EE 90 0E 01 F7 +F
+      END
+    END
+    IF lfoNumMod == 1
+      IF lfo2Base == 1
+        SEND F0 0F EE 90 0E 01 F7 +F
+      END
+    END
+    IF lfoNumMod == 2
+      IF lfo3Base == 1
+        SEND F0 0F EE 90 0E 01 F7 +F
+      END
+    END
+    IF lfoNumMod == 3
+      IF lfo4Base == 1
+        SEND F0 0F EE 90 0E 01 F7 +F
+      END
+    END
+  END
+
+  # if it is a button 15 push toggle lfo inversion
+  IF M1 == 0F 7F
+    IF lfoNumMod == 0
+      IF lfo1Invert == 1
+        SEND F0 0F EE 90 07 01 F7 +F
+      END
+    END
+    IF lfoNumMod == 1
+      IF lfo2Invert == 1
+        SEND F0 0F EE 90 07 01 F7 +F
+      END
+    END
+    IF lfoNumMod == 2
+      IF lfo3Invert == 1
+        SEND F0 0F EE 90 07 01 F7 +F
+      END
+    END
+    IF lfoNumMod == 3
+      IF lfo4Invert == 1
+        SEND F0 0F EE 90 07 01 F7 +F
+      END
     END
   END
 
@@ -3774,25 +4398,25 @@ IF MT == B0
     # END TEST
     IF lfoNumMod == 0
       # SEND SYSEX
-      SEND F0 01 15 lfoNumMod lfo1Rate F7 +F
+      SEND F0 01 16 lfoNumMod lfo1Rate F7 +F
       # END SYSEX
       ASS lfo1Rate = M2
     END
     IF lfoNumMod == 1
       # SEND SYSEX
-      SEND F0 01 15 lfoNumMod lfo2Rate F7 +F
+      SEND F0 01 16 lfoNumMod lfo2Rate F7 +F
       # END SYSEX
       ASS lfo2Rate = M2
     END
     IF lfoNumMod == 2
       # SEND SYSEX
-      SEND F0 01 15 lfoNumMod lfo3Rate F7 +F
+      SEND F0 01 16 lfoNumMod lfo3Rate F7 +F
       # END SYSEX
       ASS lfo3Rate = M2
     END
     IF lfoNumMod == 3
       # SEND SYSEX
-      SEND F0 01 15 lfoNumMod lfo4Rate F7 +F
+      SEND F0 01 16 lfoNumMod lfo4Rate F7 +F
       # END SYSEX
       ASS lfo4Rate = M2
     END
@@ -3812,25 +4436,25 @@ IF MT == B0
     # END TEST
     IF lfoNumMod == 0
       # SEND SYSEX
-      SEND F0 01 16 lfoNumMod lfo1Depth F7 +F
+      SEND F0 01 17 lfoNumMod lfo1Depth F7 +F
       # END SYSEX
       ASS lfo1Depth = M2
     END
     IF lfoNumMod == 1
       # SEND SYSEX
-      SEND F0 01 16 lfoNumMod lfo2Depth F7 +F
+      SEND F0 01 17 lfoNumMod lfo2Depth F7 +F
       # END SYSEX
       ASS lfo2Depth = M2
     END
     IF lfoNumMod == 2
       # SEND SYSEX
-      SEND F0 01 16 lfoNumMod lfo3Depth F7 +F
+      SEND F0 01 17 lfoNumMod lfo3Depth F7 +F
       # END SYSEX
       ASS lfo3Depth = M2
     END
     IF lfoNumMod == 3
       # SEND SYSEX
-      SEND F0 01 16 lfoNumMod lfo4Depth F7 +F
+      SEND F0 01 17 lfoNumMod lfo4Depth F7 +F
       # END SYSEX
       ASS lfo4Depth = M2
     END
