@@ -21,6 +21,10 @@
 
 # ALLOW | F0 01    0E    val1 val2 F7 lfoKnob
 # ALLOW | F0 01    0F    val  F7      lfoSync
+# ALLOW | F0 01    0F    val1 val2 F7 lfoBase
+# ALLOW | F0 01    10    val1 val2 F7 lfoInvert
+# ALLOW | F0 01    11    val1 val2 F7 lfoOnOff
+# ALLOW | F0 01    12    val  F7      lfoMuteAll
 # ALLOW | F0 01    10    val1 val2 F7 lfoType
 # ALLOW | F0 01    11    val  F7      lfoReset
 # ALLOW | F0 01    12    00   F7      lfoResetAll

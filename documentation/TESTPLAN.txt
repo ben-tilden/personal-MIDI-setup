@@ -14,7 +14,7 @@
 # x touch
 ###
 
-# ensure lights turn off on init - both xtouch modes # TODO
+# ensure lights turn off on init - both xtouch modes
 
 # ensure xtouch lighting changes properly when channel changed
   # ensure setPhrase, arpPhraseToggle, arpPhraseToggleOnOff, latch, lfo, padMode, groupKnobPush, lfo (4 vars) lighting resets
@@ -24,7 +24,7 @@
 
 # button push
 
-  # ensure knobPush turned on accordingly # TODO
+  # ensure knobPush turned on accordingly
 
   # ensure push control does not work when setLfo is on
 
@@ -42,46 +42,48 @@
 
   # ensure padMode is toggling
 
-  # ensure lfos are toggling # TODO
+  # ensure lfos are toggling
 
-  # ensure lfoMuteAll is toggling # TODO
+  # ensure lfoMuteAll is toggling
 
-  # ensure lfos restart accordingly on lfoReset # TODO
+  # ensure lfos restart accordingly on lfoReset
 
-  # ensure all lfos restart on lfoResetAll # TODO
+  # ensure all lfos restart on lfoResetAll
 
-  # ensure lfoSync's are toggling # TODO
+  # ensure lfoSync's are toggling
 
-  # ensure lfoBase's are toggling # TODO
+  # ensure lfoBase's are toggling
 
-  # ensure lfoInvert's are toggling # TODO
+  # ensure lfoInvert's are toggling
 
   # ensure groupKnobPush is toggling
 
-  # ensure drumParams can't be changed when groupKnobPush on # TODO
-  # ensure drumParams can't be changed when knob9Push on # TODO
-  # ensure drumParams can't be changed when knob10Push on # TODO
-  # ensure drumParams can't be changed when knob11Push on # TODO
+  # ensure 'pan' lighting reset
+
+  # ensure drumParams can't be changed when groupKnobPush on
+  # ensure drumParams can't be changed when knob9Push on
+  # ensure drumParams can't be changed when knob10Push on
+  # ensure drumParams can't be changed when knob11Push on
   # (ensure that if a drum param button is pressed while drum param push control is occuring that nothing happens)
 
-  # ensure drumparams are assigned according to correct buttons # TODO
+  # ensure drumparams are assigned according to correct buttons
 
-  # ensure 'select' lighting sent to knobs # TODO
-  # ensure 'level' lighting sent to knobs # TODO
-  # ensure 'attack' lighting sent to knobs # TODO
-  # ensure 'release' lighting sent to knobs # TODO
-  # ensure 'pitch' lighting sent to knobs # TODO
-  # ensure 'modAmount' lighting sent to knobs # TODO
-  # ensure 'modRate' lighting sent to knobs # TODO
-  # ensure 'waveguide' lighting sent to knobs # TODO
+  # ensure 'select' lighting sent to knobs
+  # ensure 'level' lighting sent to knobs
+  # ensure 'attack' lighting sent to knobs
+  # ensure 'release' lighting sent to knobs
+  # ensure 'pitch' lighting sent to knobs
+  # ensure 'modAmount' lighting sent to knobs
+  # ensure 'modRate' lighting sent to knobs
+  # ensure 'waveguide' lighting sent to knobs
 
 # button release
 
-  # ensure lfoKnob is correctly set for any knob that's pressed, and that nothing is negatively impacted by it # TODO
+  # ensure lfoKnob is correctly set for any knob that's pressed, and that nothing is negatively impacted by it
     # ensure sequence setLfo on, then groupKnobPush on causes no issues
     # ensure sequence groupKnobPush on, then setLfo on causes no issues
 
-  # ensure push control release handled correctly # TODO
+  # ensure push control release handled correctly
     # ensure lighting matches with L array
     # ensure L array matches with previous value
     # ensure parameter associated with knob lighting also changed
@@ -94,29 +96,29 @@
 
   # ensure gateModeMod changes accordingly and gate correlates
 
-  # ensure lfoSync sent correctly (for each lfoNum) # TODO
-  # ensure lfoBase sent correctly (for each lfoNum) # TODO
-  # ensure lfoInvert sent correctly (for each lfoNum) # TODO
+  # ensure lfoSync sent correctly (for each lfoNum)
+  # ensure lfoBase sent correctly (for each lfoNum)
+  # ensure lfoInvert sent correctly (for each lfoNum)
   # ensure lfoType changes accordingly
-  # ensure lfoNum changes accordingly and lighting corresponds (including buttons) # TODO
-  # ensure lfoNum restarts accordingly # TODO
-  # ensure all lfos restart accordingly # TODO
+  # ensure lfoNum changes accordingly and lighting corresponds (including buttons)
+  # ensure lfoNum restarts accordingly
+  # ensure all lfos restart accordingly
 
   # ensure groupKnobPush turned on accordingly
 
-  # ensure groupKnobPush release handled correctly # TODO
+  # ensure groupKnobPush release handled correctly
     # ensure lighting matches with L array
     # ensure L array matches with previous value
     # ensure parameter associated with knob lighting also changed
     # tempoPulse, gate, velocity, drumParam1, drumParam2, drumParam3, lfoRate, lfoDepth, channel specific (unassigned) (6-8, 12-16)
     # ensure knobPush reset if no knob has been turned
 
-  # ensure waveguide is toggled properly # TODO
-  # ensure pitchQuantize is toggled properly # TODO
+  # ensure waveguide is toggled properly
+  # ensure pitchQuantize is toggled properly
 
 # knob turn
 
-  # ensure that if knob is turned while knob is pressed, knob turn is set to true # TODO knobs >5
+  # ensure that if knob is turned while knob is pressed, knob turn is set to true
 
   # ensure tempo lighting functions as expected
 
@@ -131,8 +133,8 @@
 
   # ensure lfoDepth aligns with lfoDepth
 
-  # ensure correct drumParam sent on knob turn # TODO
-  # ensure drumParam changed to the correct value # TODO
+  # ensure correct drumParam sent on knob turn
+  # ensure drumParam changed to the correct value
 
 # misc
 

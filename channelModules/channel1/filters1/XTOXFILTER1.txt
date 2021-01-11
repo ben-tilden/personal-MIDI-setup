@@ -21,6 +21,10 @@
 
 # BLOCK | F0 01    0E    val1 val2 F7 lfoKnob
 # BLOCK | F0 01    0F    val  F7      lfoSync
+# BLOCK | F0 01    0F    val1 val2 F7 lfoBase
+# BLOCK | F0 01    10    val1 val2 F7 lfoInvert
+# BLOCK | F0 01    11    val1 val2 F7 lfoOnOff
+# BLOCK | F0 01    12    val  F7      lfoMuteAll
 # BLOCK | F0 01    10    val1 val2 F7 lfoType
 # BLOCK | F0 01    11    val  F7      lfoReset
 # BLOCK | F0 01    12    00   F7      lfoResetAll
@@ -35,5 +39,3 @@ IF M0 == F0
     EXIT
   END
 END
-
-# FX = XX +B
