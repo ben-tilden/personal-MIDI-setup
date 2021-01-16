@@ -25,6 +25,7 @@
 # button push
 
   # ensure knobPush turned on accordingly
+  # ensure modulated knobs not included # TODO
 
   # ensure push control does not work when setLfo is on
 
@@ -39,6 +40,7 @@
   # ensure latch is toggling
 
   # ensure setLfo is toggling
+  # ensure setLfo unable to be toggled if push control active # TODO
 
   # ensure padMode is toggling
 
@@ -83,12 +85,16 @@
     # ensure sequence setLfo on, then groupKnobPush on causes no issues
     # ensure sequence groupKnobPush on, then setLfo on causes no issues
 
+    # ensure attempting to chain modulate from lfo 1 exits gracefully # TODO
+    # ensure attempting to modulate with two lfos at once exits gracefully # TODO
+
   # ensure push control release handled correctly
     # ensure lighting matches with L array
     # ensure L array matches with previous value
     # ensure parameter associated with knob lighting also changed
     # tempoPulse, gate, velocity, drumParam1, drumParam2, drumParam3, lfoRate, lfoDepth, channel specific (unassigned) (6-8, 12-16)
     # ensure knobPush reset if no knob has been turned
+    # ensure modulated knobs not included # TODO
 
   # ensure tempoModeMod changes accordingly and tempoPulse correlates
 
@@ -112,6 +118,7 @@
     # ensure parameter associated with knob lighting also changed
     # tempoPulse, gate, velocity, drumParam1, drumParam2, drumParam3, lfoRate, lfoDepth, channel specific (unassigned) (6-8, 12-16)
     # ensure knobPush reset if no knob has been turned
+    # ensure modulated knobs not included # TODO
 
   # ensure waveguide is toggled properly
   # ensure pitchQuantize is toggled properly
