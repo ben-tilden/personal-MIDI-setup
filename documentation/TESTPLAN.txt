@@ -27,7 +27,7 @@
   # ensure knobPush turned on accordingly
   # ensure modulated knobs not included # TODO
 
-  # ensure push control does not work when setLfo is on
+  # ensure push control does not work when setLfo is on # TODO check with 'B' mode
 
   # ensure arpValueModeMod changes accordingly or setPhrase changes
 
@@ -44,9 +44,9 @@
 
   # ensure padMode is toggling
 
-  # ensure lfos are toggling
+  # ensure lfos are toggling and lfo modulation lighting corresponds # TODO lighting
 
-  # ensure lfoMuteAll is toggling
+  # ensure lfoMuteAll is toggling and lfo modulation lighting corresponds # TODO lighting
 
   # ensure lfos restart accordingly on lfoReset
 
@@ -60,7 +60,8 @@
 
   # ensure groupKnobPush is toggling
 
-  # ensure 'pan' lighting reset
+  # ensure 'pan' lighting and lfo lighting reset # TODO
+  # ensure lfo lighting reset for mode 'B' # TODO
 
   # ensure drumParams can't be changed when groupKnobPush on
   # ensure drumParams can't be changed when knob9Push on
@@ -106,7 +107,7 @@
   # ensure lfoBase sent correctly (for each lfoNum)
   # ensure lfoInvert sent correctly (for each lfoNum)
   # ensure lfoType changes accordingly
-  # ensure lfoNum changes accordingly and lighting corresponds (including buttons)
+  # ensure lfoNum changes accordingly and lighting corresponds (including buttons) # TODO (chain modulation lighting)
   # ensure lfoNum restarts accordingly
   # ensure all lfos restart accordingly
 
