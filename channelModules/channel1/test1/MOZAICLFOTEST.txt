@@ -22,7 +22,6 @@
 
 // NOTE tip: when using chain modulation, often the best results come from alternating inversion among the lfos
 
-// TODO hz for possible sync = hosttempo / 60 (times multiples of 2)
 // TODO need to handle lfo init from launchkey / xtouch
 
 @OnSysex
@@ -48,7 +47,6 @@
   elseif data[1] = 14
 
     lfoSync[data[2]] = data[3]
-    SetupLFO data[2], 0, 127, lfoSync[data[2]], lfoRate[data[2]]
 
     // TEST
     // ensure sync set correctly for lfo
@@ -154,11 +152,23 @@
   // update lfo rate
   elseif data[1] = 22
 
-    lfoRate[data[2]] = data[3] / 31.75
-    SetupLFO data[2], 0, 127, lfoSync[data[2]], lfoRate[data[2]]
+    if lfoSync[lfo] = 1 and HostRunning = 1
+      // +/- 16th notes = 9 total options
+      for x = 0 to 8
+        if data[3] >= syncVal[x] and data[3] < syncVal[x + 1]
+          // hz for sync = hosttempo / 60 (times multiples of 2)
+          lfoRate[data[2]] = (HostTempo / 60) * (Pow 2, -4 + x)
+          SetupLFO data[2], 0, 127, no, lfoRate[data[2]]
+        endif
+      endfor
+    else
+      lfoRate[data[2]] = data[3] / 31.75
+      SetupLFO data[2], 0, 127, no, lfoRate[data[2]]
+    endif
 
     // TEST
     // ensure rate set correctly for lfo
+    // ensure rate set correctly for lfo with sync on
     Log {Rate }, lfoRate[data[2]]
     Log {lfo }, data[2]
     // END TEST
@@ -191,6 +201,7 @@
   lfoRate = [0, 0, 0, 0]
   lfoDepth = [0, 0, 0, 0]
   lfoVal = [0, 0, 0, 0]
+  syncVal = [0, 14, 28, 42, 56, 70, 84, 98, 112, 128]
   SetupLFO 0, 0, 0, no, 0
   SetupLFO 1, 0, 0, no, 0
   SetupLFO 2, 0, 0, no, 0
