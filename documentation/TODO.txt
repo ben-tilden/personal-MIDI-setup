@@ -1,6 +1,5 @@
 # TODO IDEAS
 
-# create mozaic lfo file
 # ensure lighting still functions properly xtouch to xtouch
 # global reset X on hold
 # add channel specific CC's

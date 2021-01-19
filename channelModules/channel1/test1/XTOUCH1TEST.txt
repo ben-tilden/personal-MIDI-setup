@@ -1,14 +1,14 @@
 # xtouch test code
 
 # TEST NOTES
-# TODO waveGuide send not implemented anywhere
 # NOTE on first knob1Push, there may still be one unconfirmed bug where the knob lighting resets to zero when it should be reset to $14 (or whatever lighting corresponds to 24)
 # NOTE switching modes on the xtouch (from 'A' to 'B' or otherwise) while a button is currently physically pushed down will cause an issue if that button is released after mode switch
-# TODO confirmed
 # NOTE possible LFO issues
 # modulating tempo, since LFO will go from 0-127 and tempo is not expecting input other than ~10 values
-# 
-
+# TODO add flashing lighting for currently modulated knobs
+# TODO add actual sync rather than fake sync
+# TODO fix tempo
+# TODO add channel specific variables
 
 
 
@@ -2180,103 +2180,118 @@ IF MT == 80
           # END TEST
           BLOCK
           EXIT
-        ELSE # else only needed here, since will only reach here if it passes other conditionals
-          ASS lfo1Knob = M1
-          SEND F0 01 0D lfoNumMod lfo1Knob F7 +F
         END
+
+        ASS lfo1Knob = M1
+        SEND F0 01 0D lfoNumMod lfo1Knob F7 +F
 
       END
       IF lfoNumMod == 1
 
-        IF lfo1Knob == M1
-          # TEST
-          # ensure attempting to modulate with two lfos at once exits gracefully
-          LOG KNOB_ALREADY_MODULATED
-          # END TEST
-          BLOCK
-          EXIT
+        # lfo knobs (3 and 4) can modulate each other
+        IF M1 != 3
+          IF M1 != 4
+            IF lfo1Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
+              BLOCK
+              EXIT
+            END
+            IF lfo3Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
+              BLOCK
+              EXIT
+            END
+            IF lfo4Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
+              BLOCK
+              EXIT
+            END
+          END
         END
-        IF lfo3Knob == M1
-          # TEST
-          # ensure attempting to modulate with two lfos at once exits gracefully
-          LOG KNOB_ALREADY_MODULATED
-          # END TEST
-          BLOCK
-          EXIT
-        END
-        IF lfo4Knob == M1
-          # TEST
-          # ensure attempting to modulate with two lfos at once exits gracefully
-          LOG KNOB_ALREADY_MODULATED
-          # END TEST
-          BLOCK
-          EXIT
-        ELSE # else only needed here, since will only reach here if it passes other conditionals
-          ASS lfo2Knob = M1
-          SEND F0 01 0D lfoNumMod lfo2Knob F7 +F
-        END
+
+        ASS lfo2Knob = M1
+        SEND F0 01 0D lfoNumMod lfo2Knob F7 +F
 
       END
       IF lfoNumMod == 2
 
-        IF lfo1Knob == M1
-          # TEST
-          # ensure attempting to modulate with two lfos at once exits gracefully
-          LOG KNOB_ALREADY_MODULATED
-          # END TEST
-          BLOCK
-          EXIT
+        # lfo knobs (3 and 4) can modulate each other
+        IF M1 != 3
+          IF M1 != 4
+            IF lfo1Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
+              BLOCK
+              EXIT
+            END
+            IF lfo2Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
+              BLOCK
+              EXIT
+            END
+            IF lfo4Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
+              BLOCK
+              EXIT
+            END
+          END
         END
-        IF lfo2Knob == M1
-          # TEST
-          # ensure attempting to modulate with two lfos at once exits gracefully
-          LOG KNOB_ALREADY_MODULATED
-          # END TEST
-          BLOCK
-          EXIT
-        END
-        IF lfo4Knob == M1
-          # TEST
-          # ensure attempting to modulate with two lfos at once exits gracefully
-          LOG KNOB_ALREADY_MODULATED
-          # END TEST
-          BLOCK
-          EXIT
-        ELSE # else only needed here, since will only reach here if it passes other conditionals
-          ASS lfo3Knob = M1
-          SEND F0 01 0D lfoNumMod lfo3Knob F7 +F
-        END
+
+        ASS lfo3Knob = M1
+        SEND F0 01 0D lfoNumMod lfo3Knob F7 +F
 
       END
       IF lfoNumMod == 3
 
-        IF lfo1Knob == M1
-          # TEST
-          # ensure attempting to modulate with two lfos at once exits gracefully
-          LOG KNOB_ALREADY_MODULATED
-          # END TEST
-          BLOCK
-          EXIT
+        # lfo knobs (3 and 4) can modulate each other
+        IF M1 != 3
+          IF M1 != 4
+            IF lfo1Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
+              BLOCK
+              EXIT
+            END
+            IF lfo2Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
+              BLOCK
+              EXIT
+            END
+            IF lfo3Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
+              BLOCK
+              EXIT
+            END
+          END
         END
-        IF lfo2Knob == M1
-          # TEST
-          # ensure attempting to modulate with two lfos at once exits gracefully
-          LOG KNOB_ALREADY_MODULATED
-          # END TEST
-          BLOCK
-          EXIT
-        END
-        IF lfo3Knob == M1
-          # TEST
-          # ensure attempting to modulate with two lfos at once exits gracefully
-          LOG KNOB_ALREADY_MODULATED
-          # END TEST
-          BLOCK
-          EXIT
-        ELSE # else only needed here, since will only reach here if it passes other conditionals
-          ASS lfo4Knob = M1
-          SEND F0 01 0D lfoNumMod lfo4Knob F7 +F
-        END
+
+        ASS lfo4Knob = M1
+        SEND F0 01 0D lfoNumMod lfo4Knob F7 +F
 
       END
       ASS setLfo = 0
@@ -3137,6 +3152,7 @@ IF MT == 80
     MATH lfoNumMod = lfoNum % 4
 
     IF lfoNumMod == 0
+      # TODO send flashing lighting if modulated
       # send lighting for lfo1Rate and depth
       SEND F0 0F EE BA 04 lfo1Rate F7 +F
       SEND F0 0F EE BA 05 lfo1Depth F7 +F
@@ -3994,7 +4010,7 @@ IF MT == 80
         SEND F0 0F EE 90 04 01 F7 +F
         IF lfoMuteAll == 0
           # SEND F0 0F F7 +F # TODO send knob flashing lights
-        ENDs
+        END
       END
     END
     IF lfoNumMod == 2
@@ -4268,116 +4284,148 @@ END
 IF MT == B0
   # set knob turn to true if using push control
   IF knob1Push == 1
-    ASS knob1Turn = 1
-    # TEST
-    # ensure that if knob is turned while knob is pressed, knob turn is set to true
-    LOG knob1Turn knob1Turn
-    # END TEST
+    IF M1 == 1
+      ASS knob1Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob1Turn knob1Turn
+      # END TEST
+    END
   END
   IF knob2Push == 1
-    ASS knob2Turn = 1
-    # TEST
-    # ensure that if knob is turned while knob is pressed, knob turn is set to true
-    LOG knob2Turn knob2Turn
-    # END TEST
+    IF M1 == 2
+      ASS knob2Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob2Turn knob2Turn
+      # END TEST
+    END
   END
   IF knob3Push == 1
-    ASS knob3Turn = 1
-    # TEST
-    # ensure that if knob is turned while knob is pressed, knob turn is set to true
-    LOG knob3Turn knob3Turn
-    # END TEST
+    IF M1 == 3
+      ASS knob3Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob3Turn knob3Turn
+      # END TEST
+    END
   END
   IF knob4Push == 1
-    ASS knob4Turn = 1
-    # TEST
-    # ensure that if knob is turned while knob is pressed, knob turn is set to true
-    LOG knob4Turn knob4Turn
-    # END TEST
+    IF M1 == 4
+      ASS knob4Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob4Turn knob4Turn
+      # END TEST
+    END
   END
   IF knob5Push == 1
-    ASS knob5Turn = 1
-    # TEST
-    # ensure that if knob is turned while knob is pressed, knob turn is set to true
-    LOG knob5Turn knob5Turn
-    # END TEST
+    IF M1 == 5
+      ASS knob5Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob5Turn knob5Turn
+      # END TEST
+    END
   END
   IF knob6Push == 1
-    ASS knob6Turn = 1
-    # TEST
-    # ensure that if knob is turned while knob is pressed, knob turn is set to true
-    LOG knob6Turn knob6Turn
-    # END TEST
+    IF M1 == 6
+      ASS knob6Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob6Turn knob6Turn
+      # END TEST
+    END
   END
   IF knob7Push == 1
-    ASS knob7Turn = 1
-    # TEST
-    # ensure that if knob is turned while knob is pressed, knob turn is set to true
-    LOG knob7Turn knob7Turn
-    # END TEST
+    IF M1 == 7
+      ASS knob7Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob7Turn knob7Turn
+      # END TEST
+    END
   END
   IF knob8Push == 1
-    ASS knob8Turn = 1
-    # TEST
-    # ensure that if knob is turned while knob is pressed, knob turn is set to true
-    LOG knob8Turn knob8Turn
-    # END TEST
+    IF M1 == 8
+      ASS knob8Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob8Turn knob8Turn
+      # END TEST
+    END
   END
   IF knob9Push == 1
-    ASS knob9Turn = 1
-    # TEST
-    # ensure that if knob is turned while knob is pressed, knob turn is set to true
-    LOG knob9Turn knob9Turn
-    # END TEST
+    IF M1 == 0B
+      ASS knob9Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob9Turn knob9Turn
+      # END TEST
+    END
   END
   IF knob10Push == 1
-    ASS knob10Turn = 1
-    # TEST
-    # ensure that if knob is turned while knob is pressed, knob turn is set to true
-    LOG knob10Turn knob10Turn
-    # END TEST
+    IF M1 == 0C
+      ASS knob10Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob10Turn knob10Turn
+      # END TEST
+    END
   END
   IF knob11Push == 1
-    ASS knob11Turn = 1
-    # TEST
-    # ensure that if knob is turned while knob is pressed, knob turn is set to true
-    LOG knob11Turn knob11Turn
-    # END TEST
+    IF M1 == 0D
+      ASS knob11Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob11Turn knob11Turn
+      # END TEST
+    END
   END
   IF knob12Push == 1
-    ASS knob12Turn = 1
-    # TEST
-    # ensure that if knob is turned while knob is pressed, knob turn is set to true
-    LOG knob12Turn knob12Turn
-    # END TEST
+    IF M1 == 0E
+      ASS knob12Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob12Turn knob12Turn
+      # END TEST
+    END
   END
   IF knob13Push == 1
-    ASS knob13Turn = 1
-    # TEST
-    # ensure that if knob is turned while knob is pressed, knob turn is set to true
-    LOG knob13Turn knob13Turn
-    # END TEST
+    IF M1 == 0F
+      ASS knob13Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob13Turn knob13Turn
+      # END TEST
+    END
   END
   IF knob14Push == 1
-    ASS knob14Turn = 1
-    # TEST
-    # ensure that if knob is turned while knob is pressed, knob turn is set to true
-    LOG knob14Turn knob14Turn
-    # END TEST
+    IF M1 == 10
+      ASS knob14Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob14Turn knob14Turn
+      # END TEST
+    END
   END
   IF knob15Push == 1
-    ASS knob15Turn = 1
-    # TEST
-    # ensure that if knob is turned while knob is pressed, knob turn is set to true
-    LOG knob15Turn knob15Turn
-    # END TEST
+    IF M1 == 11
+      ASS knob15Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob15Turn knob15Turn
+      # END TEST
+    END
   END
   IF knob16Push == 1
-    ASS knob16Turn = 1
-    # TEST
-    # ensure that if knob is turned while knob is pressed, knob turn is set to true
-    LOG knob16Turn knob16Turn
-    # END TEST
+    IF M1 == 12
+      ASS knob16Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob16Turn knob16Turn
+      # END TEST
+    END
   END
   # TEST
   # ensure tempo lighting functions as expected

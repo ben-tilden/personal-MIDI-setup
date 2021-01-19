@@ -1,15 +1,8 @@
-
-//63.5 * sin(2pi * r1x) * (.5 * sin(2pi * r2x) + .5) + 63.5
-//        rate of modulated      rate of modulating
-
-//(63.5 * sin(2pi * r1x) + 63.5) * (.5 * sin(2pi * r2x) + .5)
-//        rate of modulated      rate of modulating
-
 // sysex messages sent here:
 
 // ALLOW | F0 01    0D    val1 val2 F7 lfoKnob
 // ALLOW | F0 01    0E    val1 val2 F7 lfoSync
-// ALLOW | F0 01    0F    val1 val2 F7 lfoBase # TODO
+// ALLOW | F0 01    0F    val1 val2 F7 lfoBase
 // ALLOW | F0 01    10    val1 val2 F7 lfoInvert
 // ALLOW | F0 01    11    val1 val2 F7 lfoOnOff
 // ALLOW | F0 01    12    val  F7      lfoMuteAll
@@ -19,35 +12,32 @@
 // ALLOW | F0 01    16    val1 val2 F7 lfoRate
 // ALLOW | F0 01    17    val1 val2 F7 lfoDepth
 
+//order of modulation doesn't matter for bottom
+//BOTTOM: 31.75 * (1 + sin(rx)) * (1 + sin(rx))
+//ORIGINAL: (63.5 * sin(rx) + 63.5) * (.5 * sin(rx) + .5)
 
+//middle is r2 modulating r1
+//MIDDLE: 31.75 * sin(r1x) * (1 + sin(r2x)) + 63.5
+//ORIGINAL: 63.5 * sin(r1x) * (.5 * sin(r2x) + .5) + 63.5
 
-// sendmidiout / sendmidicc
-// ResetLFO <lfo> [,<startphase>]
-// <result> = GetLFOValue <lfo>
+// NOTE tip: when using chain modulation, often the best results come from alternating inversion among the lfos
 
-// SetupLFO <lfo>, <minimum>, <maximum>, <sync>, <frequency>
-// SetLFOType <lfo>, {type }
-// ResetLFO <lfo> [,<phase>]
-// <var> = GetLFOValue <lfo>
-
-// TODO could add another (final) button to reset lfo completely (stop and reset)
+// TODO hz for possible sync = hosttempo / 60 (times multiples of 2)
+// TODO need to handle lfo init from launchkey / xtouch
 
 @OnSysex
   ReceiveSysex data
-  // setting knob for lfo to modulate
   // TEST
   Log data[0], { }, data[1], { }, data[2], { }, data[3]
   // END TEST
 
   // set target knob for lfo
   if data[1] = 13
-    lfoTargetKnob[data[2]] = data[3]
-    // TODO need to add testing for this
-    // TODO need to reset these if data is changed - i.e. if new data sent for knob
+
     // NOTE could add multiple sources of modulation for lfos in the future if desired
-    if data[3] = 3 or data[3] = 4
-      isModulatingChain[data[2]] = data[3]
-    endif
+    // NOTE chain modulating data will not be sent for lfo 1 - (see '# ensure attempting to chain modulate from lfo 1 exits gracefully')
+    lfoTargetKnob[data[2]] = data[3] + 1 // need to add one since knob turn input is +1 from knob push input
+
     // TEST
     // ensure target knob set correctly for lfo
     Log {Knob }, lfoTargetKnob[data[2]]
@@ -56,8 +46,10 @@
 
   // set lfo to sync with tempo / not
   elseif data[1] = 14
+
     lfoSync[data[2]] = data[3]
-    SetupLFO data[2], -1, 1, lfoSync[data[2]], lfoFrequency[data[2]]
+    SetupLFO data[2], 0, 127, lfoSync[data[2]], lfoRate[data[2]]
+
     // TEST
     // ensure sync set correctly for lfo
     Log {Sync }, lfoSync[data[2]]
@@ -66,7 +58,9 @@
 
   // set lfo to bottom / middle
   elseif data[1] = 15
+
     lfoBase[data[2]] = data[3]
+
     // TEST
     // ensure base set correctly for lfo
     Log {Base }, lfoBase[data[2]]
@@ -75,7 +69,9 @@
 
   // set lfo to invert output values
   elseif data[1] = 16
+
     lfoInvert[data[2]] = data[3]
+
     // TEST
     // ensure invert set correctly for lfo
     Log {Invert }, lfoInvert[data[2]]
@@ -84,11 +80,14 @@
 
   // turn off or on lfo
   elseif data[1] = 17
+
     lfoOnOff[data[2]] = data[3]
+
     // uncomment to restart on turning lfo on
     //if data[3] = 1
     //  ResetLfo data[2]
     //endif
+
     // TEST
     // ensure on/off set correctly for lfo
     Log {OnOff }, lfoOnOff[data[2]]
@@ -97,7 +96,9 @@
 
   // mute all lfos
   elseif data[1] = 18
+
     lfoMuteAll = data[2]
+
     // TEST
     // ensure muteAll set correctly
     Log {lfoMuteAll }, lfoMuteAll
@@ -105,6 +106,7 @@
 
   // setting lfo type
   elseif data[1] = 19
+
     if data[3] = 0
       setLFOType data[2], {Sine}
     elseif data[3] = 1
@@ -120,6 +122,7 @@
     elseif data[3] = 6
       setLFOType data[2], {SH}
     endif
+
     // TEST
     // ensure type set correctly for lfo
     Log {Type }, data[3]
@@ -128,7 +131,9 @@
 
   // restarting lfo
   elseif data[1] = 20
+
     ResetLfo data[2]
+
     // TEST
     // ensure lfo correctly restarts
     Log {Restart }, data[2]
@@ -136,9 +141,11 @@
 
   // restarting all lfos
   elseif data[1] = 21
+
     for lfo = 0 to 3
       ResetLfo lfo
     endfor
+
     // TEST
     // ensure all lfos correctly restart
     Log {RestartAll }
@@ -146,21 +153,21 @@
 
   // update lfo rate
   elseif data[1] = 22
-    lfoFrequency[data[2]] = data[3] / 31.75
-    SetupLFO data[2], -1, 1, lfoSync[data[2]], lfoFrequency[data[2]]
+
+    lfoRate[data[2]] = data[3] / 31.75
+    SetupLFO data[2], 0, 127, lfoSync[data[2]], lfoRate[data[2]]
+
     // TEST
     // ensure rate set correctly for lfo
-    Log {Rate }, lfoFrequency[data[2]]
+    Log {Rate }, lfoRate[data[2]]
     Log {lfo }, data[2]
     // END TEST
 
   // update lfo depth
-  // TODO change '/ 127' to '/ 63.5' (or (data[3] - 63.5) / 127?) if lfoBase = 1 (middle) and lfo's isModulatingChain is true
-  // -0.5 to 0.5
-  // modulated lfo depth (0-127) * (.5 >= x >= -.5) + 63.5
-  // .5sinx * (63.5(sin 4x) + 63.5) + 63.5
   elseif data[1] = 23
+
     lfoDepth[data[2]] = data[3] / 127
+
     // TEST
     // ensure depth set correctly for lfo
     Log {Depth }, lfoDepth[data[2]]
@@ -169,11 +176,6 @@
 
   endif
 @End
-
-// worst we can do is lfo1 modulating lfo2 modulating lfo3 modulating lfo4
-// if lfoTargetKnob = 4 or 5 set lfo differently
-
-// TODO send knob flashing lighting when knob is modulated
 
 @Onload
   //SetMetroPPQN 20
@@ -186,19 +188,17 @@
   lfoInvert = [0, 0, 0, 0]
   lfoOnOff = [0, 0, 0, 0]
   lfoMuteAll = 0
-  lfoFrequency = [0, 0, 0, 0]
+  lfoRate = [0, 0, 0, 0]
   lfoDepth = [0, 0, 0, 0]
   lfoVal = [0, 0, 0, 0]
-  // Index zero will not be used
-  isChainModulating = [-1, 0, 0, 0]
   SetupLFO 0, 0, 0, no, 0
   SetupLFO 1, 0, 0, no, 0
   SetupLFO 2, 0, 0, no, 0
   SetupLFO 3, 0, 0, no, 0
-  logLFOs = 0
   // TEST
   // ensure load is correct
-  Log {Load }
+  Log {Load}
+  logLFOs = 0
   // END TEST
 @End
 
@@ -207,69 +207,96 @@
   Log {Host On: }, HostTempo
 @End
 
-//hz for sync = hosttempo / 60 (times multiples of 2)
-
-//TODO should not be possible for lfo to modulate itself - write checks
-//TODO need to handle lfo init
-//TODO need to be able to choose which lfo to modulate? or should it be top down - it should be top down
-//TODO default rate should be one
-//Modulated needs to be smaller than the modulater
-
-//lfo 1 rate not changing anything
-
 @OnTimer
-  SetTimerInterval ((60000 / HostTempo) / 20) // would it hurt to make this constant?
+  if HostRunning = 1
+    SetTimerInterval ((60000 / HostTempo) / 20) // would it hurt to make this constant?
+  endif
   //SetMetroPPQN if necessary
   if lfoMuteAll = 0
-    for lfo = 0 to 4
+    for lfo = 3 to 0
       if lfoOnOff[lfo] = 1
+
+        // TEST
         if logLFOs = 1
-          Log {lfo0 - }, GetLFOValue 0
-          Log {lfo1 - }, GetLFOValue 1
+          Log {---OnTimer for loop iteration Start---}
+          Log {lfoNum }, lfo
+          Log {lfoVal BeforeGet }, lfoVal[lfo]
         endif
+        // END TEST
+
+        lfoVal[lfo] = GetLFOValue lfo
+
+        // TEST
+        if logLFOs = 1
+          Log {lfoVal AfterGet }, lfoVal[lfo]
+        endif
+        // END TEST
+
+        // handle chain modulating both rate (3) and depth (4)
+        if lfoTargetKnob[lfo + 1] = 4 and lfoOnOff[lfo + 1] = 1
+          SetupLFO lfo, 0, 127, lfoSync[lfo], lfoVal[lfo + 1] / 31.75 // NOTE there may be a way to do this transition more smoothly
+        elseif lfoTargetKnob[lfo + 1] = 5 and lfoOnOff[lfo + 1] = 1
+          // NOTE for both of these, there is a conversion of the values to a sin wave that goes from -1 to 1
+          // see equation at top
+          if lfoBase[lfo] = 0
+            // lfoVal[lfo] = 31.75 * (1 + ((lfoVal[lfo] / 63.5) - 1)) * (1 + ((lfoVal[lfo + 1] / 63.5) - 1))
+            lfoVal[lfo] = 31.75 * (lfoVal[lfo] / 63.5) * (lfoVal[lfo + 1] / 63.5)
+          else
+            // lfoVal[lfo] = 31.75 * ((lfoVal[lfo] / 63.5) - 1) * (1 + ((lfoVal[lfo + 1] / 63.5) - 1)) + 63.5
+            lfoVal[lfo] = 31.75 * ((lfoVal[lfo] / 63.5) - 1) * (lfoVal[lfo + 1] / 63.5) + 63.5
+          endif
+        endif
+
         // TEST
         // ensure value takes depth into consideration
-        Log {BeforeDepth }, lfoVal[lfo]
+        if logLFOs = 1
+          Log {BeforeDepth }, lfoVal[lfo]
+        endif
         // END TEST
+
         lfoVal[lfo] = lfoVal[lfo] * lfoDepth[lfo]
+
         // TEST
-        Log {AfterDepth }, lfoVal[lfo]
+        if logLFOs = 1
+          Log {AfterDepth }, lfoVal[lfo]
+        endif
         // END TEST
+
         if lfoInvert[lfo]
+
           // TEST
           // ensure value inverts
-          Log {BeforeInvert }, lfoVal[lfo]
-          // END TEST
-          lfoVal[lfo] = lfoVal[lfo] * -1 + 127
-          // TEST
-          Log {AfterInvert }, lfoVal[lfo]
-          // END TEST
-        endif
-        if isModulatingChain[(lfo + 1)] = 3 // depth
-          // bottom
-          if lfoBase[0] = 0 // TODO will likely need to change lfos to -1 to 1
-            lfoVal[0] = 31.75 * (1 + GetLFOValue 0) * (1 + GetLFOValue 1)
-            value = 31.75 * (1 + GetLFOValue 0) * (1 + GetLFOValue 1)
-            Log lfoVal[0]
-            Log lfoVal[1]
-
-          // middle
-          else
-            lfoVal[lfo] = 31.75 * lfoVal[lfo] * (1 + lfoVal[(lfo + 1)]) + 63.5
+          if logLFOs = 1
+            Log {BeforeInvert }, lfoVal[lfo]
           endif
-        elseif isModulatingChain[(lfo + 1)] = 4 // rate
-          //SetupLFO data[2], -1, 1, lfoSync[data[2]], lfoVal[()]
+          // END TEST
+
+          lfoVal[lfo] = lfoVal[lfo] * -1 + 127
+
+          // TEST
+          if logLFOs = 1
+            Log {AfterInvert }, lfoVal[lfo]
+          endif
+          // END TEST
+
         endif
-        //SendMIDICC 10, lfoTargetKnob[lfo], lfoVal[lfo] // currently for lfo knob it is whichever knob is selected, which should not be
+
+        if lfoTargetKnob[lfo] <> 4 and lfoTargetKnob[lfo] <> 5
+          SendMIDICC 10, lfoTargetKnob[lfo], lfoVal[lfo]
+        endif
+
         // TEST
-        //Log lfoVal[0]
-        SetXYValues 64, value
+        SetXYValues 64, lfoVal[0]
+        if logLFOs = 1
+          Log {---OnTimer for loop iteration End---}
+        endif
         // END TEST
       endif
     endfor
   endif
 @End
 
+// TEST
 @OnPadDown
   if logLFOs = 1
     logLFOs = 0
@@ -277,8 +304,4 @@
     logLFOs = 1
   endif
 @End
-
-//this one doesn't matter
-//BOTTOM: 31.75 * (1 + sin(rx)) * (1 + sin(rx))
-//this is r2 modulating r1
-//MIDDLE: 31.75 * sin(r1x) * (1 + sin(r2x)) + 63.5
+//END TEST

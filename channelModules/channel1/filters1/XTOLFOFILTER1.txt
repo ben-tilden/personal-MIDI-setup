@@ -19,17 +19,17 @@
 # BLOCK | F0 11    0C    val  F7      padMode
 # BLOCK | F0 CC/FF 15    60   F7      gateOpened
 
-# ALLOW | F0 01    0E    val1 val2 F7 lfoKnob
-# ALLOW | F0 01    0F    val  F7      lfoSync
+# ALLOW | F0 01    0D    val1 val2 F7 lfoKnob
+# ALLOW | F0 01    0E    val1 val2 F7 lfoSync
 # ALLOW | F0 01    0F    val1 val2 F7 lfoBase
 # ALLOW | F0 01    10    val1 val2 F7 lfoInvert
 # ALLOW | F0 01    11    val1 val2 F7 lfoOnOff
 # ALLOW | F0 01    12    val  F7      lfoMuteAll
-# ALLOW | F0 01    10    val1 val2 F7 lfoType
-# ALLOW | F0 01    11    val  F7      lfoReset
-# ALLOW | F0 01    12    00   F7      lfoResetAll
-# ALLOW | F0 01    13    val1 val2 F7 lfoRate
-# ALLOW | F0 01    14    val1 val2 F7 lfoDepth
+# ALLOW | F0 01    13    val1 val2 F7 lfoType
+# ALLOW | F0 01    14    val  F7      lfoReset
+# ALLOW | F0 01    15    00   F7      lfoResetAll
+# ALLOW | F0 01    16    val1 val2 F7 lfoRate
+# ALLOW | F0 01    17    val1 val2 F7 lfoDepth
 
 IF M0 == F0
   IF M1 != 01
@@ -37,3 +37,5 @@ IF M0 == F0
     EXIT
   END
 END
+
+CX = XX +B

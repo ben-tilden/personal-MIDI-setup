@@ -86,7 +86,7 @@
     # ensure sequence groupKnobPush on, then setLfo on causes no issues
 
     # ensure attempting to chain modulate from lfo 1 exits gracefully # TODO
-    # ensure attempting to modulate with two lfos at once exits gracefully # TODO
+    # ensure attempting to modulate with two lfos at once exits gracefully (aside from knobs 3 and 4) # TODO
 
   # ensure push control release handled correctly
     # ensure lighting matches with L array
