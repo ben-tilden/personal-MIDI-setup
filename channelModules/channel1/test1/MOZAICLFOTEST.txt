@@ -194,11 +194,44 @@
     Log {tempoMode }, tempoMode
     // END TEST
 
+  // init
+  elseif data[1] = 29
+
+    // SetMetroPPQN 20 is the metric we're going off here
+    SetTimerInterval 25 // set for 120bpm ((60000 / bpm) / 20)
+    StartTimer
+    // init variables
+    lfoTargetKnob = [0, 0, 0, 0]
+    lfoSync = [0, 0, 0, 0]
+    lfoBase = [0, 0, 0, 0]
+    lfoInvert = [0, 0, 0, 0]
+    lfoOnOff = [0, 0, 0, 0]
+    lfoMuteAll = 0
+    lfoRate = [0, 0, 0, 0]
+    lfoDepth = [0, 0, 0, 0]
+    lfoVal = [0, 0, 0, 0]
+    SetupLFO 0, 0, 0, no, 0
+    SetupLFO 1, 0, 0, no, 0
+    SetupLFO 2, 0, 0, no, 0
+    SetupLFO 3, 0, 0, no, 0
+    tempoMode = 0
+    tempoIndex = 0
+    tempoZeroIndex = 0
+    // init constants
+    syncVal = [0, 14, 28, 42, 56, 70, 84, 98, 112, 128]
+    modeTempo = [24, 1, 26, 51, 76, 101] // 5
+    modeZeroTempo = [12, 1, 14, 27, 40, 53, 66, 79, 92, 105, 118] // 10
+
+    // TEST
+    // ensure init received
+    Log {lfo init}
+    // END TEST
+
   endif
 @End
 
 @Onload
-  //SetMetroPPQN 20
+  // SetMetroPPQN 20 is the metric we're going off here
   SetTimerInterval 25 // set for 120bpm ((60000 / bpm) / 20)
   StartTimer
   // init variables
@@ -211,16 +244,17 @@
   lfoRate = [0, 0, 0, 0]
   lfoDepth = [0, 0, 0, 0]
   lfoVal = [0, 0, 0, 0]
-  syncVal = [0, 14, 28, 42, 56, 70, 84, 98, 112, 128]
   SetupLFO 0, 0, 0, no, 0
   SetupLFO 1, 0, 0, no, 0
   SetupLFO 2, 0, 0, no, 0
   SetupLFO 3, 0, 0, no, 0
   tempoMode = 0
   tempoIndex = 0
-  modeTempo = [24, 1, 26, 51, 76, 101] // 6
   tempoZeroIndex = 0
-  modeZeroTempo = [12, 1, 14, 27, 40, 53, 66, 79, 92, 105, 118] // 11
+  // init constants
+  syncVal = [0, 14, 28, 42, 56, 70, 84, 98, 112, 128]
+  modeTempo = [24, 1, 26, 51, 76, 101] // 5
+  modeZeroTempo = [12, 1, 14, 27, 40, 53, 66, 79, 92, 105, 118] // 10
   // TEST
   // ensure load is correct
   Log {Load}
@@ -228,15 +262,17 @@
   // END TEST
 @End
 
-@OnHostStart
-  SetTimerInterval ((60000 / HostTempo) / 20)
-  Log {Host On: }, HostTempo
-@End
+// uncomment this and elsewhere to set timer to send at different rates depending on tempo
+//@OnHostStart
+//  SetTimerInterval ((60000 / HostTempo) / 20)
+//  Log {Host On: }, HostTempo
+//@End
 
 @OnTimer
-  if HostRunning = 1
-    SetTimerInterval ((60000 / HostTempo) / 20) // would it hurt to make this constant?
-  endif
+  // uncomment this and elsewhere to set timer to send at different rates depending on tempo
+  //if HostRunning = 1
+  //  SetTimerInterval ((60000 / HostTempo) / 20) // would it hurt to make this constant?
+  //endif
   //SetMetroPPQN if necessary
   if lfoMuteAll = 0
     for lfo = 3 to 0

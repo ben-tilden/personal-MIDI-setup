@@ -3,8 +3,6 @@
 # TEST NOTES
 # NOTE on first knob1Push, there may still be one unconfirmed bug where the knob lighting resets to zero when it should be reset to $14 (or whatever lighting corresponds to 24)
 # NOTE switching modes on the xtouch (from 'A' to 'B' or otherwise) while a button is currently physically pushed down will cause an issue if that button is released after mode switch
-# NOTE possible LFO issues
-# TODO modulating tempo, since LFO will go from 0-127 and tempo is not expecting input other than ~10 values
 # TODO need to handle lfo init from launchkey / xtouch
 # TODO add testing to testPlan from lfo
 # TODO add channel specific variables
@@ -339,6 +337,9 @@ IF M0 == F0
     # END
     # END TEST
 
+    # reset lfo
+    SEND F0 01 1D 00 F7 +F
+
     # reset lights for mode 'B'
     SEND C0 01
 
@@ -501,7 +502,7 @@ IF M0 == F0
   END
 
   # Send lights when channel change sysex received
-  IF M2 == 1D CC
+  IF M2 == 1E CC
 
     ASS resetIndex = 0
     # need to reset lights from other channel

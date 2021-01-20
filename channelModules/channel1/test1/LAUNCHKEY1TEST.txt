@@ -323,7 +323,7 @@ IF MT == B0
 
     # send channel change sysex
     # SEND SYSEX
-    SEND F0 FF 1D CC F7 +F
+    SEND F0 FF 1E CC F7 +F
     # END SYSEX
 
     # change channel variable here
