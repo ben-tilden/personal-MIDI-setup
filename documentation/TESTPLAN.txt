@@ -26,9 +26,9 @@
 # button push
 
   # ensure knobPush turned on accordingly
-  # ensure modulated knobs not included # TODO
+  # ensure modulated knobs not included
 
-  # ensure push control does not work when setLfo is on # TODO check with 'B' mode
+  # ensure push control does not work when setLfo is on
 
   # ensure arpValueModeMod changes accordingly or setPhrase changes
 
@@ -41,13 +41,14 @@
   # ensure latch is toggling
 
   # ensure setLfo is toggling
-  # ensure setLfo unable to be toggled if push control active # TODO
+  # ensure setLfo unable to be toggled if push control active
 
   # ensure padMode is toggling
 
-  # ensure lfos are toggling and lfo modulation lighting corresponds # TODO lighting
+  # ensure lfos are toggling and lfo modulation lighting corresponds
+  # ensure gate lighting functions as expected when gate is modulated
 
-  # ensure lfoMuteAll is toggling and lfo modulation lighting corresponds # TODO lighting
+  # ensure lfoMuteAll is toggling and lfo modulation lighting corresponds
 
   # ensure lfos restart accordingly on lfoReset
 
@@ -61,8 +62,8 @@
 
   # ensure groupKnobPush is toggling
 
-  # ensure 'pan' lighting and lfo lighting reset # TODO
-  # ensure lfo lighting reset for mode 'B' # TODO
+  # ensure 'pan' lighting and lfo lighting reset
+  # ensure lfo lighting reset for mode 'B'
 
   # ensure drumParams can't be changed when groupKnobPush on
   # ensure drumParams can't be changed when knob9Push on
@@ -86,9 +87,10 @@
   # ensure lfoKnob is correctly set for any knob that's pressed, and that nothing is negatively impacted by it
     # ensure sequence setLfo on, then groupKnobPush on causes no issues
     # ensure sequence groupKnobPush on, then setLfo on causes no issues
+    # ensure that lfo lighting correctly sent for both mode 'A' and mode 'B'
 
-    # ensure attempting to chain modulate from lfo 1 exits gracefully # TODO
-    # ensure attempting to modulate with two lfos at once exits gracefully (aside from knobs 3 and 4) # TODO
+    # ensure attempting to chain modulate from lfo 1 exits gracefully
+    # ensure attempting to modulate with two lfos at once exits gracefully (aside from knobs 3 and 4)
 
   # ensure push control release handled correctly
     # ensure lighting matches with L array
@@ -96,7 +98,7 @@
     # ensure parameter associated with knob lighting also changed
     # tempoPulse, gate, velocity, drumParam1, drumParam2, drumParam3, lfoRate, lfoDepth, channel specific (unassigned) (6-8, 12-16)
     # ensure knobPush reset if no knob has been turned
-    # ensure modulated knobs not included # TODO
+    # ensure modulated knobs not included
 
   # ensure tempoModeMod changes accordingly and tempoPulse correlates
 
@@ -108,7 +110,7 @@
   # ensure lfoBase sent correctly (for each lfoNum)
   # ensure lfoInvert sent correctly (for each lfoNum)
   # ensure lfoType changes accordingly
-  # ensure lfoNum changes accordingly and lighting corresponds (including buttons) # TODO (chain modulation lighting)
+  # ensure lfoNum changes accordingly and lighting corresponds (including buttons)
   # ensure lfoNum restarts accordingly
   # ensure all lfos restart accordingly
 
@@ -120,7 +122,7 @@
     # ensure parameter associated with knob lighting also changed
     # tempoPulse, gate, velocity, drumParam1, drumParam2, drumParam3, lfoRate, lfoDepth, channel specific (unassigned) (6-8, 12-16)
     # ensure knobPush reset if no knob has been turned
-    # ensure modulated knobs not included # TODO
+    # ensure modulated knobs not included
 
   # ensure waveguide is toggled properly
   # ensure pitchQuantize is toggled properly
@@ -160,27 +162,27 @@
 // lfo
 //////
 
-// ensure target knob set correctly for lfo
-// ensure sync set correctly for lfo
-// ensure base set correctly for lfo
-// ensure invert set correctly for lfo
-// ensure on/off set correctly for lfo
-// ensure muteAll set correctly
-// ensure type set correctly for lfo
-// ensure lfo correctly restarts
-// ensure all lfos correctly restart
-// ensure rate set correctly for lfo
-// ensure rate set correctly for lfo with sync on
-// ensure depth set correctly for lfo
-// ensure tempoMode set correctly
+// ensure target knob set correctly for lfo # TODO
+// ensure sync set correctly for lfo # TODO
+// ensure base set correctly for lfo # TODO
+// ensure invert set correctly for lfo # TODO
+// ensure on/off set correctly for lfo # TODO
+// ensure muteAll set correctly # TODO
+// ensure type set correctly for lfo # TODO
+// ensure lfo correctly restarts # TODO
+// ensure all lfos correctly restart # TODO
+// ensure rate set correctly for lfo # TODO
+// ensure rate set correctly for lfo with sync on # TODO
+// ensure depth set correctly for lfo # TODO
+// ensure tempoMode set correctly # TODO
 // ensure init received
 
-// ensure load is correct
+// ensure load is correct # TODO
 
-// ensure base taken into consideration
-// ensure value takes depth into consideration
-// ensure value inverts
-// ensure tempo modulation works as expected
+// ensure base taken into consideration # TODO
+// ensure value takes depth into consideration # TODO
+// ensure value inverts # TODO
+// ensure tempo modulation works as expected # TODO
 
 ###
 # launchkey mini

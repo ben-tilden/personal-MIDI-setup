@@ -3,6 +3,7 @@
 # TEST NOTES
 # NOTE on first knob1Push, there may still be one unconfirmed bug where the knob lighting resets to zero when it should be reset to $14 (or whatever lighting corresponds to 24)
 # NOTE switching modes on the xtouch (from 'A' to 'B' or otherwise) while a button is currently physically pushed down will cause an issue if that button is released after mode switch
+# NOTE knobs modulated by lfos should not be turned; they will resolve cleanly if turned, but lighting will be lost
 # TODO add channel specific variables
 
 
@@ -1984,7 +1985,8 @@ IF MT == 90
     # END TEST
   END
 
-  # if it is a button 16 send 'pan' lighting (reset after mode change)
+  # if it is a button 32 reset lfo modulation lighting
+  # TODO because used elsewhere, could be a subroutine
   IF M1 == 2F 7F
     IF lfoMuteAll == 0
       IF lfo1OnOffToggle == 1
@@ -2337,8 +2339,32 @@ IF MT == 80
           EXIT
         END
 
+        # NOTE lfo1Knob can be set to only < 8 because it cannot be set to 3 or 4
+        # NOTE originally had checks to send for values M1 > 17, but original conditional prevents this
+        # send L value to old knob
+        IF lfoMuteAll == 0
+          IF lfo1OnOffToggle == 1
+            IF lfo1Knob < 8
+              IF M1 < 8
+                MATH knobTemp = lfo1Knob + 1
+                SEND F0 0F EE BA knobTemp LJ3D F7 +F
+              END
+            END
+          END
+        END
+
         ASS lfo1Knob = M1
         SEND F0 01 0D lfoNumMod lfo1Knob F7 +F
+
+        # send flash to new knob
+        IF lfoMuteAll == 0
+          IF lfo1OnOffToggle == 1
+            IF lfo1Knob < 8
+              MATH lfoTemp = lfo1Knob + 9
+              SEND F0 0F EE B0 lfoTemp 1C F7 +F
+            END
+          END
+        END
 
       END
       IF lfoNumMod == 1
@@ -2373,8 +2399,38 @@ IF MT == 80
           END
         END
 
+        # send L value to old knob
+        IF lfoMuteAll == 0
+          IF lfo2OnOffToggle == 1
+            IF lfo2Knob < 8
+              IF M1 < 8
+                IF lfo2Knob != 3
+                  IF lfo2Knob != 4
+                    MATH knobTemp = lfo2Knob + 1
+                    SEND F0 0F EE BA knobTemp LJ3E F7 +F
+                  END
+                END
+              END
+            END
+          END
+        END
+
         ASS lfo2Knob = M1
         SEND F0 01 0D lfoNumMod lfo2Knob F7 +F
+
+        # send flash to new knob
+        IF lfoMuteAll == 0
+          IF lfo2OnOffToggle == 1
+            IF lfo2Knob < 8
+              IF lfo2Knob != 3
+                IF lfo2Knob != 4
+                  MATH lfoTemp = lfo2Knob + 9
+                  SEND F0 0F EE B0 lfoTemp 1C F7 +F
+                END
+              END
+            END
+          END
+        END
 
       END
       IF lfoNumMod == 2
@@ -2409,8 +2465,38 @@ IF MT == 80
           END
         END
 
+        # send L value to old knob
+        IF lfoMuteAll == 0
+          IF lfo3OnOffToggle == 1
+            IF lfo3Knob < 8
+              IF M1 < 8
+                IF lfo3Knob != 3
+                  IF lfo3Knob != 4
+                    MATH knobTemp = lfo3Knob + 1
+                    SEND F0 0F EE BA knobTemp LJ3F F7 +F
+                  END
+                END
+              END
+            END
+          END
+        END
+
         ASS lfo3Knob = M1
         SEND F0 01 0D lfoNumMod lfo3Knob F7 +F
+
+        # send flash to new knob
+        IF lfoMuteAll == 0
+          IF lfo3OnOffToggle == 1
+            IF lfo3Knob < 8
+              IF lfo3Knob != 3
+                IF lfo3Knob != 4
+                  MATH lfoTemp = lfo3Knob + 9
+                  SEND F0 0F EE B0 lfoTemp 1C F7 +F
+                END
+              END
+            END
+          END
+        END
 
       END
       IF lfoNumMod == 3
@@ -2445,8 +2531,38 @@ IF MT == 80
           END
         END
 
+        # send L value to old knob
+        IF lfoMuteAll == 0
+          IF lfo4OnOffToggle == 1
+            IF lfo4Knob < 8
+              IF M1 < 8
+                IF lfo4Knob != 3
+                  IF lfo4Knob != 4
+                    MATH knobTemp = lfo4Knob + 1
+                    SEND F0 0F EE BA knobTemp LJ40 F7 +F
+                  END
+                END
+              END
+            END
+          END
+        END
+
         ASS lfo4Knob = M1
         SEND F0 01 0D lfoNumMod lfo4Knob F7 +F
+
+        # send flash to new knob
+        IF lfoMuteAll == 0
+          IF lfo4OnOffToggle == 1
+            IF lfo4Knob < 8
+              IF lfo4Knob != 3
+                IF lfo4Knob != 4
+                  MATH lfoTemp = lfo4Knob + 9
+                  SEND F0 0F EE B0 lfoTemp 1C F7 +F
+                END
+              END
+            END
+          END
+        END
 
       END
       ASS setLfo = 0
@@ -2597,9 +2713,42 @@ IF MT == 80
 
         END
         ASS setLfo = 0
+        # reset flashing setLfo button
         SEND C0 00
         SEND F0 0F EE 90 0B 00 F7 +F
         SEND C0 01
+        # resend lighting for mode 'B'
+        IF lfoMuteAll == 0
+          IF lfo1OnOffToggle == 1
+            IF lfo1Knob > 17
+              # only done for mode 'B', since action only applicable to mode 'B'
+              MATH lfoTemp = lfo1Knob - F
+              SEND F0 0F EE B0 lfoTemp 1C F7 +F
+            END
+          END
+          IF lfo2OnOffToggle == 1
+            IF lfo2Knob > 17
+              # only done for mode 'B', since action only applicable to mode 'B'
+              MATH lfoTemp = lfo2Knob - F
+              SEND F0 0F EE B0 lfoTemp 1C F7 +F
+            END
+          END
+          IF lfo3OnOffToggle == 1
+            IF lfo3Knob > 17
+              # only done for mode 'B', since action only applicable to mode 'B'
+              MATH lfoTemp = lfo3Knob - F
+              SEND F0 0F EE B0 lfoTemp 1C F7 +F
+            END
+          END
+          IF lfo4OnOffToggle == 1
+            IF lfo4Knob > 17
+              # only done for mode 'B', since action only applicable to mode 'B'
+              MATH lfoTemp = lfo4Knob - F
+              SEND F0 0F EE B0 lfoTemp 1C F7 +F
+            END
+          END
+        END
+
         # TEST
         # ensure lfoKnob is correctly set for any knob that's pressed, and that nothing is negatively impacted by it
         # ensure sequence setLfo on, then groupKnobPush on causes no issues
@@ -3184,6 +3333,41 @@ IF MT == 80
     # NOTE preventing the light from sending will change the length more quickly, more easily
     # NOTE will be testing with live to see best setup here
     MATH gateModeMod = gateMode % 6
+
+    # don't send lighting / L array val if knob is actively being modulated
+    IF lfo1Knob == 1
+      IF lfo1OnOffToggle == 1
+        IF lfoMuteAll == 0
+          BLOCK
+          EXIT
+        END
+      END
+    END
+    IF lfo2Knob == 1
+      IF lfo2OnOffToggle == 1
+        IF lfoMuteAll == 0
+          BLOCK
+          EXIT
+        END
+      END
+    END
+    IF lfo3Knob == 1
+      IF lfo3OnOffToggle == 1
+        IF lfoMuteAll == 0
+          BLOCK
+          EXIT
+        END
+      END
+    END
+    IF lfo4Knob == 1
+      IF lfo4OnOffToggle == 1
+        IF lfoMuteAll == 0
+          BLOCK
+          EXIT
+        END
+      END
+    END
+
     IF gateModeMod == 0
       ASS gateFactor = 1
       SEND F0 0F EE BA 02 00 F7 +F
