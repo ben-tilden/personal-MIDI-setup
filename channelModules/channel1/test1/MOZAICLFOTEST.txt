@@ -184,6 +184,16 @@
     Log {lfo }, data[2]
     // END TEST
 
+  // update tempoMode
+  elseif data[1] = 24
+
+    tempoMode = data[2]
+
+    // TEST
+    // ensure tempoMode set correctly
+    Log {tempoMode }, tempoMode
+    // END TEST
+
   endif
 @End
 
@@ -206,6 +216,11 @@
   SetupLFO 1, 0, 0, no, 0
   SetupLFO 2, 0, 0, no, 0
   SetupLFO 3, 0, 0, no, 0
+  tempoMode = 0
+  tempoIndex = 0
+  modeTempo = [24, 1, 26, 51, 76, 101] // 6
+  tempoZeroIndex = 0
+  modeZeroTempo = [12, 1, 14, 27, 40, 53, 66, 79, 92, 105, 118] // 11
   // TEST
   // ensure load is correct
   Log {Load}
@@ -290,6 +305,24 @@
           endif
           // END TEST
 
+        endif
+
+        if lfoTargetKnob[lfo] = 1
+          if tempoMode = 0
+            tempoZeroIndex = Round (lfoVal[lfo] / 12.7)
+            lfoVal[lfo] = modeZeroTempo[tempoZeroIndex]
+          else
+            tempoIndex = Round (lfoVal[lfo] / 25.4)
+            lfoVal[lfo] = modeTempo[tempoIndex]
+          endif
+          // TEST
+          if logLFOs = 1
+            Log {tempoZeroIndex }, tempoZeroIndex
+            Log {tempoMode }, tempoMode
+            Log {tempoLfo }, lfo
+            Log {tempoLfoVal }, lfoVal[lfo]
+          endif
+          // END TEST
         endif
 
         if lfoTargetKnob[lfo] <> 4 and lfoTargetKnob[lfo] <> 5

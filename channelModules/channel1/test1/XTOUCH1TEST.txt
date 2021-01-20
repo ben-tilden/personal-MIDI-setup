@@ -92,7 +92,7 @@ IF LOAD
   ALIAS I1 channelNoteOn
   ALIAS I2 channelNoteOff
   ALIAS I3 tempoMode
-  ALIAS I4 tempoModeMod
+  ALIAS I4 tempoModeMod # TODO change?
   ALIAS I5 arpValueMode
   ALIAS I6 previousDrumVal
   ALIAS I7 gateMode
@@ -318,7 +318,7 @@ IF M0 == F0
   END
 
   # Turn off lights when init sysex received
-  IF M2 == 1A 00
+  IF M2 == 1B 00
     # TEST
     # uncomment to turn on all lights on xtouch
     # IF LOAD
@@ -501,7 +501,7 @@ IF M0 == F0
   END
 
   # Send lights when channel change sysex received
-  IF M2 == 1C CC
+  IF M2 == 1D CC
 
     ASS resetIndex = 0
     # need to reset lights from other channel
@@ -1295,7 +1295,7 @@ IF MT == 90
     # if phrase then add rest to phrase sequence
     ELSE
       IF setPhrase == 1
-        SEND F0 11 19 2E F7 +F
+        SEND F0 11 1A 2E F7 +F
         # NOTE not currently planning on handling this, but there may is likely a race condition between rest and note that could cause issues
         # TEST
         # ensure rest sent
@@ -3131,6 +3131,7 @@ IF MT == 80
     MATH tempoMode = tempoMode + 1
     # set tempo mode to variable modulo 4
     MATH tempoModeMod = tempoMode % 4
+    SEND F0 01 18 tempoModeMod F7 +F
     IF tempoModeMod == 0
       ASS tempoPulse = $24
       SEND F0 CC 03 tempoPulse F7 +F
@@ -4178,10 +4179,20 @@ IF MT == 80
       IF lfoNumMod == 0
         SEND F0 0F EE 90 04 01 F7 +F
       END
-      # no chain modulation from lfo 1
-      IF lfo1Knob < 8
-        MATH lfoTemp = lfo1Knob + 9
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      IF lfoMuteAll == 0
+        # no chain modulation from lfo 1
+        IF lfo1Knob < 8
+          MATH lfoTemp = lfo1Knob + 9
+          SEND F0 0F EE B0 lfoTemp 1C F7 +F
+        END
+      END
+    ELSE
+      # don't want to send L values twice if we don't have to
+      IF lfoMuteAll == 0
+        IF lfo1Knob < 8
+          MATH knobTemp = lfo1Knob + 1
+          SEND F0 0F EE BA knobTemp LJ3D F7 +F
+        END
       END
     END
     IF lfo2OnOffToggle == 1
@@ -4209,6 +4220,7 @@ IF MT == 80
         END
       END
     ELSE
+      # don't want to send L values twice if we don't have to
       IF lfoMuteAll == 0
         IF lfo2Knob < 8
           IF lfoNumMod == 0
@@ -4255,6 +4267,7 @@ IF MT == 80
         END
       END
     ELSE
+      # don't want to send L values twice if we don't have to
       IF lfoMuteAll == 0
         IF lfo3Knob < 8
           IF lfoNumMod == 1
@@ -4301,6 +4314,7 @@ IF MT == 80
         END
       END
     ELSE
+      # don't want to send L values twice if we don't have to
       IF lfoMuteAll == 0
         IF lfo4Knob < 8
           IF lfoNumMod == 2
@@ -4327,74 +4341,6 @@ IF MT == 80
   IF M1 == 14 00
     IF lfoMuteAll == 1
       SEND F0 0F EE 90 0C 01 F7 +F
-      IF lfo1OnOffToggle == 1
-        # no chain modulation from lfo 1
-        IF lfo1Knob < 8
-          MATH lfoTemp = lfo1Knob + 9
-          SEND F0 0F EE B0 lfoTemp 1C F7 +F
-        END
-      END
-      IF lfo2OnOffToggle == 1
-        IF lfo2Knob < 8
-          IF lfoNumMod == 0
-            IF lfo2Knob == 3
-              SEND F0 0F EE B0 0C 1C F7 +F
-            END
-            IF lfo2Knob == 4
-              SEND F0 0F EE B0 0D 1C F7 +F
-            END
-          END
-          IF lfo2Knob < 3
-            MATH lfoTemp = lfo2Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-          IF lfo2Knob > 4
-            MATH lfoTemp = lfo2Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-        END
-      END
-      IF lfo3OnOffToggle == 1
-        IF lfo3Knob < 8
-          IF lfoNumMod == 1
-            IF lfo3Knob == 3
-              SEND F0 0F EE B0 0C 1C F7 +F
-            END
-            IF lfo3Knob == 4
-              SEND F0 0F EE B0 0D 1C F7 +F
-            END
-          END
-          IF lfo3Knob < 3
-            MATH lfoTemp = lfo3Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-          IF lfo3Knob > 4
-            MATH lfoTemp = lfo3Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-        END
-      END
-      IF lfo4OnOffToggle == 1
-        IF lfo4Knob < 8
-          IF lfoNumMod == 2
-            IF lfo4Knob == 3
-              SEND F0 0F EE B0 0C 1C F7 +F
-            END
-            IF lfo4Knob == 4
-              SEND F0 0F EE B0 0D 1C F7 +F
-            END
-          END
-          IF lfo4Knob < 3
-            MATH lfoTemp = lfo4Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-          IF lfo4Knob > 4
-            MATH lfoTemp = lfo4Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-        END
-      END
-    ELSE
       IF lfo1OnOffToggle == 1
         # no chain modulation from lfo 1
         IF lfo1Knob < 8
@@ -4459,6 +4405,74 @@ IF MT == 80
           IF lfo4Knob > 4
             MATH knobTemp = lfo4Knob + 1
             SEND F0 0F EE BA knobTemp LJ40 F7 +F
+          END
+        END
+      END
+    ELSE
+      IF lfo1OnOffToggle == 1
+        # no chain modulation from lfo 1
+        IF lfo1Knob < 8
+          MATH lfoTemp = lfo1Knob + 9
+          SEND F0 0F EE B0 lfoTemp 1C F7 +F
+        END
+      END
+      IF lfo2OnOffToggle == 1
+        IF lfo2Knob < 8
+          IF lfoNumMod == 0
+            IF lfo2Knob == 3
+              SEND F0 0F EE B0 0C 1C F7 +F
+            END
+            IF lfo2Knob == 4
+              SEND F0 0F EE B0 0D 1C F7 +F
+            END
+          END
+          IF lfo2Knob < 3
+            MATH lfoTemp = lfo2Knob + 9
+            SEND F0 0F EE B0 lfoTemp 1C F7 +F
+          END
+          IF lfo2Knob > 4
+            MATH lfoTemp = lfo2Knob + 9
+            SEND F0 0F EE B0 lfoTemp 1C F7 +F
+          END
+        END
+      END
+      IF lfo3OnOffToggle == 1
+        IF lfo3Knob < 8
+          IF lfoNumMod == 1
+            IF lfo3Knob == 3
+              SEND F0 0F EE B0 0C 1C F7 +F
+            END
+            IF lfo3Knob == 4
+              SEND F0 0F EE B0 0D 1C F7 +F
+            END
+          END
+          IF lfo3Knob < 3
+            MATH lfoTemp = lfo3Knob + 9
+            SEND F0 0F EE B0 lfoTemp 1C F7 +F
+          END
+          IF lfo3Knob > 4
+            MATH lfoTemp = lfo3Knob + 9
+            SEND F0 0F EE B0 lfoTemp 1C F7 +F
+          END
+        END
+      END
+      IF lfo4OnOffToggle == 1
+        IF lfo4Knob < 8
+          IF lfoNumMod == 2
+            IF lfo4Knob == 3
+              SEND F0 0F EE B0 0C 1C F7 +F
+            END
+            IF lfo4Knob == 4
+              SEND F0 0F EE B0 0D 1C F7 +F
+            END
+          END
+          IF lfo4Knob < 3
+            MATH lfoTemp = lfo4Knob + 9
+            SEND F0 0F EE B0 lfoTemp 1C F7 +F
+          END
+          IF lfo4Knob > 4
+            MATH lfoTemp = lfo4Knob + 9
+            SEND F0 0F EE B0 lfoTemp 1C F7 +F
           END
         END
       END
