@@ -11,6 +11,7 @@
 // ALLOW | F0 01    15    00   F7      lfoResetAll
 // ALLOW | F0 01    16    val1 val2 F7 lfoRate
 // ALLOW | F0 01    17    val1 val2 F7 lfoDepth
+//
 
 //order of modulation doesn't matter for bottom
 //BOTTOM: 31.75 * (1 + sin(rx)) * (1 + sin(rx))
@@ -21,8 +22,6 @@
 //ORIGINAL: 63.5 * sin(r1x) * (.5 * sin(r2x) + .5) + 63.5
 
 // NOTE tip: when using chain modulation, often the best results come from alternating inversion among the lfos
-
-// TODO need to handle lfo init from launchkey / xtouch
 
 @OnSysex
   ReceiveSysex data
@@ -301,9 +300,21 @@
           // NOTE for both of these, there is a conversion of the values to a sin wave that goes from -1 to 1
           // see equation at top
           if lfoBase[lfo] = 0
+            // TEST
+            // ensure base taken into consideration
+            if logLFOs = 1
+              Log {lfoBase bottom}, lfoBase[lfo]
+            endif
+            // END TEST
             // lfoVal[lfo] = 31.75 * (1 + ((lfoVal[lfo] / 63.5) - 1)) * (1 + ((lfoVal[lfo + 1] / 63.5) - 1))
             lfoVal[lfo] = 31.75 * (lfoVal[lfo] / 63.5) * (lfoVal[lfo + 1] / 63.5)
           else
+            // TEST
+            // ensure base taken into consideration
+            if logLFOs = 1
+              Log {lfoBase middle}, lfoBase[lfo]
+            endif
+            // END TEST
             // lfoVal[lfo] = 31.75 * ((lfoVal[lfo] / 63.5) - 1) * (1 + ((lfoVal[lfo + 1] / 63.5) - 1)) + 63.5
             lfoVal[lfo] = 31.75 * ((lfoVal[lfo] / 63.5) - 1) * (lfoVal[lfo + 1] / 63.5) + 63.5
           endif
@@ -352,6 +363,7 @@
             lfoVal[lfo] = modeTempo[tempoIndex]
           endif
           // TEST
+          // ensure tempo modulation works as expected
           if logLFOs = 1
             Log {tempoZeroIndex }, tempoZeroIndex
             Log {tempoMode }, tempoMode

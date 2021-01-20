@@ -3,8 +3,6 @@
 # TEST NOTES
 # NOTE on first knob1Push, there may still be one unconfirmed bug where the knob lighting resets to zero when it should be reset to $14 (or whatever lighting corresponds to 24)
 # NOTE switching modes on the xtouch (from 'A' to 'B' or otherwise) while a button is currently physically pushed down will cause an issue if that button is released after mode switch
-# TODO need to handle lfo init from launchkey / xtouch
-# TODO add testing to testPlan from lfo
 # TODO add channel specific variables
 
 

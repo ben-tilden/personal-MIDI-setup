@@ -31,6 +31,7 @@
 # ALLOW | F0 01    16    val1 val2 F7 lfoRate
 # ALLOW | F0 01    17    val1 val2 F7 lfoDepth
 # ALLOW | F0 01    18    val1 F7      lfoTempo
+# ALLOW | F0 01    19    00   F7      lfoInit
 
 IF M0 == F0
   IF M1 != 01

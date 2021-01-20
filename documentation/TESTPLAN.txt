@@ -1,5 +1,6 @@
 # test plan
 # regex for code:( +# TEST\n(.+\n)+? +# END TEST\n)|( +# TEST LIVE\n(.+\n)+? +# END TEST LIVE\n)
+// regex for code:( +// TEST\n(.+\n)+? +// END TEST\n)|( +// TEST LIVE\n(.+\n)+? +// END TEST LIVE\n)
 
 
 ###
@@ -154,6 +155,32 @@
       # with either on (knob # 6, 7, and 8 for pushKnob), drumParams will not be able to be changed
     # groupPushKnob / pushKnob and lfoNum
       # with either on (knob # 4 for pushKnob), lfoNum will not be able to be changed
+
+//////
+// lfo
+//////
+
+// ensure target knob set correctly for lfo
+// ensure sync set correctly for lfo
+// ensure base set correctly for lfo
+// ensure invert set correctly for lfo
+// ensure on/off set correctly for lfo
+// ensure muteAll set correctly
+// ensure type set correctly for lfo
+// ensure lfo correctly restarts
+// ensure all lfos correctly restart
+// ensure rate set correctly for lfo
+// ensure rate set correctly for lfo with sync on
+// ensure depth set correctly for lfo
+// ensure tempoMode set correctly
+// ensure init received
+
+// ensure load is correct
+
+// ensure base taken into consideration
+// ensure value takes depth into consideration
+// ensure value inverts
+// ensure tempo modulation works as expected
 
 ###
 # launchkey mini
