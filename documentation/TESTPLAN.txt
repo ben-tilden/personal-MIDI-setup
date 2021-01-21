@@ -26,7 +26,8 @@
 # button push
 
   # ensure knobPush turned on accordingly
-  # ensure modulated knobs not included
+  # ensure modulated knobs not included when turned on and lfoMuteAll is off # TODO
+    # ensure knobs 4 and 5 are excluded from this # TODO
 
   # ensure push control does not work when setLfo is on
 
@@ -162,27 +163,27 @@
 // lfo
 //////
 
-// ensure target knob set correctly for lfo # TODO
-// ensure sync set correctly for lfo # TODO
-// ensure base set correctly for lfo # TODO
-// ensure invert set correctly for lfo # TODO
-// ensure on/off set correctly for lfo # TODO
-// ensure muteAll set correctly # TODO
-// ensure type set correctly for lfo # TODO
-// ensure lfo correctly restarts # TODO
-// ensure all lfos correctly restart # TODO
-// ensure rate set correctly for lfo # TODO
-// ensure rate set correctly for lfo with sync on # TODO
-// ensure depth set correctly for lfo # TODO
-// ensure tempoMode set correctly # TODO
+// ensure target knob set correctly for lfo
+// ensure sync set correctly for lfo
+// ensure base set correctly for lfo
+// ensure invert set correctly for lfo
+// ensure on/off set correctly for lfo
+// ensure muteAll set correctly
+// ensure type set correctly for lfo
+// ensure lfo correctly restarts
+// ensure all lfos correctly restart
+// ensure rate set correctly for lfo
+// ensure rate set correctly for lfo with sync on
+// ensure depth set correctly for lfo
+// ensure tempoMode set correctly
 // ensure init received
 
-// ensure load is correct # TODO
+// ensure load is correct
 
-// ensure base taken into consideration # TODO
-// ensure value takes depth into consideration # TODO
-// ensure value inverts # TODO
-// ensure tempo modulation works as expected # TODO
+// ensure base taken into consideration
+// ensure value takes depth into consideration
+// ensure value inverts
+// ensure tempo modulation works as expected
 
 ###
 # launchkey mini

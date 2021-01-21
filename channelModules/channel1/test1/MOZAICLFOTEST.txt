@@ -216,6 +216,7 @@
     tempoMode = 0
     tempoIndex = 0
     tempoZeroIndex = 0
+    lfoView = 0
     // init constants
     syncVal = [0, 14, 28, 42, 56, 70, 84, 98, 112, 128]
     modeTempo = [24, 1, 26, 51, 76, 101] // 5
@@ -250,6 +251,7 @@
   tempoMode = 0
   tempoIndex = 0
   tempoZeroIndex = 0
+  lfoView = 0
   // init constants
   syncVal = [0, 14, 28, 42, 56, 70, 84, 98, 112, 128]
   modeTempo = [24, 1, 26, 51, 76, 101] // 5
@@ -295,7 +297,9 @@
 
         // handle chain modulating both rate (3) and depth (4)
         if lfoTargetKnob[lfo + 1] = 4 and lfoOnOff[lfo + 1] = 1
-          SetupLFO lfo, 0, 127, lfoSync[lfo], lfoVal[lfo + 1] / 31.75 // NOTE there may be a way to do this transition more smoothly
+          // NOTE still unsure if this is the exact equation - seems to be extremely slightly lagging, but don't know why
+          // overall arbitrary anyway
+          SetupLFO lfo, 0, 127, no, (lfoVal[lfo + 1] / 127) * lfoRate[lfo] * 2
         elseif lfoTargetKnob[lfo + 1] = 5 and lfoOnOff[lfo + 1] = 1
           // NOTE for both of these, there is a conversion of the values to a sin wave that goes from -1 to 1
           // see equation at top
@@ -378,7 +382,7 @@
         endif
 
         // TEST
-        SetXYValues 64, lfoVal[0]
+        SetXYValues 64, lfoVal[lfoView]
         if logLFOs = 1
           Log {---OnTimer for loop iteration End---}
         endif
@@ -388,12 +392,13 @@
   endif
 @End
 
-// TEST
 @OnPadDown
+  lfoView = LastPad
+  // TEST
   if logLFOs = 1
     logLFOs = 0
   else
     logLFOs = 1
   endif
+  //END TEST
 @End
-//END TEST

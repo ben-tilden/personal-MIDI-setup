@@ -1,9 +1,8 @@
 # xtouch test code
 
 # TEST NOTES
-# NOTE on first knob1Push, there may still be one unconfirmed bug where the knob lighting resets to zero when it should be reset to $14 (or whatever lighting corresponds to 24)
 # NOTE switching modes on the xtouch (from 'A' to 'B' or otherwise) while a button is currently physically pushed down will cause an issue if that button is released after mode switch
-# NOTE knobs modulated by lfos should not be turned; they will resolve cleanly if turned, but lighting will be lost
+# NOTE knobs modulated by lfos should not be turned (unless chain modulated); they will resolve cleanly if turned, but lighting will be lost
 # TODO add channel specific variables
 
 
@@ -89,7 +88,7 @@ IF LOAD
   ALIAS I1 channelNoteOn
   ALIAS I2 channelNoteOff
   ALIAS I3 tempoMode
-  ALIAS I4 tempoModeMod # TODO change?
+  ALIAS I4 tempoModeMod # NOTE this was later changed to a sysex variable, not updating at the current time
   ALIAS I5 arpValueMode
   ALIAS I6 previousDrumVal
   ALIAS I7 gateMode
@@ -136,6 +135,10 @@ IF LOAD
   ALIAS I30 knobTemp
   ALIAS I31 groupKnobPush
   ALIAS I32 lfoTemp # TODO
+  ALIAS I33 lfo1PushPass
+  ALIAS I34 lfo2PushPass
+  ALIAS I35 lfo3PushPass
+  ALIAS I36 lfo4PushPass
 
   # sysex
 
@@ -225,10 +228,14 @@ IF LOAD
 
   # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
   ASS tempoMode = 0
+  # NOTE needs to be done in case reset occurs when on other tempoMode, since this isn't reset by sysex
+  ASS tempoModeMod = 0
   # NOTE if this isn't reset on each 'install', then it's technically possible it could decrease/increase to the value min/max
   ASS arpValueMode = 8004
   # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
   ASS gateMode = 0
+  # NOTE needs to be done in case reset occurs when on other gateMode, since this isn't reset by sysex
+  ASS gateModeMod = 0
   # NOTE if these aren't reset on each 'install', then it's technically possible they could increase to the value max
   ASS lfo1Type = 0
   ASS lfo2Type = 0
@@ -236,6 +243,7 @@ IF LOAD
   ASS lfo4Type = 0
   # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
   ASS lfoNum = 0
+
   # NOTE this is set to 'select' on initial load
   ASS previousDrumVal = 00
   ASS gateFactor = 1
@@ -275,6 +283,10 @@ IF LOAD
   ASS knob16Push = 0
   ASS knob16Turn = 0
   ASS groupKnobPush = 0
+  ASS lfo1PushPass = FFFF
+  ASS lfo2PushPass = FFFF
+  ASS lfo3PushPass = FFFF
+  ASS lfo4PushPass = FFFF
 
   # NOTE L array is used for lighting storage for push control - these are init values
   ASS L0 = 0E 00 64 00 00 00 00 00
@@ -427,6 +439,8 @@ IF M0 == F0
     # reset necessary local variables
     # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
     ASS tempoMode = 0
+    # NOTE needs to be done in case reset occurs when on other tempoMode
+    ASS tempoModeMod = 0
     # NOTE if this isn't reset on each 'install', then it's technically possible it could decrease/increase to the value min/max
     ASS arpValueMode = 8004
     # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
@@ -477,6 +491,10 @@ IF M0 == F0
     ASS knob16Push = 0
     ASS knob16Turn = 0
     ASS groupKnobPush = 0
+    ASS lfo1PushPass = FFFF
+    ASS lfo2PushPass = FFFF
+    ASS lfo3PushPass = FFFF
+    ASS lfo4PushPass = FFFF
 
     # NOTE L array is used for lighting storage for push control - these are init values
     ASS L0 = 0E 00 64 00 00 00 00 00
@@ -537,6 +555,7 @@ IF M0 == F0
     IF padMode == 1
       SEND F0 0F EE 90 03 01 F7 +F
     END
+    # TODO may not work if lighting not sent in correct order
     IF lfoNumMod == 0
       IF lfo1OnOffToggle == 1
         SEND F0 0F EE 90 04 01 F7 +F
@@ -706,6 +725,7 @@ IF M0 == F0
     LOG previousDrumVal previousDrumVal
     # END TEST
 
+    # TODO likely could inject L0 via message and have a similar effect
     # send tempo lighting
     IF tempoModeMod == 0
       IF tempoPulse == 48
@@ -983,278 +1003,197 @@ IF MT == 90
   END
   # END TEST
   IF setLfo == 0
+
+    # chain modulating lfos should not be impacted by the conditionals below, since push control should work with them when they are being modulated
+    # the reason push control caused issues for the other knobs was because the lfo information was getting sent directly back here for processing and turning on knobTurn inadvertently - with these two the processing all occurs in the lfo file
+
+    # assign knob4Push to true when knob4 is pushed - for push control
+    IF M1 == 3
+      ASS knob4Push = 1
+      # TEST
+      # ensure knobPush turned on accordingly
+      LOG knob4Push knob4Push
+      # END TEST
+    END
+
+    # assign knob5Push to true when knob5 is pushed - for push control
+    IF M1 == 4
+      ASS knob5Push = 1
+      # TEST
+      # ensure knobPush turned on accordingly
+      LOG knob5Push knob5Push
+      # END TEST
+    END
+
     # TODO this could likely be a subroutine
-    # assign knob1Push to true when knob1 is pushed - for push control
-    IF M1 == 0
-      IF lfo1Knob != 0
-        IF lfo2Knob != 0
-          IF lfo3Knob != 0
-            IF lfo4Knob != 0
+    # NOTE due to the complicated logic involved here and language syntax we had to try to keep it relatively clean here
+
+    # if there is an lfo currently modulating that is on
+    IF lfoMuteAll == 0
+      IF lfo1Knob == M1
+        IF lfo1OnOffToggle == 1
+          ASS lfo1PushPass = M1
+        END
+      END
+      IF lfo2Knob == M1
+        IF lfo2OnOffToggle == 1
+          ASS lfo2PushPass = M1
+        END
+      END
+      IF lfo3Knob == M1
+        IF lfo3OnOffToggle == 1
+          ASS lfo3PushPass = M1
+        END
+      END
+      IF lfo4Knob == M1
+        IF lfo4OnOffToggle == 1
+          ASS lfo4PushPass = M1
+        END
+      END
+    END
+
+    IF lfo1PushPass != M1
+      IF lfo2PushPass != M1
+        IF lfo3PushPass != M1
+          IF lfo4PushPass != M1
+
+            # assign knob1Push to true when knob1 is pushed - for push control
+            IF M1 == 0
               ASS knob1Push = 1
               # TEST
               # ensure knobPush turned on accordingly
               LOG knob1Push knob1Push
               # END TEST
             END
-          END
-        END
-      END
-    END
 
-    # assign knob2Push to true when knob2 is pushed - for push control
-    IF M1 == 1
-      IF lfo1Knob != 1
-        IF lfo2Knob != 1
-          IF lfo3Knob != 1
-            IF lfo4Knob != 1
+            # assign knob2Push to true when knob2 is pushed - for push control
+            IF M1 == 1
               ASS knob2Push = 1
               # TEST
               # ensure knobPush turned on accordingly
               LOG knob2Push knob2Push
               # END TEST
             END
-          END
-        END
-      END
-    END
 
-    # assign knob3Push to true when knob3 is pushed - for push control
-    IF M1 == 2
-      IF lfo1Knob != 2
-        IF lfo2Knob != 2
-          IF lfo3Knob != 2
-            IF lfo4Knob != 2
+            # assign knob3Push to true when knob3 is pushed - for push control
+            IF M1 == 2
               ASS knob3Push = 1
               # TEST
               # ensure knobPush turned on accordingly
               LOG knob3Push knob3Push
               # END TEST
             END
-          END
-        END
-      END
-    END
 
-    # assign knob4Push to true when knob4 is pushed - for push control
-    IF M1 == 3
-      IF lfo1Knob != 3
-        IF lfo2Knob != 3
-          IF lfo3Knob != 3
-            IF lfo4Knob != 3
-              ASS knob4Push = 1
-              # TEST
-              # ensure knobPush turned on accordingly
-              LOG knob4Push knob4Push
-              # END TEST
-            END
-          END
-        END
-      END
-    END
-
-    # assign knob5Push to true when knob5 is pushed - for push control
-    IF M1 == 4
-      IF lfo1Knob != 4
-        IF lfo2Knob != 4
-          IF lfo3Knob != 4
-            IF lfo4Knob != 4
-              ASS knob5Push = 1
-              # TEST
-              # ensure knobPush turned on accordingly
-              LOG knob5Push knob5Push
-              # END TEST
-            END
-          END
-        END
-      END
-    END
-
-    # assign knob6Push to true when knob6 is pushed - for push control
-    IF M1 == 5
-      IF lfo1Knob != 5
-        IF lfo2Knob != 5
-          IF lfo3Knob != 5
-            IF lfo4Knob != 5
+            # assign knob6Push to true when knob6 is pushed - for push control
+            IF M1 == 5
               ASS knob6Push = 1
               # TEST
               # ensure knobPush turned on accordingly
               LOG knob6Push knob6Push
               # END TEST
             END
-          END
-        END
-      END
-    END
 
-    # assign knob7Push to true when knob7 is pushed - for push control
-    IF M1 == 6
-      IF lfo1Knob != 6
-        IF lfo2Knob != 6
-          IF lfo3Knob != 6
-            IF lfo4Knob != 6
+            # assign knob7Push to true when knob7 is pushed - for push control
+            IF M1 == 6
               ASS knob7Push = 1
               # TEST
               # ensure knobPush turned on accordingly
               LOG knob7Push knob7Push
               # END TEST
             END
-          END
-        END
-      END
-    END
 
-    # assign knob8Push to true when knob8 is pushed - for push control
-    IF M1 == 7
-      IF lfo1Knob != 7
-        IF lfo2Knob != 7
-          IF lfo3Knob != 7
-            IF lfo4Knob != 7
+            # assign knob8Push to true when knob8 is pushed - for push control
+            IF M1 == 7
               ASS knob8Push = 1
               # TEST
               # ensure knobPush turned on accordingly
               LOG knob8Push knob8Push
               # END TEST
             END
-          END
-        END
-      END
-    END
 
-    # assign knob9Push to true when knob9 is pushed - for push control
-    IF M1 == 18
-      IF lfo1Knob != 18
-        IF lfo2Knob != 18
-          IF lfo3Knob != 18
-            IF lfo4Knob != 18
+            # assign knob9Push to true when knob9 is pushed - for push control
+            IF M1 == 18
               ASS knob9Push = 1
               # TEST
               # ensure knobPush turned on accordingly
               LOG knob9Push knob9Push
               # END TEST
             END
-          END
-        END
-      END
-    END
 
-    # assign knob10Push to true when knob10 is pushed - for push control
-    IF M1 == 19
-      IF lfo1Knob != 19
-        IF lfo2Knob != 19
-          IF lfo3Knob != 19
-            IF lfo4Knob != 19
+            # assign knob10Push to true when knob10 is pushed - for push control
+            IF M1 == 19
               ASS knob10Push = 1
               # TEST
               # ensure knobPush turned on accordingly
               LOG knob10Push knob10Push
               # END TEST
             END
-          END
-        END
-      END
-    END
 
-    # assign knob11Push to true when knob11 is pushed - for push control
-    IF M1 == 1A
-      IF lfo1Knob != 1A
-        IF lfo2Knob != 1A
-          IF lfo3Knob != 1A
-            IF lfo4Knob != 1A
+            # assign knob11Push to true when knob11 is pushed - for push control
+            IF M1 == 1A
               ASS knob11Push = 1
               # TEST
               # ensure knobPush turned on accordingly
               LOG knob11Push knob11Push
               # END TEST
             END
-          END
-        END
-      END
-    END
 
-    # assign knob12Push to true when knob12 is pushed - for push control
-    IF M1 == 1B
-      IF lfo1Knob != 1B
-        IF lfo2Knob != 1B
-          IF lfo3Knob != 1B
-            IF lfo4Knob != 1B
+            # assign knob12Push to true when knob12 is pushed - for push control
+            IF M1 == 1B
               ASS knob12Push = 1
               # TEST
               # ensure knobPush turned on accordingly
               LOG knob12Push knob12Push
               # END TEST
             END
-          END
-        END
-      END
-    END
 
-    # assign knob13Push to true when knob13 is pushed - for push control
-    IF M1 == 1C
-      IF lfo1Knob != 1C
-        IF lfo2Knob != 1C
-          IF lfo3Knob != 1C
-            IF lfo4Knob != 1C
+            # assign knob13Push to true when knob13 is pushed - for push control
+            IF M1 == 1C
               ASS knob13Push = 1
               # TEST
               # ensure knobPush turned on accordingly
               LOG knob13Push knob13Push
               # END TEST
             END
-          END
-        END
-      END
-    END
 
-    # assign knob14Push to true when knob14 is pushed - for push control
-    IF M1 == 1D
-      IF lfo1Knob != 1D
-        IF lfo2Knob != 1D
-          IF lfo3Knob != 1D
-            IF lfo4Knob != 1D
+            # assign knob14Push to true when knob14 is pushed - for push control
+            IF M1 == 1D
               ASS knob14Push = 1
               # TEST
               # ensure knobPush turned on accordingly
               LOG knob14Push knob14Push
               # END TEST
             END
-          END
-        END
-      END
-    END
 
-    # assign knob15Push to true when knob15 is pushed - for push control
-    IF M1 == 1E
-      IF lfo1Knob != 1E
-        IF lfo2Knob != 1E
-          IF lfo3Knob != 1E
-            IF lfo4Knob != 1E
+            # assign knob15Push to true when knob15 is pushed - for push control
+            IF M1 == 1E
               ASS knob15Push = 1
               # TEST
               # ensure knobPush turned on accordingly
               LOG knob15Push knob15Push
               # END TEST
             END
-          END
-        END
-      END
-    END
 
-    # assign knob16Push to true when knob16 is pushed - for push control
-    IF M1 == 1F
-      IF lfo1Knob != 1F
-        IF lfo2Knob != 1F
-          IF lfo3Knob != 1F
-            IF lfo4Knob != 1F
+            # assign knob16Push to true when knob16 is pushed - for push control
+            IF M1 == 1F
               ASS knob16Push = 1
               # TEST
               # ensure knobPush turned on accordingly
               LOG knob16Push knob16Push
               # END TEST
             END
+
           END
         END
       END
     END
+    
+    # reset lfo push pass here - could use else statements in logic above as well
+    ASS lfo1PushPass = FFFF
+    ASS lfo2PushPass = FFFF
+    ASS lfo3PushPass = FFFF
+    ASS lfo4PushPass = FFFF
+
   END
 
   # if it is a button 1 push
@@ -2347,7 +2286,11 @@ IF MT == 80
             IF lfo1Knob < 8
               IF M1 < 8
                 MATH knobTemp = lfo1Knob + 1
-                SEND F0 0F EE BA knobTemp LJ3D F7 +F
+                IF M1 == 0
+                  SEND BA knobTemp LJ3D +I
+                ELSE
+                  SEND F0 0F EE BA knobTemp LJ3D F7 +F
+                END
               END
             END
           END
@@ -2407,7 +2350,11 @@ IF MT == 80
                 IF lfo2Knob != 3
                   IF lfo2Knob != 4
                     MATH knobTemp = lfo2Knob + 1
-                    SEND F0 0F EE BA knobTemp LJ3E F7 +F
+                    IF M1 == 0
+                      SEND BA knobTemp LJ3E +I
+                    ELSE
+                      SEND F0 0F EE BA knobTemp LJ3E F7 +F
+                    END
                   END
                 END
               END
@@ -2473,7 +2420,11 @@ IF MT == 80
                 IF lfo3Knob != 3
                   IF lfo3Knob != 4
                     MATH knobTemp = lfo3Knob + 1
-                    SEND F0 0F EE BA knobTemp LJ3F F7 +F
+                    IF M1 == 0
+                      SEND BA knobTemp LJ3F +I
+                    ELSE
+                      SEND F0 0F EE BA knobTemp LJ3F F7 +F
+                    END
                   END
                 END
               END
@@ -2539,7 +2490,11 @@ IF MT == 80
                 IF lfo4Knob != 3
                   IF lfo4Knob != 4
                     MATH knobTemp = lfo4Knob + 1
-                    SEND F0 0F EE BA knobTemp LJ40 F7 +F
+                    IF M1 == 0
+                      SEND BA knobTemp LJ40 +I
+                    ELSE
+                      SEND F0 0F EE BA knobTemp LJ40 F7 +F
+                    END
                   END
                 END
               END
@@ -3280,9 +3235,61 @@ IF MT == 80
     # set tempo mode to variable modulo 4
     MATH tempoModeMod = tempoMode % 4
     SEND F0 01 18 tempoModeMod F7 +F
+
     IF tempoModeMod == 0
       ASS tempoPulse = $24
       SEND F0 CC 03 tempoPulse F7 +F
+    END
+    # set each tempoPulse to default value on switching
+    # also send data to xtouch to reflect this
+    IF tempoModeMod == 1
+      ASS tempoPulse = $24
+      SEND F0 CC 03 tempoPulse F7 +F
+    END
+    IF tempoModeMod == 2
+      ASS tempoPulse = $24
+      SEND F0 CC 03 tempoPulse F7 +F
+    END
+    IF tempoModeMod == 3
+      ASS tempoPulse = $18
+      SEND F0 CC 03 tempoPulse F7 +F
+    END
+
+    # don't send lighting / L array val if knob is actively being modulated
+    IF lfo1Knob == 0
+      IF lfo1OnOffToggle == 1
+        IF lfoMuteAll == 0
+          BLOCK
+          EXIT
+        END
+      END
+    END
+    IF lfo2Knob == 0
+      IF lfo2OnOffToggle == 1
+        IF lfoMuteAll == 0
+          BLOCK
+          EXIT
+        END
+      END
+    END
+    IF lfo3Knob == 0
+      IF lfo3OnOffToggle == 1
+        IF lfoMuteAll == 0
+          BLOCK
+          EXIT
+        END
+      END
+    END
+    IF lfo4Knob == 0
+      IF lfo4OnOffToggle == 1
+        IF lfoMuteAll == 0
+          BLOCK
+          EXIT
+        END
+      END
+    END
+
+    IF tempoModeMod == 0
       SEND F0 0F EE BA 01 $26 F7 +F
       ASS L0 = $14
       # TEST
@@ -3292,8 +3299,6 @@ IF MT == 80
     # set each tempoPulse to default value on switching
     # also send data to xtouch to reflect this
     IF tempoModeMod == 1
-      ASS tempoPulse = $24
-      SEND F0 CC 03 tempoPulse F7 +F
       SEND F0 0F EE BA 01 00 F7 +F
       ASS L0 = 00
       # TEST
@@ -3301,8 +3306,6 @@ IF MT == 80
       # END TEST
     END
     IF tempoModeMod == 2
-      ASS tempoPulse = $24
-      SEND F0 CC 03 tempoPulse F7 +F
       SEND F0 0F EE BA 01 $50 F7 +F
       ASS L0 = $26
       # TEST
@@ -3310,14 +3313,13 @@ IF MT == 80
       # END TEST
     END
     IF tempoModeMod == 3
-      ASS tempoPulse = $18
-      SEND F0 CC 03 tempoPulse F7 +F
       SEND F0 0F EE BA 01 $50 F7 +F
       ASS L0 = $26
       # TEST
       LOG L0 L0
       # END TEST
     END
+
     # TEST
     # ensure tempoModeMod changes accordingly and tempoPulse correlates
     LOG tempoMode tempoModeMod
@@ -3333,6 +3335,25 @@ IF MT == 80
     # NOTE preventing the light from sending will change the length more quickly, more easily
     # NOTE will be testing with live to see best setup here
     MATH gateModeMod = gateMode % 6
+
+    IF gateModeMod == 0
+      ASS gateFactor = 1
+    END
+    IF gateModeMod == 1
+      ASS gateFactor = 2
+    END
+    IF gateModeMod == 2
+      ASS gateFactor = 5
+    END
+    IF gateModeMod == 3
+      ASS gateFactor = 10
+    END
+    IF gateModeMod == 4
+      ASS gateFactor = 20
+    END
+    IF gateModeMod == 5
+      ASS gateFactor = 40
+    END
 
     # don't send lighting / L array val if knob is actively being modulated
     IF lfo1Knob == 1
@@ -3368,54 +3389,12 @@ IF MT == 80
       END
     END
 
-    IF gateModeMod == 0
-      ASS gateFactor = 1
-      SEND F0 0F EE BA 02 00 F7 +F
-      ASS L1 = 00
-      # TEST
-      LOG L1 L1
-      # END TEST
-    END
-    IF gateModeMod == 1
-      ASS gateFactor = 2
-      SEND F0 0F EE BA 02 00 F7 +F
-      ASS L1 = 00
-      # TEST
-      LOG L1 L1
-      # END TEST
-    END
-    IF gateModeMod == 2
-      ASS gateFactor = 5
-      SEND F0 0F EE BA 02 00 F7 +F
-      ASS L1 = 00
-      # TEST
-      LOG L1 L1
-      # END TEST
-    END
-    IF gateModeMod == 3
-      ASS gateFactor = 10
-      SEND F0 0F EE BA 02 00 F7 +F
-      ASS L1 = 00
-      # TEST
-      LOG L1 L1
-      # END TEST
-    END
-    IF gateModeMod == 4
-      ASS gateFactor = 20
-      SEND F0 0F EE BA 02 00 F7 +F
-      ASS L1 = 00
-      # TEST
-      LOG L1 L1
-      # END TEST
-    END
-    IF gateModeMod == 5
-      ASS gateFactor = 40
-      SEND F0 0F EE BA 02 00 F7 +F
-      ASS L1 = 00
-      # TEST
-      LOG L1 L1
-      # END TEST
-    END
+    SEND F0 0F EE BA 02 00 F7 +F
+    ASS L1 = 00
+    # TEST
+    LOG L1 L1
+    # END TEST
+
     # TEST
     # ensure gateModeMod changes accordingly and gate correlates
     LOG gateMode gateModeMod
@@ -3525,10 +3504,18 @@ IF MT == 80
       END
       # send flashing lights if chain modulating
       IF lfo2Knob == 3
-        SEND F0 0F EE B0 0C 1C F7 +F
+        IF lfoMuteAll == 0
+          IF lfo2OnOffToggle == 1
+            SEND F0 0F EE B0 0C 1C F7 +F
+          END
+        END
       END
       IF lfo2Knob == 4
-        SEND F0 0F EE B0 0D 1C F7 +F
+        IF lfoMuteAll == 0
+          IF lfo2OnOffToggle == 1
+            SEND F0 0F EE B0 0D 1C F7 +F
+          END
+        END
       END
     END
     IF lfoNumMod == 1
@@ -3564,10 +3551,18 @@ IF MT == 80
       END
       # send flashing lights if chain modulating
       IF lfo3Knob == 3
-        SEND F0 0F EE B0 0C 1C F7 +F
+        IF lfoMuteAll == 0
+          IF lfo3OnOffToggle == 1
+            SEND F0 0F EE B0 0C 1C F7 +F
+          END
+        END
       END
       IF lfo3Knob == 4
-        SEND F0 0F EE B0 0D 1C F7 +F
+        IF lfoMuteAll == 0
+          IF lfo3OnOffToggle == 1
+            SEND F0 0F EE B0 0D 1C F7 +F
+          END
+        END
       END
     END
     IF lfoNumMod == 2
@@ -3603,10 +3598,18 @@ IF MT == 80
       END
       # send flashing lights if chain modulating
       IF lfo4Knob == 3
-        SEND F0 0F EE B0 0C 1C F7 +F
+        IF lfoMuteAll == 0
+          IF lfo4OnOffToggle == 1
+            SEND F0 0F EE B0 0C 1C F7 +F
+          END
+        END
       END
       IF lfo4Knob == 4
-        SEND F0 0F EE B0 0D 1C F7 +F
+        IF lfoMuteAll == 0
+          IF lfo4OnOffToggle == 1
+            SEND F0 0F EE B0 0D 1C F7 +F
+          END
+        END
       END
     END
     IF lfoNumMod == 3
@@ -4374,7 +4377,11 @@ IF MT == 80
       IF lfoMuteAll == 0
         IF lfo1Knob < 8
           MATH knobTemp = lfo1Knob + 1
-          SEND F0 0F EE BA knobTemp LJ3D F7 +F
+          IF lfo1Knob == 0
+            SEND BA knobTemp LJ3D +I
+          ELSE
+            SEND F0 0F EE BA knobTemp LJ3D F7 +F
+          END
         END
       END
     END
@@ -4414,12 +4421,17 @@ IF MT == 80
               SEND F0 0F EE BA 05 LJ3E F7 +F
             END
           END
-          IF lfo2Knob < 3
-            MATH knobTemp = lfo2Knob + 1
+          MATH knobTemp = lfo2Knob + 1
+          IF lfo2Knob == 0
+            SEND BA knobTemp LJ3E +I
+          END
+          IF lfo2Knob == 1
+            SEND F0 0F EE BA knobTemp LJ3E F7 +F
+          END
+          IF lfo2Knob == 2
             SEND F0 0F EE BA knobTemp LJ3E F7 +F
           END
           IF lfo2Knob > 4
-            MATH knobTemp = lfo2Knob + 1
             SEND F0 0F EE BA knobTemp LJ3E F7 +F
           END
         END
@@ -4461,12 +4473,17 @@ IF MT == 80
               SEND F0 0F EE BA 05 LJ3F F7 +F
             END
           END
-          IF lfo3Knob < 3
-            MATH knobTemp = lfo3Knob + 1
+          MATH knobTemp = lfo3Knob + 1
+          IF lfo3Knob == 0
+            SEND BA knobTemp LJ3F +I
+          END
+          IF lfo3Knob == 1
+            SEND F0 0F EE BA knobTemp LJ3F F7 +F
+          END
+          IF lfo3Knob == 2
             SEND F0 0F EE BA knobTemp LJ3F F7 +F
           END
           IF lfo3Knob > 4
-            MATH knobTemp = lfo3Knob + 1
             SEND F0 0F EE BA knobTemp LJ3F F7 +F
           END
         END
@@ -4508,12 +4525,17 @@ IF MT == 80
               SEND F0 0F EE BA 05 LJ40 F7 +F
             END
           END
-          IF lfo4Knob < 3
-            MATH knobTemp = lfo4Knob + 1
+          MATH knobTemp = lfo4Knob + 1
+          IF lfo4Knob == 0
+            SEND BA knobTemp LJ40 +I
+          END
+          IF lfo4Knob == 1
+            SEND F0 0F EE BA knobTemp LJ40 F7 +F
+          END
+          IF lfo4Knob == 2
             SEND F0 0F EE BA knobTemp LJ40 F7 +F
           END
           IF lfo4Knob > 4
-            MATH knobTemp = lfo4Knob + 1
             SEND F0 0F EE BA knobTemp LJ40 F7 +F
           END
         END
@@ -4527,8 +4549,12 @@ IF MT == 80
       IF lfo1OnOffToggle == 1
         # no chain modulation from lfo 1
         IF lfo1Knob < 8
-          MATH knobTemp = lfo1Knob + 1
-          SEND F0 0F EE BA knobTemp LJ3D F7 +F
+          MATH knobTemp = lfo3Knob + 1
+          IF lfo1Knob == 0
+            SEND BA knobTemp LJ3D +I
+          ELSE
+            SEND F0 0F EE BA knobTemp LJ3D F7 +F
+          END
         END
       END
       IF lfo2OnOffToggle == 1
@@ -4541,8 +4567,14 @@ IF MT == 80
               SEND F0 0F EE BA 05 LJ3E F7 +F
             END
           END
-          IF lfo2Knob < 3
-            MATH knobTemp = lfo2Knob + 1
+          MATH knobTemp = lfo2Knob + 1
+          IF lfo2Knob == 0
+            SEND BA knobTemp LJ3E +I
+          END
+          IF lfo2Knob == 1
+            SEND F0 0F EE BA knobTemp LJ3E F7 +F
+          END
+          IF lfo2Knob == 2
             SEND F0 0F EE BA knobTemp LJ3E F7 +F
           END
           IF lfo2Knob > 4
@@ -4561,8 +4593,14 @@ IF MT == 80
               SEND F0 0F EE BA 05 LJ3F F7 +F
             END
           END
-          IF lfo3Knob < 3
-            MATH knobTemp = lfo3Knob + 1
+          MATH knobTemp = lfo3Knob + 1
+          IF lfo3Knob == 0
+            SEND BA knobTemp LJ3F +I
+          END
+          IF lfo3Knob == 1
+            SEND F0 0F EE BA knobTemp LJ3F F7 +F
+          END
+          IF lfo3Knob == 2
             SEND F0 0F EE BA knobTemp LJ3F F7 +F
           END
           IF lfo3Knob > 4
@@ -4581,8 +4619,14 @@ IF MT == 80
               SEND F0 0F EE BA 05 LJ40 F7 +F
             END
           END
-          IF lfo4Knob < 3
-            MATH knobTemp = lfo4Knob + 1
+          MATH knobTemp = lfo4Knob + 1
+          IF lfo4Knob == 0
+            SEND BA knobTemp LJ40 +I
+          END
+          IF lfo4Knob == 1
+            SEND F0 0F EE BA knobTemp LJ40 F7 +F
+          END
+          IF lfo4Knob == 2
             SEND F0 0F EE BA knobTemp LJ40 F7 +F
           END
           IF lfo4Knob > 4
@@ -5351,7 +5395,9 @@ IF MT == B0
           BX = XX +B
           SEND F0 CC 03 tempoPulse F7 +F
           SEND F0 0F EE BA 01 00 F7 +F
-          ASS L0 = $24
+          IF knob1Push == 0
+            ASS L0 = $24
+          END
         END
       END
       # if knob value is 49
@@ -5475,7 +5521,9 @@ IF MT == B0
           BX = XX +B
           SEND F0 CC 03 tempoPulse F7 +F
           SEND F0 0F EE BA 01 00 F7 +F
-          ASS L0 = $24
+          IF knob1Push == 0
+            ASS L0 = $24
+          END
         END
       END
       # if knob value is 49
@@ -5599,7 +5647,9 @@ IF MT == B0
           BX = XX +B
           SEND F0 CC 03 tempoPulse F7 +F
           SEND F0 0F EE BA 01 00 F7 +F
-          ASS L0 = $24
+          IF knob1Push == 0
+            ASS L0 = $24
+          END
         END
       END
       # if knob value is 49
@@ -5656,6 +5706,7 @@ IF MT == B0
     LOG tempoPulse tempoPulse
     LOG L0_SET
     LOG L0 L0
+    LOG tempoModeMod tempoModeMod
     # END TEST
   END
   # if knob is 2 (gate)
