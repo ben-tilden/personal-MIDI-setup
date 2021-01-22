@@ -13,7 +13,6 @@
 
 
 
-
 # xtouch mini
 
 # this file builds out the arpeggiator / drum roll for each channel
@@ -4549,7 +4548,7 @@ IF MT == 80
       IF lfo1OnOffToggle == 1
         # no chain modulation from lfo 1
         IF lfo1Knob < 8
-          MATH knobTemp = lfo3Knob + 1
+          MATH knobTemp = lfo1Knob + 1
           IF lfo1Knob == 0
             SEND BA knobTemp LJ3D +I
           ELSE

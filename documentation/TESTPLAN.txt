@@ -26,8 +26,8 @@
 # button push
 
   # ensure knobPush turned on accordingly
-  # ensure modulated knobs not included when turned on and lfoMuteAll is off # TODO
-    # ensure knobs 4 and 5 are excluded from this # TODO
+  # ensure modulated knobs not included when turned on and lfoMuteAll is off
+    # ensure knobs 4 and 5 are excluded from this
 
   # ensure push control does not work when setLfo is on
 
