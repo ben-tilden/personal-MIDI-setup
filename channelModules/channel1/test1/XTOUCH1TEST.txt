@@ -4,6 +4,8 @@
 
 # add channel specific CC's
   # fm, bass, sample, drum
+# add channel specific padMode value
+# set init for local setup and sampleext
 
 # TEST NOTES
 # NOTE switching modes on the xtouch (from 'A' to 'B' or otherwise) while a button is currently physically pushed down will cause an issue if that button is released after mode switch
@@ -164,6 +166,7 @@ IF LOAD
   ALIAS I34 lfo2PushPass
   ALIAS I35 lfo3PushPass
   ALIAS I36 lfo4PushPass
+  ALIAS previousTrackingMode # channel specific # TODO # TODO add to channel specific variables as well
 
   # sysex
 
@@ -177,6 +180,7 @@ IF LOAD
   ALIAS JB latch
   ALIAS JC padMode
   ALIAS JD lfoNumMod
+  ALIAS JE trackingMode # channel specific
   # TODO
   ALIAS J10 lfoTypeMod
   ALIAS J15 arpModeSwitched # NOTE gateOpened
@@ -429,6 +433,7 @@ IF M0 == F0
     ASS latch = 0
     ASS padMode = 0
     ASS lfoNumMod = 0
+    ASS trackingMode = 0 # channel specific
     ASS lfoTypeMod = 0
     ASS arpModeSwitched = 0
     ASS lfo1Rate = 0
@@ -479,6 +484,7 @@ IF M0 == F0
     ASS lfoNum = 0
     # NOTE this is set to 'select' on initial load
     ASS previousDrumVal = 00
+    ASS previousTrackingMode = 00 # channel specific
     ASS gateFactor = 1
     ASS programChange = 0
 
@@ -583,9 +589,6 @@ IF M0 == F0
     IF padMode == 1
       SEND F0 0F EE 90 03 01 F7 +F
     END
-    # TODO padMode is more of a universal concept - could use a global variable instead of sending sysex
-    # or also could send automatically based on channel information - seems like the most natural next step
-    # for now keeping it channel specific
     SEND F0 11 0C padMode F7 +F
     # TODO may not work if lighting not sent in correct order
     IF lfoNumMod == 0
@@ -1999,6 +2002,48 @@ IF MT == 90
   END
 
   # channel specific
+
+  # tracking off
+  IF M1 == 25 7F
+    ASS trackingMode = 0
+    IF previousTrackingMode != 5
+      SEND F0 0F EE 90 previousTrackingMode 00 F7 +F
+    END
+    SEND F0 11 1F trackingMode F7 +F
+
+    # TEST
+    # ensure trackingMode is assigned according to correct buttons
+    LOG trackingMode trackingMode
+    # END TEST
+  END
+
+  # tracking mode double
+  IF M1 == 24 7F
+    ASS trackingMode = 2
+    IF previousTrackingMode != 4
+      SEND F0 0F EE 90 previousTrackingMode 00 F7 +F
+    END
+    SEND F0 11 1F trackingMode F7 +F
+
+    # TEST
+    # ensure trackingMode is assigned according to correct buttons
+    LOG trackingMode trackingMode
+    # END TEST
+  END
+
+  # tracking mode single
+  IF M1 == 2C 7F
+    ASS trackingMode = 1
+    IF previousTrackingMode != C
+      SEND F0 0F EE 90 previousTrackingMode 00 F7 +F
+    END
+    SEND F0 11 1F trackingMode F7 +F
+
+    # TEST
+    # ensure trackingMode is assigned according to correct buttons
+    LOG trackingMode trackingMode
+    # END TEST
+  END
 
   # if knob is pressed and a drumParam is changed, the value in the L array will not match up correctly
   # NOTE monitor for actions that this may be blocking that are unrelated to drum
@@ -4870,6 +4915,19 @@ IF MT == 80
       LOG PITCH_QUANTIZED
     END
     # END TEST
+  END
+
+  IF M1 == 25 00
+    SEND F0 0F EE 90 05 01 F7 +F
+    ASS previousTrackingMode = 05
+  END
+  IF M1 == 24 00
+    SEND F0 0F EE 90 04 01 F7 +F
+    ASS previousTrackingMode = 04
+  END
+  IF M1 == 2C 00
+    SEND F0 0F EE 90 0C 01 F7 +F
+    ASS previousTrackingMode = 0C
   END
 
   # if knob is pressed and a drumParam is changed, the value in the L array will not match up correctly

@@ -1,6 +1,6 @@
 # launchkey to xtouch filter
 
-# filter messages that don't have FF or FC as their routing (CC)
+# filter messages that don't have FF or FC as their routing (CC, 11)
 
 # messages expected:
 
@@ -13,8 +13,10 @@
 # BLOCK | F0 CC    08    val  F7      phraseVal                
 # ALLOW | F0 FF    09    val  F7      phraseIndex              
 # BLOCK | F0 CC    0A    val  F7      phraseLengthPlusOffset   
+# BLOCK | F0 11    0C    val  F7      padMode
 # BLOCK | F0 CC/FF 19    60   F7      gateOpened               
 # BLOCK | F0 CC    index val1 val2 F7 phraseOffsetValues               
+# BLOCK | F0 11    1F    val  F7      trackingMode
 # BLOCK | F0 CC 20 val1 val2 val3 val4 val5 val6 val7 val8 val9 val10 F7 arpValues
 
 # BLOCK | any channel specific note and CC messages

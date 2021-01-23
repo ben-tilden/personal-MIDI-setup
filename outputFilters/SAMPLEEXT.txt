@@ -6,9 +6,27 @@ IF LOAD
   ASS padMode = 0
   # see 4.
   ASS K0 = 1C # remote control event
-  ASS L0 = 64 +P # current fixed velocity
+  ASS L0 = 64 # current fixed velocity
   SET LB0 SVEL # set labels to current velocity
   SET LB1 L0 +D
+END
+
+# sysex reception
+
+# init
+IF M0 == F0
+  IF M2 == 1C
+    # see 2.
+    ALIAS I0 padMode
+    ASS padMode = 0
+    # see 4.
+    ASS K0 = 1C # remote control event
+    ASS L0 = 64 # current fixed velocity
+    SET LB0 SVEL # set labels to current velocity
+    SET LB1 L0 +D
+    BLOCK
+    EXIT
+  END
 END
 
 # 1. block interfering MIDI
@@ -29,7 +47,6 @@ NC-F = XX +B
 # 2. switch MIDI for sample
 
 # sysex reception
-# TODO send 0 on init
 
 IF M0 == F0
   IF M2 == 0C

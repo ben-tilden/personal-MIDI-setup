@@ -5,38 +5,62 @@
 # option to add slapback
 
 IF LOAD
-  SET Q2 +H
-  SET Q3 +H
-  SET Q7 +H
+  # uncomment (and add more) to further set up information here
+  # SET Q2 +H
+  # SET Q3 +H
+  # SET Q7 +H
   # see 1.
   ALIAS I0 padMode
   ASS padMode = 0
   # see 2.
-  SET Q3 DRUM_TRACKING 1 3 +MENU
+  SET Q3 DRUM_TRACKING 0 2 +MENU
   # see 3.
   ASS J0 = 0
   ASS J1 = 0
   ASS J2 = 0
   ASS J3 = 0
-  # see 4.
-  ASS K3 = 0B # remote control event
-  ASS K4 = 31 # remote control event
-  ASS K5 = 05 # remote control event
-  SET Q4 BASS_EXPR
-  SET Q5 BASS_GATE
-  SET Q6 BASS_SLIDE
-  ASS Q4 = 64 +P # current fixed EXPR
-  ASS Q5 = 64 +P # current fixed GATE
-  ASS Q6 = 64 +P # current fixed SLIDE
   # see 6.
   ASS K0 = 7F # remote control event
   SET Q1 VELOCITY
-  ASS Q1 = 64 +P # current fixed velocity
+  ASS Q1 = 64 # current fixed velocity
   # see 7.
   ASS K1 = 7E # remote control event
   ASS K2 = 0
   SET Q0 INTERVAL $-12 $12
-  ASS Q0 = 0 +P # current fixed interval level
+  ASS Q0 = 0 # current fixed interval level
+END
+
+# sysex reception
+
+# init
+IF M0 == F0
+  IF M2 == 1C
+    # uncomment (and add more) to further set up information here
+    # SET Q2 +H
+    # SET Q3 +H
+    # SET Q7 +H
+    # see 1.
+    ALIAS I0 padMode
+    ASS padMode = 0
+    # see 2.
+    SET Q3 DRUM_TRACKING 0 2 +MENU
+    # see 3.
+    ASS J0 = 0
+    ASS J1 = 0
+    ASS J2 = 0
+    ASS J3 = 0
+    # see 6.
+    ASS K0 = 7F # remote control event
+    SET Q1 VELOCITY
+    ASS Q1 = 64 # current fixed velocity
+    # see 7.
+    ASS K1 = 7E # remote control event
+    ASS K2 = 0
+    SET Q0 INTERVAL $-12 $12
+    ASS Q0 = 0 # current fixed interval level
+    BLOCK
+    EXIT
+  END
 END
 
 # 1. switch MIDI from Beats
@@ -63,8 +87,22 @@ END
 
 # 3. chromaticize keys volca drum
 
+# sysex reception
+
+IF M0 == F0
+  IF M2 == 1F
+    ASS Q3 = M3
+    # TEST
+    # ensure localsetup receives trackingMode
+    LOG trackingMode_SYSEX_RECEIVED Q3
+    # END TEST
+    BLOCK
+    EXIT
+  END
+END
+
 # if tracking is on
-IF Q3 != 3
+IF Q3 != 0
   # if M0 is a note in the current channel, send the channel (J1), pitch control, and note number (J0)
   MAT J2 = MC + 90
   IF M0 == J2
@@ -72,7 +110,7 @@ IF Q3 != 3
       MAT J0 = MC + B0
       MAT J1 = M1 + 1
       # if tracking is set to 1 part
-      IF Q3 == 2
+      IF Q3 == 1
         SND J0 1C J1
       ELSE
         # I0 is divided into 25 separate groups, ranging 5 values from -12 to +12 semitones (with quantized pitch)
@@ -398,32 +436,6 @@ N9 2F = X5 3C # remap 47 to 69 for channel 10 volca drum pt 6
 
 BX 6C 7F = FA # map start control
 BX 6D 7F = FC # map stop control
-
-# mapping hidden MIDI for bass
-B7 15 = B7 0B # expression to knob 1
-B7 16 = B7 31 # gate time to knob 2
-B7 17 = B7 05 # slide time to knob 3
-
-# adding expression to slider
-IF M0 == B7
-  IF M1 == K3
-    ASS Q4 = M2
-  END
-END
-
-# adding gate time to slider
-IF M0 == B7
-  IF M1 == K4
-    ASS Q5 = M2
-  END
-END
-
-# adding slide time to slider
-IF M0 == B7
-  IF M1 == K5
-    ASS Q6 = M2
-  END
-END
 
 # mapping drum
 
