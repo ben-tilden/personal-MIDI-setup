@@ -44,7 +44,9 @@
   # ensure setLfo is toggling
   # ensure setLfo unable to be toggled if push control active
 
-  # ensure padMode is toggling
+  # ensure padMode is toggling # TODO
+  # ensure localsetup receives padMode # TODO
+  # ensure sampleext receives padMode # TODO
 
   # ensure lfos are toggling and lfo modulation lighting corresponds
   # ensure gate lighting functions as expected when gate is modulated

@@ -2,10 +2,8 @@
 
 IF LOAD
   # see 2.
-  ALIAS I0 CNT
-  ASS CNT = 0
-  ALIAS I1 TGL
-  ASS TGL = 0
+  ALIAS I0 padMode
+  ASS padMode = 0
   # see 4.
   ASS K0 = 1C # remote control event
   ASS L0 = 64 +P # current fixed velocity
@@ -30,24 +28,23 @@ NC-F = XX +B
 
 # 2. switch MIDI for sample
 
-# If a control message and scene change, change scene upward
-IF MT == B0
-  IF M1 == 68 7F
-    MAT CNT = CNT + 1
-    MAT TGL = CNT % 2
+# sysex reception
+# TODO send 0 on init
+
+IF M0 == F0
+  IF M2 == 0C
+    ASS padMode = M3
+    # TEST
+    # ensure sampleext receives padMode
+    LOG padMode_SYSEX_RECEIVED padMode
+    # END TEST
+    BLOCK
+    EXIT
   END
 END
 
-# If a control message and scene change, change scene downward
-IF MT == B0
-  IF M1 == 69 7F
-    MAT CNT = CNT - 1
-    MAT TGL = CNT % 2
-  END
-END
-
-# If toggle is zero, block all of channel 10
-IF TGL == 0
+# If padMode is zero, block all of channel 10
+IF padMode == 0
   N9 = XX +B
   B9 0-1B = XX +B
   B9 1D-67 = XX +B
@@ -55,8 +52,8 @@ IF TGL == 0
   B9 6E-7F = XX +B
 END
 
-# If toggle is one, block all of channel 10 except 24 - 2C and 30
-IF TGL == 1
+# If padMode is one, block all of channel 10 except 24 - 2C and 30
+IF padMode == 1
   N9 00-23 = XX XX +B
   N9 2D-2F = XX XX +B
   N9 31-7F = XX XX +B

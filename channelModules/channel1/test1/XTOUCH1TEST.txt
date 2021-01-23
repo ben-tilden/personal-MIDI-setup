@@ -8,8 +8,6 @@
 # TEST NOTES
 # NOTE switching modes on the xtouch (from 'A' to 'B' or otherwise) while a button is currently physically pushed down will cause an issue if that button is released after mode switch
 # NOTE knobs modulated by lfos should not be turned (unless chain modulated); they will resolve cleanly if turned, but lighting will be lost
-# TODO add channel specific variables
-# TODO add padMode interpretation
 # NOTE could add knob to change channel instead of launchkey button
 # NOTE it's possible to create arrays just via offset and iterate through rather than have x if statements as seen here
 
@@ -94,7 +92,20 @@ IF LOAD
 
   # constant
 
-  ALIAS 00 channelVal # channel specific (obviously)
+  # channel specific
+
+  ALIAS 00 channelVal
+  ALIAS 0A knob6Val
+  ALIAS 34 knob7Val
+  ALIAS 33 knob8Val
+  ALIAS FFFF knob9Val # drumParams
+  ALIAS FFFF knob10Val # drumParams
+  ALIAS FFFF knob11Val # drumParams
+  ALIAS 67 knob12Val
+  ALIAS 31 knob13Val
+  ALIAS 32 knob14Val
+  ALIAS FFFF knob15Val # unspecified
+  ALIAS FFFF knob16Val # unspecified
 
   # local
 
@@ -198,10 +209,10 @@ IF LOAD
   ALIAS J3A lfo2Invert
   ALIAS J3B lfo3Invert
   ALIAS J3C lfo4Invert
-  ALIAS J3D lfo1Knob # TODO used as index
-  ALIAS J3E lfo2Knob # TODO used as index
-  ALIAS J3F lfo3Knob # TODO used as index
-  ALIAS J40 lfo4Knob # TODO used as index
+  ALIAS J3D lfo1Knob # NOTE used as index (also NOTE this is not listed for all indices)
+  ALIAS J3E lfo2Knob # NOTE used as index
+  ALIAS J3F lfo3Knob # NOTE used as index
+  ALIAS J40 lfo4Knob # NOTE used as index
 
   # channel specific
 
@@ -518,6 +529,9 @@ IF M0 == F0
 
     ASS K0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0E 0F 10
 
+    # send pad mode
+    SEND F0 11 0C padMode F7 +F
+
     # send init tempo lighting
     SEND F0 0F EE BA 01 $26 F7 +F
     # send init velocity lighting
@@ -569,6 +583,10 @@ IF M0 == F0
     IF padMode == 1
       SEND F0 0F EE 90 03 01 F7 +F
     END
+    # TODO padMode is more of a universal concept - could use a global variable instead of sending sysex
+    # or also could send automatically based on channel information - seems like the most natural next step
+    # for now keeping it channel specific
+    SEND F0 11 0C padMode F7 +F
     # TODO may not work if lighting not sent in correct order
     IF lfoNumMod == 0
       IF lfo1OnOffToggle == 1
@@ -894,6 +912,9 @@ IF M0 == F0
       LOG lfo4Rate lfo4Rate
       LOG lfo4Depth lfo4Depth
     END
+
+    # channel specific
+
     IF drumParams == $14
       LOG select1 select1
       LOG select2 select2
@@ -1353,12 +1374,11 @@ IF MT == 90
     # isBeats
     IF padMode == 0
       ASS padMode = 1
-      SEND F0 11 0C padMode F7 +F
     # isSample
     ELSE
       ASS padMode = 0
-      SEND F0 11 0C padMode F7 +F
     END
+    SEND F0 11 0C padMode F7 +F
     # TEST
     # ensure padMode is toggling
     IF padMode == 0
@@ -2912,7 +2932,8 @@ IF MT == 80
         # ensure lighting matches with L array
         # ensure L array matches with previous value
         # ensure parameter associated with knob lighting also changed
-        # TODO what does this control?
+        # pan (DRUM)
+        # channel specific
         LOG M1 M1
         LOG LM1 LM1
         LOG knob6Push knob6Push
@@ -2943,7 +2964,8 @@ IF MT == 80
         # ensure lighting matches with L array
         # ensure L array matches with previous value
         # ensure parameter associated with knob lighting also changed
-        # TODO what does this control?
+        # dry gain (DRUM)
+        # channel specific
         LOG M1 M1
         LOG LM1 LM1
         LOG knob7Push knob7Push
@@ -2974,7 +2996,8 @@ IF MT == 80
         # ensure lighting matches with L array
         # ensure L array matches with previous value
         # ensure parameter associated with knob lighting also changed
-        # TODO what does this control?
+        # drive (DRUM)
+        # channel specific
         LOG M1 M1
         LOG LM1 LM1
         LOG knob8Push knob8Push
@@ -3098,7 +3121,8 @@ IF MT == 80
         # ensure lighting matches with L array
         # ensure L array matches with previous value
         # ensure parameter associated with knob lighting also changed
-        # TODO what does this control?
+        # waveguide send (DRUM)
+        # channel specific
         LOG M1 M1
         LOG LM1 LM1
         LOG knob12Push knob12Push
@@ -3129,7 +3153,8 @@ IF MT == 80
         # ensure lighting matches with L array
         # ensure L array matches with previous value
         # ensure parameter associated with knob lighting also changed
-        # TODO what does this control?
+        # bit reduction (DRUM)
+        # channel specific
         LOG M1 M1
         LOG LM1 LM1
         LOG knob13Push knob13Push
@@ -3160,7 +3185,8 @@ IF MT == 80
         # ensure lighting matches with L array
         # ensure L array matches with previous value
         # ensure parameter associated with knob lighting also changed
-        # TODO what does this control?
+        # fold (DRUM)
+        # channel specific
         LOG M1 M1
         LOG LM1 LM1
         LOG knob14Push knob14Push
@@ -3191,7 +3217,8 @@ IF MT == 80
         # ensure lighting matches with L array
         # ensure L array matches with previous value
         # ensure parameter associated with knob lighting also changed
-        # TODO what does this control?
+        # unspecified (DRUM)
+        # channel specific
         LOG M1 M1
         LOG LM1 LM1
         LOG knob15Push knob15Push
@@ -3222,7 +3249,8 @@ IF MT == 80
         # ensure lighting matches with L array
         # ensure L array matches with previous value
         # ensure parameter associated with knob lighting also changed
-        # TODO what does this control?
+        # unspecified (DRUM)
+        # channel specific
         LOG M1 M1
         LOG LM1 LM1
         LOG knob16Push knob16Push
@@ -4056,7 +4084,8 @@ IF MT == 80
         # ensure lighting matches with L array
         # ensure L array matches with previous value
         # ensure parameter associated with knob lighting also changed
-        # TODO what does this control?
+        # pan (DRUM)
+        # channel specific
         LOG L5 L5
         LOG knob6Push knob6Push
         LOG knob6Turn knob6Turn
@@ -4081,7 +4110,8 @@ IF MT == 80
         # ensure lighting matches with L array
         # ensure L array matches with previous value
         # ensure parameter associated with knob lighting also changed
-        # TODO what does this control?
+        # dry gain (DRUM)
+        # channel specific
         LOG L6 L6
         LOG knob7Push knob7Push
         LOG knob7Turn knob7Turn
@@ -4106,7 +4136,8 @@ IF MT == 80
         # ensure lighting matches with L array
         # ensure L array matches with previous value
         # ensure parameter associated with knob lighting also changed
-        # TODO what does this control?
+        # drive (DRUM)
+        # channel specific
         LOG L7 L7
         LOG knob8Push knob8Push
         LOG knob8Turn knob8Turn
@@ -4226,7 +4257,8 @@ IF MT == 80
         # ensure lighting matches with L array
         # ensure L array matches with previous value
         # ensure parameter associated with knob lighting also changed
-        # TODO what does this control?
+        # waveguide send (DRUM)
+        # channel specific
         LOG L1B L1B
         LOG knob12Push knob12Push
         LOG knob12Turn knob12Turn
@@ -4256,7 +4288,8 @@ IF MT == 80
         # ensure lighting matches with L array
         # ensure L array matches with previous value
         # ensure parameter associated with knob lighting also changed
-        # TODO what does this control?
+        # bit reduction (DRUM)
+        # channel specific
         LOG L1C L1C
         LOG knob13Push knob13Push
         LOG knob13Turn knob13Turn
@@ -4286,7 +4319,8 @@ IF MT == 80
         # ensure lighting matches with L array
         # ensure L array matches with previous value
         # ensure parameter associated with knob lighting also changed
-        # TODO what does this control?
+        # fold (DRUM)
+        # channel specific
         LOG L1D L1D
         LOG knob14Push knob14Push
         LOG knob14Turn knob14Turn
@@ -4316,7 +4350,8 @@ IF MT == 80
         # ensure lighting matches with L array
         # ensure L array matches with previous value
         # ensure parameter associated with knob lighting also changed
-        # TODO what does this control?
+        # unspecified (DRUM)
+        # channel specific
         LOG L1E L1E
         LOG knob15Push knob15Push
         LOG knob15Turn knob15Turn
@@ -4346,7 +4381,8 @@ IF MT == 80
         # ensure lighting matches with L array
         # ensure L array matches with previous value
         # ensure parameter associated with knob lighting also changed
-        # TODO what does this control?
+        # unspecified (DRUM)
+        # channel specific
         LOG L1F L1F
         LOG knob16Push knob16Push
         LOG knob16Turn knob16Turn
@@ -5818,7 +5854,7 @@ IF MT == B0
 
   # channel specific
 
-  # if knob is 6 (undefined)
+  # if knob is 6 (pan)
   IF M1 == 6
     # needs to be sent out
     # assign for push control
@@ -5830,9 +5866,9 @@ IF MT == B0
     # END TEST
 
     # send channel specific val
-    # SEND F0 11 EE channelCC $val M2 F7 +F
+    SEND F0 11 EE channelCC knob6Val M2 F7 +F
   END
-  # if knob is 7 (undefined)
+  # if knob is 7 (dry gain)
   IF M1 == 7
     # needs to be sent out
     # assign for push control
@@ -5844,9 +5880,9 @@ IF MT == B0
     # END TEST
 
     # send channel specific val
-    # SEND F0 11 EE channelCC $val M2 F7 +F
+    SEND F0 11 EE channelCC knob7Val M2 F7 +F
   END
-  # if knob is 8 (undefined)
+  # if knob is 8 (drive)
   IF M1 == 8
     # needs to be sent out
     # assign for push control
@@ -5858,7 +5894,7 @@ IF MT == B0
     # END TEST
 
     # send channel specific val
-    # SEND F0 11 EE channelCC $val M2 F7 +F
+    SEND F0 11 EE channelCC knob8Val M2 F7 +F
   END
   # if knob is B (drumParam 1)
   IF M1 == B
@@ -6025,7 +6061,7 @@ IF MT == B0
   END
   # END TEST
 
-  # if knob is E (undefined)
+  # if knob is E (waveguide send)
   IF M1 == E
     # needs to be sent out
     # assign for push control
@@ -6037,9 +6073,9 @@ IF MT == B0
     # END TEST
 
     # send channel specific val
-    # SEND F0 11 EE channelCC $val M2 F7 +F
+    SEND F0 11 EE channelCC knob12Val M2 F7 +F
   END
-  # if knob is F (undefined)
+  # if knob is F (bit reduction)
   IF M1 == F
     # needs to be sent out
     # assign for push control
@@ -6051,9 +6087,9 @@ IF MT == B0
     # END TEST
 
     # send channel specific val
-    # SEND F0 11 EE channelCC $val M2 F7 +F
+    SEND F0 11 EE channelCC knob13Val M2 F7 +F
   END
-  # if knob is 10 (undefined)
+  # if knob is 10 (fold)
   IF M1 == 10
     # needs to be sent out
     # assign for push control
@@ -6065,9 +6101,9 @@ IF MT == B0
     # END TEST
 
     # send channel specific val
-    # SEND F0 11 EE channelCC $val M2 F7 +F
+    # SEND F0 11 EE channelCC knob14Val M2 F7 +F
   END
-  # if knob is 11 (undefined)
+  # if knob is 11 (unspecified)
   IF M1 == 11
     # needs to be sent out
     # assign for push control
@@ -6079,9 +6115,9 @@ IF MT == B0
     # END TEST
 
     # send channel specific val
-    # SEND F0 11 EE channelCC $val M2 F7 +F
+    # SEND F0 11 EE channelCC knob15Val M2 F7 +F
   END
-  # if knob is 12 (undefined)
+  # if knob is 12 (unspecified)
   IF M1 == 12
     # needs to be sent out
     # assign for push control
@@ -6093,7 +6129,7 @@ IF MT == B0
     # END TEST
 
     # send channel specific val
-    # SEND F0 11 EE channelCC $val M2 F7 +F
+    # SEND F0 11 EE channelCC knob16Val M2 F7 +F
   END
 
   # end channel specific

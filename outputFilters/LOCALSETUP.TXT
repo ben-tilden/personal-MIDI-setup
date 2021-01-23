@@ -9,10 +9,8 @@ IF LOAD
   SET Q3 +H
   SET Q7 +H
   # see 1.
-  ALIAS I0 CNT
-  ASS CNT = 0
-  ALIAS I1 TGL
-  ASS TGL = 0
+  ALIAS I0 padMode
+  ASS padMode = 0
   # see 2.
   SET Q3 DRUM_TRACKING 1 3 +MENU
   # see 3.
@@ -43,24 +41,22 @@ END
 
 # 1. switch MIDI from Beats
 
-# if a control message and scene change positive, change scene upward
-IF MT == B0
-  IF M1 == 68 7F
-    MAT CNT = CNT + 1
-    MAT TGL = CNT % 2
+# sysex reception
+
+IF M0 == F0
+  IF M2 == 0C
+    ASS padMode = M3
+    # TEST
+    # ensure localsetup receives padMode
+    LOG padMode_SYSEX_RECEIVED padMode
+    # END TEST
+    BLOCK
+    EXIT
   END
 END
 
-# if a control message and scene change negative, change scene downward
-IF MT == B0
-  IF M1 == 69 7F
-    MAT CNT = CNT - 1
-    MAT TGL = CNT % 2
-  END
-END
-
-# if toggle is one, block channel 10 24 - 2C and 30
-IF TGL == 1
+# if padMode is one, block channel 10 24 - 2C and 30
+IF padMode == 1
   N9 24-2C = XX XX +B
   N9 30 = XX XX +B
 END
