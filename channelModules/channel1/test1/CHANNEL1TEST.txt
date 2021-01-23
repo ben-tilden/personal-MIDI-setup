@@ -10,6 +10,11 @@
 # This is actually likely due to the order in which the keys are initially pressed - the first button pressed might be what is sent, then when the array is sorted it may be sorted into the second spot
 # sort each time clock is sent via some process similar to selection sort? this could prevent the timing issue above
 
+# NOTE could add drunk mode in terms of value
+# randomizer probability implemented with current arp value implementation
+# randomizer / drunk mode in terms of tempo / probability
+# NOTE aka swing
+
 
 
 

@@ -1,9 +1,24 @@
 # xtouch test code
 
+# TODO IDEAS
+
+# add channel specific CC's
+  # fm, bass, sample, drum
+
 # TEST NOTES
 # NOTE switching modes on the xtouch (from 'A' to 'B' or otherwise) while a button is currently physically pushed down will cause an issue if that button is released after mode switch
 # NOTE knobs modulated by lfos should not be turned (unless chain modulated); they will resolve cleanly if turned, but lighting will be lost
 # TODO add channel specific variables
+# TODO add padMode interpretation
+# NOTE could add knob to change channel instead of launchkey button
+# NOTE it's possible to create arrays just via offset and iterate through rather than have x if statements as seen here
+
+Due to there only being 4 local arrays available and a lack of sophisticated syntax regarding logic, there have been a few questions regarding best practice:
+
+If you need to store values 1, 2, 3, 4 in an array that should directly correspond to another array (i.e. a hashmap of sorts), do you use the same indices at the expense of possibly losing storage flexibility, or do you offset the indices using a constant? The former allows you to access the same values using the same indices, which is likely less convoluted (and likely better) but due to storage restrictions this could cause issues if there are too many variables. This is especially relevant considering the fact that, in order to use for loops the content needs to be immediately adjacent, which can be difficult to negotiate if indices of one array are assigned only based off location in another array.
+
+How should 'if' statements be layered? Is this arbitrary (or rather, only done to make things more readable) or can it actually make things more scalable?
+
 
 
 

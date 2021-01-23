@@ -11,7 +11,8 @@
 // ALLOW | F0 01    15    00   F7      lfoResetAll
 // ALLOW | F0 01    16    val1 val2 F7 lfoRate
 // ALLOW | F0 01    17    val1 val2 F7 lfoDepth
-//
+// ALLOW | F0 01    18    val1 F7      lfoTempo
+// ALLOW | F0 01    19    00   F7      lfoInit
 
 //order of modulation doesn't matter for bottom
 //BOTTOM: 31.75 * (1 + sin(rx)) * (1 + sin(rx))
