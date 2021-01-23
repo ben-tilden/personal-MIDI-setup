@@ -117,7 +117,7 @@ IF LOAD
   ALIAS I3 tempoMode
   ALIAS I4 tempoModeMod # NOTE this was later changed to a sysex variable, not updating at the current time
   ALIAS I5 arpValueMode
-  ALIAS I6 previousDrumVal
+  # TODO
   ALIAS I7 gateMode
   ALIAS I8 gateModeMod
   ALIAS I9 gateFactor
@@ -166,7 +166,6 @@ IF LOAD
   ALIAS I34 lfo2PushPass
   ALIAS I35 lfo3PushPass
   ALIAS I36 lfo4PushPass
-  ALIAS previousTrackingMode # channel specific # TODO # TODO add to channel specific variables as well
 
   # sysex
 
@@ -246,7 +245,9 @@ IF LOAD
   ALIAS K17 waveguideTune
   ALIAS K18 pitchQuantize
   ALIAS K19 waveguideToggle
-  ALIAS K1A drumParams
+  ALIAS K1A drumParams # includes all drumParams, so K1B and K1C as well
+  ALIAS K1D previousDrumVal
+  ALIAS K1E previousTrackingMode
 
   # assign local
 
@@ -274,7 +275,6 @@ IF LOAD
   ASS lfoNum = 0
 
   # NOTE this is set to 'select' on initial load
-  ASS previousDrumVal = 00
   ASS gateFactor = 1
   ASS programChange = 0
 
@@ -318,12 +318,13 @@ IF LOAD
   ASS lfo4PushPass = FFFF
 
   # NOTE L array is used for lighting storage for push control - these are init values
+  # channel specific
   ASS L0 = 0E 00 64 00 00 00 00 00
   ASS L18 = 00 00 00 00 00 00 00 00
 
   # assign channel specific
 
-  ASS K0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0E 0F 10
+  ASS K0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0E 0F 10 00 00
 
 END
 
@@ -483,8 +484,6 @@ IF M0 == F0
     # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
     ASS lfoNum = 0
     # NOTE this is set to 'select' on initial load
-    ASS previousDrumVal = 00
-    ASS previousTrackingMode = 00 # channel specific
     ASS gateFactor = 1
     ASS programChange = 0
 
@@ -528,12 +527,13 @@ IF M0 == F0
     ASS lfo4PushPass = FFFF
 
     # NOTE L array is used for lighting storage for push control - these are init values
+    # channel specific
     ASS L0 = 0E 00 64 00 00 00 00 00
     ASS L18 = 00 00 00 00 00 00 00 00
 
     # reset channel specific
 
-    ASS K0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0E 0F 10
+    ASS K0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0E 0F 10 00 00
 
     # send pad mode
     SEND F0 11 0C padMode F7 +F
