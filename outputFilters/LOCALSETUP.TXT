@@ -58,6 +58,9 @@ IF M0 == F0
     ASS K2 = 0
     SET Q0 INTERVAL $-12 $12
     ASS Q0 = 0 # current fixed interval level
+    # TEST
+    LOG LOCAL_SETUP_RESET
+    # END TEST
     BLOCK
     EXIT
   END
