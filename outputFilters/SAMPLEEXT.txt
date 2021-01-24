@@ -17,13 +17,18 @@ END
 IF M0 == F0
   IF M2 == 1C
     # see 2.
-    ALIAS I0 padMode
     ASS padMode = 0
     # see 4.
     ASS K0 = 1C # remote control event
     ASS L0 = 64 # current fixed velocity
     SET LB0 SVEL # set labels to current velocity
     SET LB1 L0 +D
+    # TEST
+    LOG SAMPLE_EXT_RESET
+    # END TEST
+    BLOCK
+    EXIT
+  ELSE
     BLOCK
     EXIT
   END

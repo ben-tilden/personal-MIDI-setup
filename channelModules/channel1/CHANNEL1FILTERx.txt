@@ -9,8 +9,6 @@ IF LOAD
 END
 
 IF globalChannel != thisChannel
-  IF M1 != 6B 00
-    BLOCK
-    EXIT
-  END
+  BLOCK
+  EXIT
 END

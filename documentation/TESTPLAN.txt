@@ -9,7 +9,7 @@
 
 # ensure hardware messages only send to the correct modules
 
-# ensure that hardware input filtering happening correctly # TODO hardware filter
+# ensure that hardware input filtering happening correctly
 
 ###
 # x touch
@@ -21,7 +21,7 @@
   # ensure setPhrase, arpPhraseToggle, arpPhraseToggleOnOff, latch, lfo, padMode, groupKnobPush, lfo (4 vars) lighting resets
   # ensure knob lighting resets
 # ensure xtouch receives setPhrase
-# ensure xtouch receives gateOpened # optional implementation not exercised yet # TODO channel change
+# ensure xtouch receives gateOpened # optional implementation not exercised yet
 
 # button push
 
@@ -44,12 +44,12 @@
   # ensure setLfo is toggling
   # ensure setLfo unable to be toggled if push control active
 
-  # ensure padMode is toggling # TODO
-  # ensure localsetup receives padMode # TODO
-  # ensure sampleext receives padMode # TODO
+  # ensure padMode is toggling
+  # ensure localsetup receives padMode
+  # ensure sampleext receives padMode
 
-  # ensure trackingMode is changed correctly (with lighting) # TODO 
-  # ensure localsetup receives trackingMode # TODO
+  # ensure trackingMode is changed correctly (with lighting)
+  # ensure localsetup receives trackingMode
 
   # ensure lfos are toggling and lfo modulation lighting corresponds
   # ensure gate lighting functions as expected when gate is modulated
@@ -204,7 +204,7 @@
 # ensure global array reset (with locals)
 # ensure xtouch reset (with locals)
 # ensure channel information reset
-# ensure localsetup and sampleext reset # TODO
+# ensure localsetup and sampleext reset
 
 # ensure channel reset button properly resets the channel
 # ensure channel change properly affects filters

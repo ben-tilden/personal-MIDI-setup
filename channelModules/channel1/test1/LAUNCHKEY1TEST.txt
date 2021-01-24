@@ -171,6 +171,8 @@ IF LOAD
   ASS overload = 0
   ASS initLatch = 1
 
+  ASS channel = 00 # channel specific (channel 0 only)
+
   # reset xtouch lighting and params
   SEND F0 FF 1B 00 F7 +F
   # TEST
@@ -319,7 +321,8 @@ IF MT == B0
   # channel changed on release - should be released when hold released on launchkey
   # NOTE pressing a button / key and changing the channel before note off is not supported
   # channel change should use two hands, so hoping this will not come up
-  IF M1 == 6B 00
+  # NOTE because this is what changes the hardware filter, the hardware filter will not properly filter out the channel change from any channel - needs to be set to receive channel specific channel change messages
+  IF M0 == channelCC 6B 00
 
     # send channel change sysex
     # SEND SYSEX
@@ -328,7 +331,7 @@ IF MT == B0
 
     # change channel variable here
     # NOTE currently global, but could change to sysex
-    ASS channel = channelVal
+    ASS channel = MC
 
     BLOCK
     EXIT

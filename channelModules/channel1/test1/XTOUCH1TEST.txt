@@ -13,11 +13,11 @@
 # NOTE could add knob to change channel instead of launchkey button
 # NOTE it's possible to create arrays just via offset and iterate through rather than have x if statements as seen here
 
-Due to there only being 4 local arrays available and a lack of sophisticated syntax regarding logic, there have been a few questions regarding best practice:
+# Due to there only being 4 local arrays available and a lack of sophisticated syntax regarding logic, there have been a few questions regarding best practice:
 
-If you need to store values 1, 2, 3, 4 in an array that should directly correspond to another array (i.e. a hashmap of sorts), do you use the same indices at the expense of possibly losing storage flexibility, or do you offset the indices using a constant? The former allows you to access the same values using the same indices, which is likely less convoluted (and likely better) but due to storage restrictions this could cause issues if there are too many variables. This is especially relevant considering the fact that, in order to use for loops the content needs to be immediately adjacent, which can be difficult to negotiate if indices of one array are assigned only based off location in another array.
+# If you need to store values 1, 2, 3, 4 in an array that should directly correspond to another array (i.e. a hashmap of sorts), do you use the same indices at the expense of possibly losing storage flexibility, or do you offset the indices using a constant? The former allows you to access the same values using the same indices, which is likely less convoluted (and likely better) but due to storage restrictions this could cause issues if there are too many variables. This is especially relevant considering the fact that, in order to use for loops the content needs to be immediately adjacent, which can be difficult to negotiate if indices of one array are assigned only based off location in another array.
 
-How should 'if' statements be layered? Is this arbitrary (or rather, only done to make things more readable) or can it actually make things more scalable?
+# How should 'if' statements be layered? Is this arbitrary (or rather, only done to make things more readable) or can it actually make things more scalable?
 
 
 
@@ -166,6 +166,18 @@ IF LOAD
   ALIAS I34 lfo2PushPass
   ALIAS I35 lfo3PushPass
   ALIAS I36 lfo4PushPass
+  ALIAS I37 knob6CurrentVal
+  ALIAS I38 knob7CurrentVal
+  ALIAS I39 knob8CurrentVal
+  # channel specific - not necessary here due to drumParams setup
+  # ALIAS I3A knob9CurrentVal
+  # ALIAS I3B knob10CurrentVal
+  # ALIAS I3C knob11CurrentVal
+  ALIAS I3D knob12CurrentVal
+  ALIAS I3E knob13CurrentVal
+  ALIAS I3F knob14CurrentVal
+  ALIAS I40 knob15CurrentVal
+  ALIAS I41 knob16CurrentVal
 
   # sysex
 
@@ -317,6 +329,19 @@ IF LOAD
   ASS lfo3PushPass = FFFF
   ASS lfo4PushPass = FFFF
 
+  ASS knob6CurrentVal = 0
+  ASS knob7CurrentVal = 0
+  ASS knob8CurrentVal = 0
+  # channel specific - not necessary here due to drumParams setup
+  # ASS knob9CurrentVal = 0
+  # ASS knob10CurrentVal = 0
+  # ASS knob11CurrentVal = 0
+  ASS knob12CurrentVal = 0
+  ASS knob13CurrentVal = 0
+  ASS knob14CurrentVal = 0
+  ASS knob15CurrentVal = 0
+  ASS knob16CurrentVal = 0
+
   # NOTE L array is used for lighting storage for push control - these are init values
   # channel specific
   ASS L0 = 0E 00 64 00 00 00 00 00
@@ -324,7 +349,7 @@ IF LOAD
 
   # assign channel specific
 
-  ASS K0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0E 0F 10 00 00
+  ASS K0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0E 0F 10 00 05
 
 END
 
@@ -392,8 +417,6 @@ IF M0 == F0
       IF resetIndex < 8
         # reset lighting on knobs
         SEND F0 0F EE BA resetIndexTemp 00 F7 +F
-        # set lighting to 'pan'
-        SEND F0 0F EE B0 resetIndexTemp 02 F7 +F
       END
       # reset button lighting
       SEND F0 0F EE 90 resetIndex 00 F7 +F
@@ -402,6 +425,9 @@ IF M0 == F0
 
     # send init drum lighting
     SEND F0 0F EE 90 00 01 F7 +F
+
+    # send init trackingMode lighting
+    SEND F0 0F EE 90 05 01 F7 +F
 
     SEND C0 00
 
@@ -526,6 +552,19 @@ IF M0 == F0
     ASS lfo3PushPass = FFFF
     ASS lfo4PushPass = FFFF
 
+    ASS knob6CurrentVal = 0
+    ASS knob7CurrentVal = 0
+    ASS knob8CurrentVal = 0
+    # channel specific - not necessary here due to drumParams setup
+    # ASS knob9CurrentVal = 0
+    # ASS knob10CurrentVal = 0
+    # ASS knob11CurrentVal = 0
+    ASS knob12CurrentVal = 0
+    ASS knob13CurrentVal = 0
+    ASS knob14CurrentVal = 0
+    ASS knob15CurrentVal = 0
+    ASS knob16CurrentVal = 0
+
     # NOTE L array is used for lighting storage for push control - these are init values
     # channel specific
     ASS L0 = 0E 00 64 00 00 00 00 00
@@ -533,7 +572,7 @@ IF M0 == F0
 
     # reset channel specific
 
-    ASS K0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0E 0F 10 00 00
+    ASS K0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0E 0F 10 00 05
 
     # send pad mode
     SEND F0 11 0C padMode F7 +F
@@ -555,6 +594,9 @@ IF M0 == F0
   # Send lights when channel change sysex received
   IF M2 == 1E CC
 
+    # reset lights for mode 'B'
+    SEND C0 01
+
     ASS resetIndex = 0
     # need to reset lights from other channel
     # loop until this is done for all sixteen buttons
@@ -564,11 +606,140 @@ IF M0 == F0
       MATH resetIndex = resetIndex + 1
     END
 
-    IF setPhrase == 1
-      SEND F0 0F EE 90 00 01 F7 +F
+    # channel specific
+
+    # send trackingMode lighting
+    SEND F0 0F EE 90 previousTrackingMode 01 F7 +F
+
+    # send drum lighting
+    SEND F0 0F EE 90 previousDrumVal 01 F7 +F
+
+    IF drumParams == $14
+      SEND F0 0F EE BA 0B select1 F7 +F
+      SEND F0 0F EE BA 0C select2 F7 +F
+      SEND F0 0F EE BA 0D selectBoth F7 +F
     END
+    IF drumParams == $17
+      SEND F0 0F EE BA 0B level1 F7 +F
+      SEND F0 0F EE BA 0C level2 F7 +F
+      SEND F0 0F EE BA 0D levelBoth F7 +F
+    END
+    IF drumParams == $20
+      SEND F0 0F EE BA 0B attack1 F7 +F
+      SEND F0 0F EE BA 0C attack2 F7 +F
+      SEND F0 0F EE BA 0D attackBoth F7 +F
+    END
+    IF drumParams == $23
+      SEND F0 0F EE BA 0B release1 F7 +F
+      SEND F0 0F EE BA 0C release2 F7 +F
+      SEND F0 0F EE BA 0D releaseBoth F7 +F
+    END
+    IF drumParams == $26
+      SEND F0 0F EE BA 0B pitch1 F7 +F
+      SEND F0 0F EE BA 0C pitch2 F7 +F
+      SEND F0 0F EE BA 0D pitchBoth F7 +F
+    END
+    IF drumParams == $29
+      SEND F0 0F EE BA 0B modAmount1 F7 +F
+      SEND F0 0F EE BA 0C modAmount2 F7 +F
+      SEND F0 0F EE BA 0D modAmountBoth F7 +F
+    END
+    IF drumParams == $46
+      SEND F0 0F EE BA 0B modRate1 F7 +F
+      SEND F0 0F EE BA 0C modRate2 F7 +F
+      SEND F0 0F EE BA 0D modRateBoth F7 +F
+    END
+    IF drumParams == $117
+      SEND F0 0F EE BA 0B waveguideDecay F7 +F
+      SEND F0 0F EE BA 0C waveguideBody F7 +F
+      SEND F0 0F EE BA 0D waveguideTune F7 +F
+    END
+
+    # TEST
+    LOG previousDrumVal previousDrumVal
+    IF drumParams == $14
+      LOG select1 select1
+      LOG select2 select2
+      LOG selectBoth selectBoth
+    END
+    IF drumParams == $17
+      LOG level1 level1
+      LOG level2 level2
+      LOG levelBoth levelBoth
+    END
+    IF drumParams == $20
+      LOG attack1 attack1
+      LOG attack2 attack2
+      LOG attackBoth attackBoth
+    END
+    IF drumParams == $23
+      LOG release1 release1
+      LOG release2 release2
+      LOG releaseBoth releaseBoth
+    END
+    IF drumParams == $26
+      LOG pitch1 pitch1
+      LOG pitch2 pitch2
+      LOG pitchBoth pitchBoth
+    END
+    IF drumParams == $29
+      LOG modAmount1 modAmount1
+      LOG modAmount2 modAmount2
+      LOG modAmountBoth modAmountBoth
+    END
+    IF drumParams == $46
+      LOG modRate1 modRate1
+      LOG modRate2 modRate2
+      LOG modRateBoth modRateBoth
+    END
+    IF drumParams == $117
+      LOG waveguideDecay waveguideDecay
+      LOG waveguideBody waveguideBody
+      LOG waveguideTune waveguideTune
+    END
+    # END TEST
+
+    # end channel specific
+
+    # send knob12CurrentVal lighting
+    SEND F0 0F EE BA 0E knob12CurrentVal F7 +F
+
+    # send knob13CurrentVal lighting
+    SEND F0 0F EE BA 0F knob13CurrentVal F7 +F
+
+    # send knob14CurrentVal lighting
+    SEND F0 0F EE BA 10 knob14CurrentVal F7 +F
+
+    # send knob15CurrentVal lighting
+    SEND F0 0F EE BA 11 knob15CurrentVal F7 +F
+
+    # send knob16CurrentVal lighting
+    SEND F0 0F EE BA 12 knob16CurrentVal F7 +F
+
+    # change program back to 'A'
+    SEND C0 00
+
+    ASS resetIndex = 0
+    # need to reset lights from other channel
+    # loop until this is done for all sixteen buttons
+    WHILE resetIndex < 10
+      MATH resetIndexTemp = resetIndex + 1
+      # these should only go up to eight
+      IF resetIndex < 8
+        # set lighting to 'pan'
+        SEND F0 0F EE B0 resetIndexTemp 02 F7 +F
+        LOG PAN_SENT
+      END
+      # reset button lighting
+      SEND F0 0F EE 90 resetIndex 00 F7 +F
+      MATH resetIndex = resetIndex + 1
+    END
+
     IF arpPhraseToggle == 1
       SEND F0 0F EE 90 01 01 F7 +F
+      IF setPhrase == 1
+        SEND F0 0F EE 90 00 01 F7 +F
+      END
     END
     IF arpPhraseOnOffToggle == 1
       SEND F0 0F EE 90 09 01 F7 +F
@@ -584,183 +755,18 @@ IF M0 == F0
     # because switching channel is designed to use two hands, hoping this won't come up
     # would be fairly simple to resolve, just possibly a little convoluted (see conditionals when groupPushKnob is turned off; these would likely just be copied and pasted here)
     IF groupKnobPush == 1
-      SEND F0 0F EE 90 0B 01 F7 +F
+      SEND F0 0F EE 90 0A 01 F7 +F
     END
     IF padMode == 1
       SEND F0 0F EE 90 03 01 F7 +F
-    END
-    SEND F0 11 0C padMode F7 +F
-    # TODO may not work if lighting not sent in correct order
-    IF lfoNumMod == 0
-      IF lfo1OnOffToggle == 1
-        SEND F0 0F EE 90 04 01 F7 +F
-      END
-      IF lfoMuteAll == 0
-        IF lfo1OnOffToggle == 1
-          IF lfo1Knob < 8
-            MATH lfoTemp = lfo1Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-        END
-        IF lfo2OnOffToggle == 1
-          IF lfo2Knob == 3
-            SEND F0 0F EE B0 0C 1C F7 +F
-          END
-          IF lfo2Knob == 4
-            SEND F0 0F EE B0 0D 1C F7 +F
-          END
-        END
-      END
-      IF lfo1Sync == 1
-        SEND F0 0F EE 90 06 01 F7 +F
-      END
-      IF lfo1Base == 1
-        SEND F0 0F EE 90 0E 01 F7 +F
-      END
-      IF lfo1Invert == 1
-        SEND F0 0F EE 90 07 01 F7 +F
-      END
-    END
-    IF lfoNumMod == 1
-      IF lfo2OnOffToggle == 1
-        SEND F0 0F EE 90 04 01 F7 +F
-      END
-      IF lfoMuteAll == 0
-        IF lfo2OnOffToggle == 1
-          IF lfo2Knob < 8
-            IF lfo2Knob < 3
-              MATH lfoTemp = lfo2Knob + 9
-              SEND F0 0F EE B0 lfoTemp 1C F7 +F
-            END
-            IF lfo2Knob > 4
-              MATH lfoTemp = lfo2Knob + 9
-              SEND F0 0F EE B0 lfoTemp 1C F7 +F
-            END
-          END
-        END
-        IF lfo3OnOffToggle == 1
-          IF lfo3Knob == 3
-            SEND F0 0F EE B0 0C 1C F7 +F
-          END
-          IF lfo3Knob == 4
-            SEND F0 0F EE B0 0D 1C F7 +F
-          END
-        END
-      END
-      IF lfo2Sync == 1
-        SEND F0 0F EE 90 06 01 F7 +F
-      END
-      IF lfo2Base == 1
-        SEND F0 0F EE 90 0E 01 F7 +F
-      END
-      IF lfo2Invert == 1
-        SEND F0 0F EE 90 07 01 F7 +F
-      END
-    END
-    IF lfoNumMod == 2
-      IF lfo3OnOffToggle == 1
-        SEND F0 0F EE 90 04 01 F7 +F
-      END
-      IF lfoMuteAll == 0
-        IF lfo3OnOffToggle == 1
-          IF lfo3Knob < 8
-            IF lfo3Knob < 3
-              MATH lfoTemp = lfo3Knob + 9
-              SEND F0 0F EE B0 lfoTemp 1C F7 +F
-            END
-            IF lfo3Knob > 4
-              MATH lfoTemp = lfo3Knob + 9
-              SEND F0 0F EE B0 lfoTemp 1C F7 +F
-            END
-          END
-        END
-        IF lfo4OnOffToggle == 1
-          IF lfo4Knob == 3
-            SEND F0 0F EE B0 0C 1C F7 +F
-          END
-          IF lfo4Knob == 4
-            SEND F0 0F EE B0 0D 1C F7 +F
-          END
-        END
-      END
-      IF lfo3Sync == 1
-        SEND F0 0F EE 90 06 01 F7 +F
-      END
-      IF lfo3Base == 1
-        SEND F0 0F EE 90 0E 01 F7 +F
-      END
-      IF lfo3Invert == 1
-        SEND F0 0F EE 90 07 01 F7 +F
-      END
-    END
-    IF lfoNumMod == 3
-      IF lfo4OnOffToggle == 1
-        SEND F0 0F EE 90 04 01 F7 +F
-        IF lfoMuteAll == 0
-          IF lfo4Knob < 8
-            IF lfo4Knob < 3
-              MATH lfoTemp = lfo4Knob + 9
-              SEND F0 0F EE B0 lfoTemp 1C F7 +F
-            END
-            IF lfo4Knob > 4
-              MATH lfoTemp = lfo4Knob + 9
-              SEND F0 0F EE B0 lfoTemp 1C F7 +F
-            END
-          END
-        END
-      END
-      IF lfo4Sync == 1
-        SEND F0 0F EE 90 06 01 F7 +F
-      END
-      IF lfo4Base == 1
-        SEND F0 0F EE 90 0E 01 F7 +F
-      END
-      IF lfo4Invert == 1
-        SEND F0 0F EE 90 07 01 F7 +F
-      END
     END
     IF lfoMuteAll == 1
       SEND F0 0F EE 90 0C 01 F7 +F
     END
 
-    # TEST
-    # ensure setPhrase, arpPhraseToggle, arpPhraseToggleOnOff, latch, lfo, padMode, groupKnobPush, lfo (4 vars) lighting resets
-    LOG CHANNEL_SWITCH_LIGHTING
-    LOG setPhrase setPhrase
-    LOG arpPhraseToggle arpPhraseToggle
-    LOG arpPhraseOnOffToggle arpPhraseOnOffToggle
-    LOG latch latch
-    LOG setLfo setLfo
-    LOG padMode padMode
-    LOG groupKnobPush groupKnobPush
-    IF lfoNumMod == 0
-      LOG lfo1OnOffToggle lfo1OnOffToggle
-      LOG lfo1Sync lfo1Sync
-      LOG lfo1Base lfo1Base
-      LOG lfo1Invert lfo1Invert
-    END
-    IF lfoNumMod == 1
-      LOG lfo2OnOffToggle lfo2OnOffToggle
-      LOG lfo2Sync lfo2Sync
-      LOG lfo2Base lfo2Base
-      LOG lfo2Invert lfo2Invert
-    END
-    IF lfoNumMod == 2
-      LOG lfo3OnOffToggle lfo3OnOffToggle
-      LOG lfo3Sync lfo3Sync
-      LOG lfo3Base lfo3Base
-      LOG lfo3Invert lfo3Invert
-    END
-    IF lfoNumMod == 3
-      LOG lfo4OnOffToggle lfo4OnOffToggle
-      LOG lfo4Sync lfo4Sync
-      LOG lfo4Base lfo4Base
-      LOG lfo4Invert lfo4Invert
-    END
-    LOG previousDrumVal previousDrumVal
-    # END TEST
+    # NOTE other lfo specific button lighting sent later, with flashing knob lighting
 
-    # TODO likely could inject L0 via message and have a similar effect
+    # NOTE can't be done via L array due to groupKnobPush being possibly on
     # send tempo lighting
     IF tempoModeMod == 0
       IF tempoPulse == 48
@@ -865,32 +871,155 @@ IF M0 == F0
     # send velocity lighting
     SEND F0 0F EE BA 03 velocity F7 +F
 
-    # send lfo rate lighting
-    IF lfoNumMod == 0
-      SEND F0 0F EE BA 04 lfo1Rate F7 +F
-    END
-    IF lfoNumMod == 1
-      SEND F0 0F EE BA 04 lfo2Rate F7 +F
-    END
-    IF lfoNumMod == 2
-      SEND F0 0F EE BA 04 lfo3Rate F7 +F
-    END
-    IF lfoNumMod == 3
-      SEND F0 0F EE BA 04 lfo4Rate F7 +F
+    # send knob6CurrentVal lighting
+    SEND F0 0F EE BA 06 knob6CurrentVal F7 +F
+
+    # send knob7CurrentVal lighting
+    SEND F0 0F EE BA 07 knob7CurrentVal F7 +F
+
+    # send knob8CurrentVal lighting
+    SEND F0 0F EE BA 08 knob8CurrentVal F7 +F
+
+
+    # lfo flashing lights, if present, need to be send regardless of lfoNumMod under some conditions
+    IF lfoMuteAll == 0
+      IF lfo1OnOffToggle == 1
+        IF lfo1Knob < 8
+          MATH lfoTemp = lfo1Knob + 9
+          SEND F0 0F EE B0 lfoTemp 1C F7 +F
+        END
+      END
+      IF lfo2OnOffToggle == 1
+        IF lfo2Knob < 8
+          IF lfo2Knob < 3
+            MATH lfoTemp = lfo2Knob + 9
+            SEND F0 0F EE B0 lfoTemp 1C F7 +F
+          END
+          IF lfo2Knob > 4
+            MATH lfoTemp = lfo2Knob + 9
+            SEND F0 0F EE B0 lfoTemp 1C F7 +F
+          END
+        END
+      END
+      IF lfo3OnOffToggle == 1
+        IF lfo3Knob < 8
+          IF lfo3Knob < 3
+            MATH lfoTemp = lfo3Knob + 9
+            SEND F0 0F EE B0 lfoTemp 1C F7 +F
+          END
+          IF lfo3Knob > 4
+            MATH lfoTemp = lfo3Knob + 9
+            SEND F0 0F EE B0 lfoTemp 1C F7 +F
+          END
+        END
+      END
+      IF lfo4OnOffToggle == 1
+        IF lfo4Knob < 8
+          IF lfo4Knob < 3
+            MATH lfoTemp = lfo4Knob + 9
+            SEND F0 0F EE B0 lfoTemp 1C F7 +F
+          END
+          IF lfo4Knob > 4
+            MATH lfoTemp = lfo4Knob + 9
+            SEND F0 0F EE B0 lfoTemp 1C F7 +F
+          END
+        END
+      END
     END
 
-    # send lfo depth lighting
     IF lfoNumMod == 0
-      SEND F0 0F EE BA 05 lfo1Depth F7 +F
+      SEND F0 0F EE BA 04 lfo1Rate F7 +F # lfo rate
+      SEND F0 0F EE BA 05 lfo1Depth F7 +F # lfo depth
+      IF lfo1OnOffToggle == 1
+        SEND F0 0F EE 90 04 01 F7 +F
+      END
+      IF lfoMuteAll == 0
+        IF lfo2OnOffToggle == 1
+          IF lfo2Knob == 3
+            SEND F0 0F EE B0 0C 1C F7 +F
+          END
+          IF lfo2Knob == 4
+            SEND F0 0F EE B0 0D 1C F7 +F
+          END
+        END
+      END
+      IF lfo1Sync == 1
+        SEND F0 0F EE 90 06 01 F7 +F
+      END
+      IF lfo1Base == 1
+        SEND F0 0F EE 90 0E 01 F7 +F
+      END
+      IF lfo1Invert == 1
+        SEND F0 0F EE 90 07 01 F7 +F
+      END
     END
     IF lfoNumMod == 1
-      SEND F0 0F EE BA 05 lfo2Depth F7 +F
+      SEND F0 0F EE BA 04 lfo2Rate F7 +F # lfo rate
+      SEND F0 0F EE BA 05 lfo2Depth F7 +F # lfo depth
+      IF lfo2OnOffToggle == 1
+        SEND F0 0F EE 90 04 01 F7 +F
+      END
+      IF lfoMuteAll == 0
+        IF lfo3OnOffToggle == 1
+          IF lfo3Knob == 3
+            SEND F0 0F EE B0 0C 1C F7 +F
+          END
+          IF lfo3Knob == 4
+            SEND F0 0F EE B0 0D 1C F7 +F
+          END
+        END
+      END
+      IF lfo2Sync == 1
+        SEND F0 0F EE 90 06 01 F7 +F
+      END
+      IF lfo2Base == 1
+        SEND F0 0F EE 90 0E 01 F7 +F
+      END
+      IF lfo2Invert == 1
+        SEND F0 0F EE 90 07 01 F7 +F
+      END
     END
     IF lfoNumMod == 2
-      SEND F0 0F EE BA 05 lfo3Depth F7 +F
+      SEND F0 0F EE BA 04 lfo3Rate F7 +F # lfo rate
+      SEND F0 0F EE BA 05 lfo3Depth F7 +F # lfo depth
+      IF lfo3OnOffToggle == 1
+        SEND F0 0F EE 90 04 01 F7 +F
+      END
+      IF lfoMuteAll == 0
+        IF lfo4OnOffToggle == 1
+          IF lfo4Knob == 3
+            SEND F0 0F EE B0 0C 1C F7 +F
+          END
+          IF lfo4Knob == 4
+            SEND F0 0F EE B0 0D 1C F7 +F
+          END
+        END
+      END
+      IF lfo3Sync == 1
+        SEND F0 0F EE 90 06 01 F7 +F
+      END
+      IF lfo3Base == 1
+        SEND F0 0F EE 90 0E 01 F7 +F
+      END
+      IF lfo3Invert == 1
+        SEND F0 0F EE 90 07 01 F7 +F
+      END
     END
     IF lfoNumMod == 3
-      SEND F0 0F EE BA 05 lfo4Depth F7 +F
+      SEND F0 0F EE BA 04 lfo4Rate F7 +F # lfo rate
+      SEND F0 0F EE BA 05 lfo4Depth F7 +F # lfo depth
+      IF lfo4OnOffToggle == 1
+        SEND F0 0F EE 90 04 01 F7 +F
+      END
+      IF lfo4Sync == 1
+        SEND F0 0F EE 90 06 01 F7 +F
+      END
+      IF lfo4Base == 1
+        SEND F0 0F EE 90 0E 01 F7 +F
+      END
+      IF lfo4Invert == 1
+        SEND F0 0F EE 90 07 01 F7 +F
+      END
     END
 
     # TEST
@@ -915,104 +1044,43 @@ IF M0 == F0
       LOG lfo4Rate lfo4Rate
       LOG lfo4Depth lfo4Depth
     END
-
-    # channel specific
-
-    IF drumParams == $14
-      LOG select1 select1
-      LOG select2 select2
-      LOG selectBoth selectBoth
-    END
-    IF drumParams == $17
-      LOG level1 level1
-      LOG level2 level2
-      LOG levelBoth levelBoth
-    END
-    IF drumParams == $20
-      LOG attack1 attack1
-      LOG attack2 attack2
-      LOG attackBoth attackBoth
-    END
-    IF drumParams == $23
-      LOG release1 release1
-      LOG release2 release2
-      LOG releaseBoth releaseBoth
-    END
-    IF drumParams == $26
-      LOG pitch1 pitch1
-      LOG pitch2 pitch2
-      LOG pitchBoth pitchBoth
-    END
-    IF drumParams == $29
-      LOG modAmount1 modAmount1
-      LOG modAmount2 modAmount2
-      LOG modAmountBoth modAmountBoth
-    END
-    IF drumParams == $46
-      LOG modRate1 modRate1
-      LOG modRate2 modRate2
-      LOG modRateBoth modRateBoth
-    END
-    IF drumParams == $117
-      LOG waveguideDecay waveguideDecay
-      LOG waveguideBody waveguideBody
-      LOG waveguideTune waveguideTune
-    END
     # END TEST
 
-    # channel specific
-
-    # change program to send lighting to 'B' mode
-    SEND C0 01
-
-    # send drum lighting
-    SEND F0 0F EE 90 previousDrumVal 01 F7 +F
-
-    IF drumParams == $14
-      SEND F0 0F EE BA 0B select1 F7 +F
-      SEND F0 0F EE BA 0C select2 F7 +F
-      SEND F0 0F EE BA 0D selectBoth F7 +F
+    # TEST
+    # ensure setPhrase, arpPhraseToggle, arpPhraseToggleOnOff, latch, lfo, padMode, groupKnobPush, lfo (4 vars) lighting resets
+    LOG CHANNEL_SWITCH_LIGHTING
+    LOG setPhrase setPhrase
+    LOG arpPhraseToggle arpPhraseToggle
+    LOG arpPhraseOnOffToggle arpPhraseOnOffToggle
+    LOG latch latch
+    LOG setLfo setLfo
+    LOG padMode padMode
+    LOG groupKnobPush groupKnobPush
+    IF lfoNumMod == 0
+      LOG lfo1OnOffToggle lfo1OnOffToggle
+      LOG lfo1Sync lfo1Sync
+      LOG lfo1Base lfo1Base
+      LOG lfo1Invert lfo1Invert
     END
-    IF drumParams == $17
-      SEND F0 0F EE BA 0B level1 F7 +F
-      SEND F0 0F EE BA 0C level2 F7 +F
-      SEND F0 0F EE BA 0D levelBoth F7 +F
+    IF lfoNumMod == 1
+      LOG lfo2OnOffToggle lfo2OnOffToggle
+      LOG lfo2Sync lfo2Sync
+      LOG lfo2Base lfo2Base
+      LOG lfo2Invert lfo2Invert
     END
-    IF drumParams == $20
-      SEND F0 0F EE BA 0B attack1 F7 +F
-      SEND F0 0F EE BA 0C attack2 F7 +F
-      SEND F0 0F EE BA 0D attackBoth F7 +F
+    IF lfoNumMod == 2
+      LOG lfo3OnOffToggle lfo3OnOffToggle
+      LOG lfo3Sync lfo3Sync
+      LOG lfo3Base lfo3Base
+      LOG lfo3Invert lfo3Invert
     END
-    IF drumParams == $23
-      SEND F0 0F EE BA 0B release1 F7 +F
-      SEND F0 0F EE BA 0C release2 F7 +F
-      SEND F0 0F EE BA 0D releaseBoth F7 +F
+    IF lfoNumMod == 3
+      LOG lfo4OnOffToggle lfo4OnOffToggle
+      LOG lfo4Sync lfo4Sync
+      LOG lfo4Base lfo4Base
+      LOG lfo4Invert lfo4Invert
     END
-    IF drumParams == $26
-      SEND F0 0F EE BA 0B pitch1 F7 +F
-      SEND F0 0F EE BA 0C pitch2 F7 +F
-      SEND F0 0F EE BA 0D pitchBoth F7 +F
-    END
-    IF drumParams == $29
-      SEND F0 0F EE BA 0B modAmount1 F7 +F
-      SEND F0 0F EE BA 0C modAmount2 F7 +F
-      SEND F0 0F EE BA 0D modAmountBoth F7 +F
-    END
-    IF drumParams == $46
-      SEND F0 0F EE BA 0B modRate1 F7 +F
-      SEND F0 0F EE BA 0C modRate2 F7 +F
-      SEND F0 0F EE BA 0D modRateBoth F7 +F
-    END
-    IF drumParams == $117
-      SEND F0 0F EE BA 0B waveguideDecay F7 +F
-      SEND F0 0F EE BA 0C waveguideBody F7 +F
-      SEND F0 0F EE BA 0D waveguideTune F7 +F
-    END
-
-    # change program back to 'A'
-    SEND C0 00
-
-    # end channel specific
+    # END TEST
 
     # TEST
     # ensure xtouch lighting changes properly when channel changed
@@ -4442,6 +4510,92 @@ IF MT == 80
       IF programChange == 1
         ASS programChange = 0
         SEND C0 00
+
+        # also set lighting to pan
+        ASS resetIndex = 1
+        LOG resetIndex resetIndex
+        # loop until this is done for all eight knobs
+        WHILE resetIndex < 9
+          log here
+          # set lighting to 'pan'
+          SEND F0 0F EE B0 resetIndex 02 F7 +F
+          MATH resetIndex = resetIndex + 1
+        END
+        IF lfoMuteAll == 0
+          IF lfo1OnOffToggle == 1
+            IF lfo1Knob < 8
+              IF lfo1Knob < 3
+                MATH lfoTemp = lfo1Knob + 9
+                SEND F0 0F EE B0 lfoTemp 1C F7 +F
+              END
+              IF lfo1Knob > 4
+                MATH lfoTemp = lfo1Knob + 9
+                SEND F0 0F EE B0 lfoTemp 1C F7 +F
+              END
+            END
+          END
+          IF lfo2OnOffToggle == 1
+            IF lfo2Knob < 8
+              IF lfoNumMod == 0
+                IF lfo2Knob == 3
+                  SEND F0 0F EE B0 0C 1C F7 +F
+                END
+                IF lfo2Knob == 4
+                  SEND F0 0F EE B0 0D 1C F7 +F
+                END
+              END
+              IF lfo2Knob < 3
+                MATH lfoTemp = lfo2Knob + 9
+                SEND F0 0F EE B0 lfoTemp 1C F7 +F
+              END
+              IF lfo2Knob > 4
+                MATH lfoTemp = lfo2Knob + 9
+                SEND F0 0F EE B0 lfoTemp 1C F7 +F
+              END
+            END
+          END
+          IF lfo3OnOffToggle == 1
+            IF lfo3Knob < 8
+              IF lfoNumMod == 1
+                IF lfo3Knob == 3
+                  SEND F0 0F EE B0 0C 1C F7 +F
+                END
+                IF lfo3Knob == 4
+                  SEND F0 0F EE B0 0D 1C F7 +F
+                END
+              END
+              IF lfo3Knob < 3
+                MATH lfoTemp = lfo3Knob + 9
+                SEND F0 0F EE B0 lfoTemp 1C F7 +F
+              END
+              IF lfo3Knob > 4
+                MATH lfoTemp = lfo3Knob + 9
+                SEND F0 0F EE B0 lfoTemp 1C F7 +F
+              END
+            END
+          END
+          IF lfo4OnOffToggle == 1
+            IF lfo4Knob < 8
+              IF lfoNumMod == 2
+                IF lfo4Knob == 3
+                  SEND F0 0F EE B0 0C 1C F7 +F
+                END
+                IF lfo4Knob == 4
+                  SEND F0 0F EE B0 0D 1C F7 +F
+                END
+              END
+              IF lfo4Knob < 3
+                MATH lfoTemp = lfo4Knob + 9
+                SEND F0 0F EE B0 lfoTemp 1C F7 +F
+              END
+              IF lfo4Knob > 4
+                MATH lfoTemp = lfo4Knob + 9
+                SEND F0 0F EE B0 lfoTemp 1C F7 +F
+              END
+            END
+          END
+        END
+
       END
       # if using group push control, releasing the knob button should not have any effect (not that it does here)
       BLOCK
@@ -5919,6 +6073,7 @@ IF MT == B0
     IF knob6Push == 0
       ASS L5 = M2
     END
+    ASS knob6CurrentVal = M2
     # TEST
     LOG L5 L5
     # END TEST
@@ -5933,6 +6088,7 @@ IF MT == B0
     IF knob7Push == 0
       ASS L6 = M2
     END
+    ASS knob7CurrentVal = M2
     # TEST
     LOG L6 L6
     # END TEST
@@ -5947,6 +6103,7 @@ IF MT == B0
     IF knob8Push == 0
       ASS L7 = M2
     END
+    ASS knob8CurrentVal = M2
     # TEST
     LOG L7 L7
     # END TEST
@@ -6126,6 +6283,7 @@ IF MT == B0
     IF knob12Push == 0
       ASS L1B = M2
     END
+    ASS knob12CurrentVal = M2
     # TEST
     LOG L1B L1B
     # END TEST
@@ -6140,6 +6298,7 @@ IF MT == B0
     IF knob13Push == 0
       ASS L1C = M2
     END
+    ASS knob13CurrentVal = M2
     # TEST
     LOG L1C L1C
     # END TEST
@@ -6154,6 +6313,7 @@ IF MT == B0
     IF knob14Push == 0
       ASS L1D = M2
     END
+    ASS knob14CurrentVal = M2
     # TEST
     LOG L1D L1D
     # END TEST
@@ -6168,6 +6328,7 @@ IF MT == B0
     IF knob15Push == 0
       ASS L1E = M2
     END
+    ASS knob15CurrentVal = M2
     # TEST
     LOG L1E L1E
     # END TEST
@@ -6182,6 +6343,7 @@ IF MT == B0
     IF knob16Push == 0
       ASS L1F = M2
     END
+    ASS knob16CurrentVal = M2
     # TEST
     LOG L1F L1F
     # END TEST

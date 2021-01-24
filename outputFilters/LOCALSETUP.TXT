@@ -40,7 +40,6 @@ IF M0 == F0
     # SET Q3 +H
     # SET Q7 +H
     # see 1.
-    ALIAS I0 padMode
     ASS padMode = 0
     # see 2.
     SET Q3 DRUM_TRACKING 0 2 +MENU
