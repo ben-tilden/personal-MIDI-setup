@@ -4,8 +4,8 @@
 
 # add channel specific CC's
   # fm, bass, sample, drum
-# add channel specific padMode value
-# set init for local setup and sampleext
+# add full reset by converting midi message to reset message and allowing it to bypass for all hardware filters
+
 
 # TEST NOTES
 # NOTE switching modes on the xtouch (from 'A' to 'B' or otherwise) while a button is currently physically pushed down will cause an issue if that button is released after mode switch
@@ -5053,11 +5053,9 @@ IF MT == 80
   IF M1 == 19 00
     IF pitchQuantize == 0
       ASS pitchQuantize = 1
-      # NOTE / TODO unsure if this is correct as of now
       SEND F0 11 EE channelCC $53 7F F7 +F
     ELSE
       ASS pitchQuantize = 0
-      # NOTE / TODO unsure if this is correct as of now
       SEND F0 11 EE channelCC $53 00 F7 +F
     END
     # TEST

@@ -35,7 +35,11 @@
 
     // NOTE could add multiple sources of modulation for lfos in the future if desired
     // NOTE chain modulating data will not be sent for lfo 1 - (see '# ensure attempting to chain modulate from lfo 1 exits gracefully')
-    lfoTargetKnob[data[2]] = data[3] + 1 // need to add one since knob turn input is +1 from knob push input
+    if data[3] < 8
+      lfoTargetKnob[data[2]] = data[3] + 1 // need to add one since knob turn input is +1 from knob push input
+    else
+      lfoTargetKnob[data[2]] = data[3] - 13 // need to subtract 13 since knob turn input is -13 (18 - B) from knob push input
+    endif
 
     // TEST
     // ensure target knob set correctly for lfo
