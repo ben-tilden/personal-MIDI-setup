@@ -1,4 +1,4 @@
-# channel one
+# channel six
 
 # this instance will constantly be receiving clock, the question will be whether it responds to it or not
 # there will be another service receiving note in - if arpPhraseOnOffToggle is on, notes will be processed, otherwise, they will not
@@ -225,14 +225,15 @@ IF M0 == F8
               MATH arpIndex = numPressed + arpOffset
               ASS gateOpened = 0
             END
-            # TEST TRY
-            # NOTE only in modes that use octaves
-            # NOTE this might actually make sequence inconsistent between octaves and no octaves - would almost rather save locally
-            # NOTE could use local array to save arp and reset save on every completion
-            #IF gateOpened == 2
-            #  MATH arpIndex = arpIndex + 1
-            #  ASS gateOpened = 0
-            #            SEND channelNoteOn JI6 velocity
+            # arpIndex will initially be set to numPressed + 32, but after it's set to numPressed + 32 - 1, it will be automatically decreased each run through
+            # this decrease stops once we go under 32 - at that point it's reset
+            MATH arpIndex = arpIndex - 1
+            IF arpIndex == 1F
+              MATH arpIndex = numPressed + arpOffset
+              # NOTE need to subtract one here because subtraction always needs to occur after reset
+              MATH arpIndex = arpIndex - 1
+            END
+            SEND channelNoteOn JI6 velocity
             SEND channelNoteOff JI6 velocity +DJ4
           END
           # if value mode is 1 (asc 2)
