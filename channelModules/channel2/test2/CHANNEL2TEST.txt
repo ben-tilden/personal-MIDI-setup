@@ -1,4 +1,3 @@
-# TEST
 # channel one test code
 
 # TEST NOTES
@@ -11,10 +10,6 @@
 # This is actually likely due to the order in which the keys are initially pressed - the first button pressed might be what is sent, then when the array is sorted it may be sorted into the second spot
 # sort each time clock is sent via some process similar to selection sort? this could prevent the timing issue above
 
-# NOTE could add drunk mode in terms of value
-# randomizer probability implemented with current arp value implementation
-# randomizer / drunk mode in terms of tempo / probability
-# NOTE aka swing
 
 
 
@@ -24,8 +19,6 @@
 
 
 
-
-# END TEST
 # channel one
 
 # this instance will constantly be receiving clock, the question will be whether it responds to it or not
@@ -58,7 +51,7 @@ IF LOAD
 
   # constant
 
-  ALIAS 00 channelVal # channel specific (obviously)
+  ALIAS 01 channelVal # channel specific (obviously)
   ALIAS F078 maxValClockNumNorm
   ALIAS FF78 maxValClockNumEdge
   ALIAS 20 arpOffset
@@ -97,9 +90,9 @@ IF LOAD
   # assign local
 
   # these are only defined here, since they are essentially constants - will not change past this
-  MATH channelCC = B0 + channelVal
-  MATH channelNoteOn = 90 + channelVal
-  MATH channelNoteOff = 80 + channelVal
+  ASS channelCC = B0 + channelVal
+  ASS channelNoteOn = 90 + channelVal
+  ASS channelNoteOff = 80 + channelVal
 
   ASS clockNum = 0
   ASS isOctave = 0
@@ -212,7 +205,7 @@ IF M0 == F0
     EXIT
   END
 
-  IF M2 == 19
+  IF M2 == 15
     ASS gateOpened = 1
     # TEST
     # ensure channel receives gateOpened
@@ -289,7 +282,7 @@ IF M0 == F0
   END
 
   # reset channel when init sysex received
-  IF M2 == 1C 00
+  IF M2 == 18 00
     # (re)set sysex variables
     # NOTE could move this also into the init load for completeness (or remove local from init load?)
 

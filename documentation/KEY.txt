@@ -53,6 +53,131 @@
 # 2. if a knob is turning, L should only be set if knobPush is false
 # 3. lighting should only be sent at knob release if the knob which is being turned does not already have code in xtouch that sends lighting for it (i.e. tempo) (the lighting change will be blocked otherwise)
 
+# differences between channels
+
+###
+# channels 1-6 (DRUM)
+###
+
+# xtouch
+  # channel constant
+  # drum additions
+
+# launchkey
+  # channel one resets the global variable - others do not
+  # channel constant
+
+# channel
+  # channel constant
+
+# processing filter
+  # drum chromaticization
+
+# mapping filter
+  # drum exclusive mappings
+
+###
+# channel 7 (FM)
+###
+
+# xtouch
+  # channel constant
+  # drum removals
+
+# launchkey
+  # channel constant
+
+# channel
+  # channel constant
+
+# processing filter
+  # remove drum chromaticization
+
+# mapping filter
+  # remove drum exclusive mappings
+
+###
+# channel 8 (BASS) # NOTE channel 9 is a wash since it's used to map to channel 10
+###
+
+# xtouch
+  # channel constant
+  # drum removals
+
+# launchkey
+  # channel constant
+
+# channel
+  # channel constant
+
+# processing filter
+  # remove drum chromaticization
+
+# mapping filter
+  # add bass exclusive mappings
+  # remove drum exclusive mappings
+
+###
+# channel 10 (BEATS) # still needed in order to use drum roll etc.
+###
+
+# xtouch
+  # channel constant
+  # drum removals
+
+# launchkey
+  # channel constant
+
+# channel
+  # channel constant
+
+# processing filter
+  # remove drum chromaticization
+
+# mapping filter
+  # remove drum exclusive mappings
+
+###
+# channel 11 (SAMPLE) (normal)
+###
+
+# xtouch
+  # channel constant
+  # drum removals
+
+# launchkey
+  # channel constant
+
+# channel
+  # channel constant
+
+# processing filter
+  # remove drum chromaticization
+
+# mapping filter
+  # remove drum exclusive mappings
+
+###
+# channel 12 (SAMPLE) (pajen)
+###
+
+# xtouch
+  # channel constant
+  # drum removals
+
+# launchkey
+  # channel constant
+
+# channel
+  # channel constant
+
+# processing filter
+  # remove drum chromaticization
+
+# mapping filter
+  # remove drum exclusive mappings
+
+
 Other notes:
 ------------
 ARP can be used as a drum roll for any instrument by changing tempo accordingly

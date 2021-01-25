@@ -10,7 +10,9 @@ END
 
 IF globalChannel != thisChannel
   IF M1 != 6B 00
-    BLOCK
-    EXIT
+    IF M1 != 68 7F
+      BLOCK
+      EXIT
+    END
   END
 END

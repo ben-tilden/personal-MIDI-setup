@@ -1,9 +1,7 @@
-# TEST
 # launchkey mini test code
 
 # TEST NOTES
 # NOTE phrase tested and passed all tests, but there may still be one unconfirmed bug where the notes are transposed downward incorrectly
-# TODO this above bug has at this point occurred in final tests, still unconfirmed how it occurs
 
 
 
@@ -14,7 +12,6 @@
 
 
 
-# END TEST
 # launchkey mini (mk2)
 
 # if phrase and arp are off, notes will be passed through as expected
@@ -99,7 +96,7 @@ IF LOAD
 
   # constant
 
-  ALIAS 00 channelVal # channel specific (obviously)
+  ALIAS 01 channelVal # channel specific (obviously)
   ALIAS 20 arpIndexOffset
   ALIAS C8 latchInterval
 
@@ -161,9 +158,9 @@ IF LOAD
   # assign local
 
   # these are only defined here, since they are essentially constants - will not change past this
-  MATH channelCC = B0 + channelVal
-  MATH channelNoteOn = 90 + channelVal
-  MATH channelNoteOff = 80 + channelVal
+  ASS channelCC = B0 + channelVal
+  ASS channelNoteOn = 90 + channelVal
+  ASS channelNoteOff = 80 + channelVal
 
   ASS K20 = 00 00 00 00 00 00 00 00 00 00
 
@@ -174,17 +171,15 @@ IF LOAD
   ASS overload = 0
   ASS initLatch = 1
 
-  ASS channel = 00 # channel specific (channel 0 only)
-
   # reset xtouch lighting and params
-  SEND F0 FF 1B 00 F7 +F
+  SEND F0 FF 17 00 F7 +F
   # TEST
   # ensure xtouch reset
   LOG XTOUCH_RESET
   # END TEST
 
   # reset channel information
-  SEND F0 CC 1C 00 F7 +F
+  SEND F0 CC 18 00 F7 +F
   # TEST
   # ensure channel information reset (will need to be done on individual files)
   LOG CHANNELS_RESET
@@ -202,7 +197,7 @@ IF M0 == F0
     IF arpPhraseOnOffToggle == 1
       # need to open gate so that there's a smooth transition here
       # SEND SYSEX
-      SEND F0 CC 19 60 F7 +F
+      SEND F0 CC 15 60 F7 +F
       # END SYSEX
     END
     # TEST
@@ -226,7 +221,7 @@ IF M0 == F0
         END
         # need to open gate so that there's a smooth transition here
         # SEND SYSEX
-        SEND F0 CC 19 60 F7 +F
+        SEND F0 CC 15 60 F7 +F
         # END SYSEX
       ELSE
         ASS iter = arpIndexOffset
@@ -324,73 +319,16 @@ IF MT == B0
   # channel changed on release - should be released when hold released on launchkey
   # NOTE pressing a button / key and changing the channel before note off is not supported
   # channel change should use two hands, so hoping this will not come up
-  # NOTE because this is what changes the hardware filter, the hardware filter will not properly filter out the channel change from any channel - needs to be set to receive channel specific channel change messages
-  IF M0 == channelCC 6B 00
+  IF M1 == 6B 00
 
     # send channel change sysex
     # SEND SYSEX
-    SEND F0 FF 1E CC F7 +F
+    SEND F0 FF 19 CC F7 +F
     # END SYSEX
 
     # change channel variable here
     # NOTE currently global, but could change to sysex
-    ASS channel = MC
-
-    BLOCK
-    EXIT
-  END
-
-  # full reset
-  IF M1 == 68 7F
-
-    # reset sysex variables
-
-    ASS numPressed = 0
-    ASS arpPhraseToggle = 0
-    ASS arpPhraseOnOffToggle = 0
-    ASS velocity = 64
-    ASS arpValueModeMod = 0
-    ASS setPhrase = 0
-    ASS phraseVal = 3C
-    ASS phraseIndex = 2A
-    ASS phraseLengthPlusOffset = 2A
-    ASS latch = 0
-    ASS J20 = 00 00 00 00 00 00 00 00 00 00 # arp values (J10 J11 J12 J13 J14 J15 J16 J17 J18 J19)
-    ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
-    # TEST
-    # ensure phrase and arp values reset
-    ASS LFF = 20
-    WHILE LFF < 48
-      LOG J_INDEX LFF
-      LOG LFF JLFF
-      MATH LFF = LFF + 1
-    END
-    # END TEST
-
-    # reset local
-
-    ASS K20 = 00 00 00 00 00 00 00 00 00 00
-
-    ASS numPressedTotal = 0
-    ASS arpIndex = arpIndexOffset
-    # needs to be set to a value too far for both negatives and positives to reach
-    ASS tempPhraseVal = AAAA
-    ASS overload = 0
-    ASS initLatch = 1
-
-    # reset xtouch lighting and params
-    SEND F0 FF 1B 00 F7 +F
-    # TEST
-    # ensure xtouch reset
-    LOG XTOUCH_RESET
-    # END TEST
-
-    # reset channel information
-    SEND F0 CC 1C 00 F7 +F
-    # TEST
-    # ensure channel information reset (will need to be done on individual files)
-    LOG CHANNELS_RESET
-    # END TEST
+    ASS channel = channelVal
 
     BLOCK
     EXIT
@@ -399,6 +337,8 @@ IF MT == B0
   # channel reset
   IF M1 == 6A 7F
 
+    # NOTE / TODO possible to add double tap to reset all channels
+
     # reset sysex variables
 
     ASS numPressed = 0
@@ -425,6 +365,11 @@ IF MT == B0
 
     # reset local
 
+    # these are only defined here, since they are essentially constants - will not change past this
+    ASS channelCC = B0 + channelVal
+    ASS channelNoteOn = 90 + channelVal
+    ASS channelNoteOff = 80 + channelVal
+
     ASS K20 = 00 00 00 00 00 00 00 00 00 00
 
     ASS numPressedTotal = 0
@@ -435,14 +380,14 @@ IF MT == B0
     ASS initLatch = 1
 
     # reset xtouch lighting and params
-    SEND F0 FF 1B 00 F7 +F
+    SEND F0 FF 17 00 F7 +F
     # TEST
     # ensure xtouch reset
     LOG XTOUCH_RESET
     # END TEST
 
     # reset channel information
-    SEND F0 CC 1C 00 F7 +F
+    SEND F0 CC 18 00 F7 +F
     # TEST
     # ensure channel information reset (will need to be done on individual files)
     LOG CHANNELS_RESET
@@ -453,10 +398,7 @@ IF MT == B0
   END
 END
 
-IF M0 == channelNoteOn
-  LOG channelNoteOn channelNoteOn
-  LOG MT MT
-  LOG M0 M0
+IF MT == 90
 
   # RESET
 
@@ -622,7 +564,7 @@ IF M0 == channelNoteOn
   IF numPressed == 1
     # gateOpened
     # SEND SYSEX
-    SEND F0 CC 19 60 F7 +F
+    SEND F0 CC 15 60 F7 +F
     # END SYSEX
   END
   # TEST TRY
@@ -679,13 +621,8 @@ IF M0 == channelNoteOn
 END
 
 
-LOG channelNoteOnPre channelNoteOn
-LOG channelNoteOffPre channelNoteOff
-LOG M0 M0
-IF M0 == channelNoteOff
-  LOG channelNoteOff channelNoteOff
-  LOG MT MT
-  LOG M0 M0
+
+IF MT == 80
 
   # if reset (key pressed limit exceeded), handle differently
   IF overload == 1
@@ -840,7 +777,7 @@ END
 
 # NOTE could add these if statements to if statements above - I think this is slightly more readable
 IF setPhrase == 1
-  IF M0 == channelNoteOn
+  IF MT == 90
     # because we're taking offset here, we need to record each step as the difference between it and the last step
     # if tempPhraseVal has a previous value (i.e. is not the first key pressed in the phrase)
     # NOTE max phrase length at this point is 30
@@ -859,7 +796,7 @@ IF setPhrase == 1
     MATH phraseIndex = phraseIndex + 1
   END
   # if phraseRest is sent
-  IF M2 == 1A 2E
+  IF M2 == 16 2E
     # assign value to 2E57, indicating a rest
     ASS JJ9 = 2E57
     # NOTE could remove math and hard code in 2E57

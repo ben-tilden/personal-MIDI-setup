@@ -1,11 +1,5 @@
+# TEST
 # xtouch test code
-
-# TODO IDEAS
-
-# add channel specific CC's
-  # fm, bass, sample, drum
-# add full reset by converting midi message to reset message and allowing it to bypass for all hardware filters
-
 
 # TEST NOTES
 # NOTE switching modes on the xtouch (from 'A' to 'B' or otherwise) while a button is currently physically pushed down will cause an issue if that button is released after mode switch
@@ -19,6 +13,7 @@
 
 # How should 'if' statements be layered? Is this arbitrary (or rather, only done to make things more readable) or can it actually make things more scalable?
 
+# TODOs listed here are mainly for general style, some for reducing general clutter
 
 
 
@@ -28,6 +23,8 @@
 
 
 
+
+# END TEST
 # xtouch mini
 
 # this file builds out the arpeggiator / drum roll for each channel
@@ -5031,11 +5028,11 @@ IF MT == 80
   IF M1 == 18 00
     IF waveguideToggle == 0
       ASS waveguideToggle = 1
-      # NOTE / TODO unsure if this is correct as of now
+      # NOTE this is a little janky - waveguide doesn't seem to reset visually and requires a press on the machine itself
       SEND F0 11 EE channelCC $116 7F F7 +F
     ELSE
       ASS waveguideToggle = 0
-      # NOTE / TODO unsure if this is correct as of now
+      # NOTE this is a little janky - waveguide doesn't seem to reset visually and requires a press on the machine itself
       SEND F0 11 EE channelCC $116 00 F7 +F
     END
     # TEST
@@ -5148,34 +5145,226 @@ IF MT == 80
 
   IF M1 == 20 00
     SEND F0 0F EE 90 00 01 F7 +F
+    IF lfo1Knob >= 18
+      IF lfo1Knob <= 20
+        MATH lfoTemp = lfo1Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo2Knob >= 18
+      IF lfo2Knob <= 20
+        MATH lfoTemp = lfo2Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo3Knob >= 18
+      IF lfo3Knob <= 20
+        MATH lfoTemp = lfo3Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo4Knob >= 18
+      IF lfo4Knob <= 20
+        MATH lfoTemp = lfo4Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
     ASS previousDrumVal = 00
   END
   IF M1 == 21 00
     SEND F0 0F EE 90 01 01 F7 +F
+    IF lfo1Knob >= 18
+      IF lfo1Knob <= 20
+        MATH lfoTemp = lfo1Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo2Knob >= 18
+      IF lfo2Knob <= 20
+        MATH lfoTemp = lfo2Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo3Knob >= 18
+      IF lfo3Knob <= 20
+        MATH lfoTemp = lfo3Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo4Knob >= 18
+      IF lfo4Knob <= 20
+        MATH lfoTemp = lfo4Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
     ASS previousDrumVal = 01
   END
   IF M1 == 22 00
     SEND F0 0F EE 90 02 01 F7 +F
+    IF lfo1Knob >= 18
+      IF lfo1Knob <= 20
+        MATH lfoTemp = lfo1Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo2Knob >= 18
+      IF lfo2Knob <= 20
+        MATH lfoTemp = lfo2Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo3Knob >= 18
+      IF lfo3Knob <= 20
+        MATH lfoTemp = lfo3Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo4Knob >= 18
+      IF lfo4Knob <= 20
+        MATH lfoTemp = lfo4Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
     ASS previousDrumVal = 02
   END
   IF M1 == 23 00
     SEND F0 0F EE 90 03 01 F7 +F
+    IF lfo1Knob >= 18
+      IF lfo1Knob <= 20
+        MATH lfoTemp = lfo1Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo2Knob >= 18
+      IF lfo2Knob <= 20
+        MATH lfoTemp = lfo2Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo3Knob >= 18
+      IF lfo3Knob <= 20
+        MATH lfoTemp = lfo3Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo4Knob >= 18
+      IF lfo4Knob <= 20
+        MATH lfoTemp = lfo4Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
     ASS previousDrumVal = 03
   END
   IF M1 == 28 00
     SEND F0 0F EE 90 08 01 F7 +F
+    IF lfo1Knob >= 18
+      IF lfo1Knob <= 20
+        MATH lfoTemp = lfo1Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo2Knob >= 18
+      IF lfo2Knob <= 20
+        MATH lfoTemp = lfo2Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo3Knob >= 18
+      IF lfo3Knob <= 20
+        MATH lfoTemp = lfo3Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo4Knob >= 18
+      IF lfo4Knob <= 20
+        MATH lfoTemp = lfo4Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
     ASS previousDrumVal = 08
   END
   IF M1 == 29 00
     SEND F0 0F EE 90 09 01 F7 +F
+    IF lfo1Knob >= 18
+      IF lfo1Knob <= 20
+        MATH lfoTemp = lfo1Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo2Knob >= 18
+      IF lfo2Knob <= 20
+        MATH lfoTemp = lfo2Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo3Knob >= 18
+      IF lfo3Knob <= 20
+        MATH lfoTemp = lfo3Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo4Knob >= 18
+      IF lfo4Knob <= 20
+        MATH lfoTemp = lfo4Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
     ASS previousDrumVal = 09
   END
   IF M1 == 2A 00
     SEND F0 0F EE 90 0A 01 F7 +F
+    IF lfo1Knob >= 18
+      IF lfo1Knob <= 20
+        MATH lfoTemp = lfo1Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo2Knob >= 18
+      IF lfo2Knob <= 20
+        MATH lfoTemp = lfo2Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo3Knob >= 18
+      IF lfo3Knob <= 20
+        MATH lfoTemp = lfo3Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo4Knob >= 18
+      IF lfo4Knob <= 20
+        MATH lfoTemp = lfo4Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
     ASS previousDrumVal = 0A
   END
   IF M1 == 2B 00
     SEND F0 0F EE 90 0B 01 F7 +F
+    IF lfo1Knob >= 18
+      IF lfo1Knob <= 20
+        MATH lfoTemp = lfo1Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo2Knob >= 18
+      IF lfo2Knob <= 20
+        MATH lfoTemp = lfo2Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo3Knob >= 18
+      IF lfo3Knob <= 20
+        MATH lfoTemp = lfo3Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
+    IF lfo4Knob >= 18
+      IF lfo4Knob <= 20
+        MATH lfoTemp = lfo4Knob - F
+        SEND F0 0F EE B0 lfoTemp 1C F7 +F
+      END
+    END
     ASS previousDrumVal = 0B
   END
 
