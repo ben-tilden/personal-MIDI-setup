@@ -30,7 +30,7 @@ IF LOAD
 
   # constant
 
-  ALIAS 00 channelVal # channel specific (obviously)
+  ALIAS 0A channelVal # channel specific (obviously)
   ALIAS F078 maxValClockNumNorm
   ALIAS FF78 maxValClockNumEdge
   ALIAS 20 arpOffset

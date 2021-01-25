@@ -1,3 +1,31 @@
+# TEST
+# xtouch test code
+
+# TEST NOTES
+# NOTE switching modes on the xtouch (from 'A' to 'B' or otherwise) while a button is currently physically pushed down will cause an issue if that button is released after mode switch
+# NOTE knobs modulated by lfos should not be turned (unless chain modulated); they will resolve cleanly if turned, but lighting will be lost
+# NOTE could add knob to change channel instead of launchkey button
+# NOTE it's possible to create arrays just via offset and iterate through rather than have x if statements as seen here
+# NOTE / TODO knob#Val and knob#CurrentVal don't work as descriptive variables - could use a change
+
+# Due to there only being 4 local arrays available and a lack of sophisticated syntax regarding logic, there have been a few questions regarding best practice:
+
+# If you need to store values 1, 2, 3, 4 in an array that should directly correspond to another array (i.e. a hashmap of sorts), do you use the same indices at the expense of possibly losing storage flexibility, or do you offset the indices using a constant? The former allows you to access the same values using the same indices, which is likely less convoluted (and likely better) but due to storage restrictions this could cause issues if there are too many variables. This is especially relevant considering the fact that, in order to use for loops the content needs to be immediately adjacent, which can be difficult to negotiate if indices of one array are assigned only based off location in another array.
+
+# How should 'if' statements be layered? Is this arbitrary (or rather, only done to make things more readable) or can it actually make things more scalable?
+
+# TODOs listed here are mainly for general style, some for reducing general clutter
+
+
+
+
+
+
+
+
+
+
+# END TEST
 # xtouch mini
 
 # this file builds out the arpeggiator / drum roll for each channel
@@ -329,6 +357,10 @@ IF M0 == F0
 
   IF M2 == 07
     ASS setPhrase = M3
+    # TEST
+    # ensure xtouch receives setPhrase
+    LOG setPhrase_SYSEX_RECEIVED setPhrase
+    # END TEST
     # Turn off setPhrase light when sysex received
     IF setPhrase == 0
       SEND F0 0F EE 90 00 00 F7 +F
@@ -339,12 +371,35 @@ IF M0 == F0
 
   IF M2 == 15
     ASS arpModeSwitched = M3
+    # TEST
+    # ensure xtouch receives gateOpened
+    LOG gateOpened_SYSEX_RECEIVED arpModeSwitched
+    # END TEST
     BLOCK
     EXIT
   END
 
   # Turn off lights when init sysex received
   IF M2 == 1B 00
+    # TEST
+    # uncomment to turn on all lights on xtouch
+    # IF LOAD
+    #   ALIAS I0 resetIndex
+    #   ALIAS I1 resetIndexTemp
+    #   ASS resetIndex = 1
+    #   WHILE resetIndex < 11
+    #     MATH resetIndexTemp = resetIndex - 1
+    #     # these should only go up to eight
+    #     IF resetIndex < 9
+    #       # reset lighting on knobs
+    #       SEND F0 0F EE BA resetIndex 7F F7 +F
+    #     END
+    #     # reset button lighting
+    #     SEND F0 0F EE 90 resetIndexTemp 01 F7 +F
+    #     MATH resetIndex = resetIndex + 1
+    #   END
+    # END
+    # END TEST
 
     # reset lfo
     SEND F0 01 1D 00 F7 +F
@@ -525,6 +580,11 @@ IF M0 == F0
     # send init velocity lighting
     SEND F0 0F EE BA 03 $100 F7 +F
 
+    # TEST
+    # ensure lights turn off on init
+    LOG LIGHTS_OFF_SYSEX_RECEIVED
+    LOG RESET_SYSEX_RECEIVED
+    # END TEST
     BLOCK
     EXIT
   END
@@ -593,6 +653,49 @@ IF M0 == F0
       SEND F0 0F EE BA 0D waveguideTune F7 +F
     END
 
+    # TEST
+    LOG previousDrumVal previousDrumVal
+    IF drumParams == $14
+      LOG select1 select1
+      LOG select2 select2
+      LOG selectBoth selectBoth
+    END
+    IF drumParams == $17
+      LOG level1 level1
+      LOG level2 level2
+      LOG levelBoth levelBoth
+    END
+    IF drumParams == $20
+      LOG attack1 attack1
+      LOG attack2 attack2
+      LOG attackBoth attackBoth
+    END
+    IF drumParams == $23
+      LOG release1 release1
+      LOG release2 release2
+      LOG releaseBoth releaseBoth
+    END
+    IF drumParams == $26
+      LOG pitch1 pitch1
+      LOG pitch2 pitch2
+      LOG pitchBoth pitchBoth
+    END
+    IF drumParams == $29
+      LOG modAmount1 modAmount1
+      LOG modAmount2 modAmount2
+      LOG modAmountBoth modAmountBoth
+    END
+    IF drumParams == $46
+      LOG modRate1 modRate1
+      LOG modRate2 modRate2
+      LOG modRateBoth modRateBoth
+    END
+    IF drumParams == $117
+      LOG waveguideDecay waveguideDecay
+      LOG waveguideBody waveguideBody
+      LOG waveguideTune waveguideTune
+    END
+    # END TEST
 
     # end channel specific
 
@@ -917,8 +1020,71 @@ IF M0 == F0
       END
     END
 
+    # TEST
+    # ensure knob lighting resets
+    LOG CHANNEL_SWITCH_LIGHTING
+    LOG tempoPulse tempoPulse
+    LOG gate gate
+    LOG velocity velocity
+    IF lfoNumMod == 0
+      LOG lfo1Rate lfo1Rate
+      LOG lfo1Depth lfo1Depth
+    END
+    IF lfoNumMod == 1
+      LOG lfo2Rate lfo2Rate
+      LOG lfo2Depth lfo2Depth
+    END
+    IF lfoNumMod == 2
+      LOG lfo3Rate lfo3Rate
+      LOG lfo3Depth lfo3Depth
+    END
+    IF lfoNumMod == 3
+      LOG lfo4Rate lfo4Rate
+      LOG lfo4Depth lfo4Depth
+    END
+    # END TEST
 
+    # TEST
+    # ensure setPhrase, arpPhraseToggle, arpPhraseToggleOnOff, latch, lfo, padMode, groupKnobPush, lfo (4 vars) lighting resets
+    LOG CHANNEL_SWITCH_LIGHTING
+    LOG setPhrase setPhrase
+    LOG arpPhraseToggle arpPhraseToggle
+    LOG arpPhraseOnOffToggle arpPhraseOnOffToggle
+    LOG latch latch
+    LOG setLfo setLfo
+    LOG padMode padMode
+    LOG groupKnobPush groupKnobPush
+    IF lfoNumMod == 0
+      LOG lfo1OnOffToggle lfo1OnOffToggle
+      LOG lfo1Sync lfo1Sync
+      LOG lfo1Base lfo1Base
+      LOG lfo1Invert lfo1Invert
+    END
+    IF lfoNumMod == 1
+      LOG lfo2OnOffToggle lfo2OnOffToggle
+      LOG lfo2Sync lfo2Sync
+      LOG lfo2Base lfo2Base
+      LOG lfo2Invert lfo2Invert
+    END
+    IF lfoNumMod == 2
+      LOG lfo3OnOffToggle lfo3OnOffToggle
+      LOG lfo3Sync lfo3Sync
+      LOG lfo3Base lfo3Base
+      LOG lfo3Invert lfo3Invert
+    END
+    IF lfoNumMod == 3
+      LOG lfo4OnOffToggle lfo4OnOffToggle
+      LOG lfo4Sync lfo4Sync
+      LOG lfo4Base lfo4Base
+      LOG lfo4Invert lfo4Invert
+    END
+    # END TEST
 
+    # TEST
+    # ensure xtouch lighting changes properly when channel changed
+    LOG LIGHTS_SYSEX_RECEIVED
+    LOG CHANNEL_CHANGE_SYSEX_RECEIVED
+    # END TEST
     BLOCK
     EXIT
   END
@@ -931,6 +1097,15 @@ END
 IF MT == 90
 
   # don't assign if setting lfo - this prevents push control issues when setting lfo
+  # TEST
+  # ensure push control does not work when setLfo is on
+  IF setLfo == 1
+    IF M1 < 8
+      LOG NO_PUSH_CONTROL
+      LOG setLfo_ON
+    END
+  END
+  # END TEST
   IF setLfo == 0
 
     # chain modulating lfos should not be impacted by the conditionals below, since push control should work with them when they are being modulated
@@ -939,11 +1114,19 @@ IF MT == 90
     # assign knob4Push to true when knob4 is pushed - for push control
     IF M1 == 3
       ASS knob4Push = 1
+      # TEST
+      # ensure knobPush turned on accordingly
+      LOG knob4Push knob4Push
+      # END TEST
     END
 
     # assign knob5Push to true when knob5 is pushed - for push control
     IF M1 == 4
       ASS knob5Push = 1
+      # TEST
+      # ensure knobPush turned on accordingly
+      LOG knob5Push knob5Push
+      # END TEST
     END
 
     # TODO this could likely be a subroutine
@@ -981,71 +1164,127 @@ IF MT == 90
             # assign knob1Push to true when knob1 is pushed - for push control
             IF M1 == 0
               ASS knob1Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob1Push knob1Push
+              # END TEST
             END
 
             # assign knob2Push to true when knob2 is pushed - for push control
             IF M1 == 1
               ASS knob2Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob2Push knob2Push
+              # END TEST
             END
 
             # assign knob3Push to true when knob3 is pushed - for push control
             IF M1 == 2
               ASS knob3Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob3Push knob3Push
+              # END TEST
             END
 
             # assign knob6Push to true when knob6 is pushed - for push control
             IF M1 == 5
               ASS knob6Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob6Push knob6Push
+              # END TEST
             END
 
             # assign knob7Push to true when knob7 is pushed - for push control
             IF M1 == 6
               ASS knob7Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob7Push knob7Push
+              # END TEST
             END
 
             # assign knob8Push to true when knob8 is pushed - for push control
             IF M1 == 7
               ASS knob8Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob8Push knob8Push
+              # END TEST
             END
 
             # assign knob9Push to true when knob9 is pushed - for push control
             IF M1 == 18
               ASS knob9Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob9Push knob9Push
+              # END TEST
             END
 
             # assign knob10Push to true when knob10 is pushed - for push control
             IF M1 == 19
               ASS knob10Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob10Push knob10Push
+              # END TEST
             END
 
             # assign knob11Push to true when knob11 is pushed - for push control
             IF M1 == 1A
               ASS knob11Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob11Push knob11Push
+              # END TEST
             END
 
             # assign knob12Push to true when knob12 is pushed - for push control
             IF M1 == 1B
               ASS knob12Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob12Push knob12Push
+              # END TEST
             END
 
             # assign knob13Push to true when knob13 is pushed - for push control
             IF M1 == 1C
               ASS knob13Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob13Push knob13Push
+              # END TEST
             END
 
             # assign knob14Push to true when knob14 is pushed - for push control
             IF M1 == 1D
               ASS knob14Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob14Push knob14Push
+              # END TEST
             END
 
             # assign knob15Push to true when knob15 is pushed - for push control
             IF M1 == 1E
               ASS knob15Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob15Push knob15Push
+              # END TEST
             END
 
             # assign knob16Push to true when knob16 is pushed - for push control
             IF M1 == 1F
               ASS knob16Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob16Push knob16Push
+              # END TEST
             END
 
           END
@@ -1081,6 +1320,11 @@ IF MT == 90
         SEND F0 11 07 setPhrase F7 +F
       END
     END
+    # TEST
+    # ensure arpValueModeMod changes accordingly or setPhrase changes
+    LOG arpValueMode arpValueModeMod
+    LOG setPhrase setPhrase
+    # END TEST
   END
 
   # if it is a button 9 push
@@ -1096,8 +1340,16 @@ IF MT == 90
       IF setPhrase == 1
         SEND F0 11 1A 2E F7 +F
         # NOTE not currently planning on handling this, but there may is likely a race condition between rest and note that could cause issues
+        # TEST
+        # ensure rest sent
+        LOG REST_SYSEX_SENT
+        # END TEST
       END
     END
+    # TEST
+    # ensure arpValueModeMod changes accordingly
+    LOG arpValueMode arpValueModeMod
+    # END TEST
   END
 
   # if it is a button 2 push toggle arp / phrase
@@ -1113,6 +1365,16 @@ IF MT == 90
         SEND F0 11 07 setPhrase F7 +F
       END
     END
+    # TEST
+    # ensure arp and phrase are toggling and setPhrase is turned off (if on) when switched to arp
+    IF arpPhraseToggle == 0
+      LOG IS_ARP
+    END
+    IF arpPhraseToggle == 1
+      LOG IS_PHRASE
+    END
+    LOG setPhrase setPhrase
+    # END TEST
   END
 
   # if it is a button 10 push toggle button 2 selection on / off
@@ -1124,6 +1386,15 @@ IF MT == 90
       ASS arpPhraseOnOffToggle = 0
       SEND F0 C1 02 arpPhraseOnOffToggle F7 +F
     END
+    # TEST
+    # ensure arp/phrase module is turned off or on
+    IF arpPhraseOnOffToggle == 0
+      LOG MODULE_OFF
+    END
+    IF arpPhraseOnOffToggle == 1
+      LOG MODULE_ON
+    END
+    # END TEST
   END
 
   # if it is a button 3 push toggle latch
@@ -1135,6 +1406,15 @@ IF MT == 90
       ASS latch = 0
       SEND F0 11 0B latch F7 +F
     END
+    # TEST
+    # ensure latch is toggling
+    IF latch == 0
+      LOG LATCH_OFF
+    END
+    IF latch == 1
+      LOG LATCH_ON
+    END
+    # END TEST
   END
 
   # if it is a button 11 push toggle groupKnobPush
@@ -1144,6 +1424,15 @@ IF MT == 90
     ELSE
       ASS groupKnobPush = 0
     END
+    # TEST
+    # ensure groupKnobPush is toggling
+    IF groupKnobPush == 0
+      LOG groupKnobPush_OFF
+    END
+    IF groupKnobPush == 1
+      LOG groupKnobPush_ON
+    END
+    # END TEST
     # NOTE currently when turning on and off, this exits during the following conditionals, which can be inconsistent
     # the main point is that once this action is complete, there should be no need for further action anyway
     # might be good at some point to BLOCK and EXIT out of all of the conditional statements in each section
@@ -1159,6 +1448,15 @@ IF MT == 90
       ASS padMode = 0
     END
     SEND F0 11 0C padMode F7 +F
+    # TEST
+    # ensure padMode is toggling
+    IF padMode == 0
+      LOG BEATS_PAD
+    END
+    IF padMode == 1
+      LOG SAMPLE_PAD
+    END
+    # END TEST
   END
 
   # if it is a button 12 set lfo
@@ -1166,66 +1464,130 @@ IF MT == 90
     # setLfo prevents knobPush when on - this is in place to ensure knobPush and Turn can't set lfoKnob and not reset push control
     # see blocks for handling of setLfo in release below - no handling for push control
     IF knob1Push == 1
+      # TEST
+      # ensure setLfo can't be turned on when knobPush on
+      LOG knobPush_ON_NO_setLfo
+      # END TEST
       BLOCK
       EXIT
     END
     IF knob2Push == 1
+      # TEST
+      # ensure setLfo can't be turned on when knobPush on
+      LOG knobPush_ON_NO_setLfo
+      # END TEST
       BLOCK
       EXIT
     END
     IF knob3Push == 1
+      # TEST
+      # ensure setLfo can't be turned on when knobPush on
+      LOG knobPush_ON_NO_setLfo
+      # END TEST
       BLOCK
       EXIT
     END
     IF knob4Push == 1
+      # TEST
+      # ensure setLfo can't be turned on when knobPush on
+      LOG knobPush_ON_NO_setLfo
+      # END TEST
       BLOCK
       EXIT
     END
     IF knob5Push == 1
+      # TEST
+      # ensure setLfo can't be turned on when knobPush on
+      LOG knobPush_ON_NO_setLfo
+      # END TEST
       BLOCK
       EXIT
     END
     IF knob6Push == 1
+      # TEST
+      # ensure setLfo can't be turned on when knobPush on
+      LOG knobPush_ON_NO_setLfo
+      # END TEST
       BLOCK
       EXIT
     END
     IF knob7Push == 1
+      # TEST
+      # ensure setLfo can't be turned on when knobPush on
+      LOG knobPush_ON_NO_setLfo
+      # END TEST
       BLOCK
       EXIT
     END
     IF knob8Push == 1
+      # TEST
+      # ensure setLfo can't be turned on when knobPush on
+      LOG knobPush_ON_NO_setLfo
+      # END TEST
       BLOCK
       EXIT
     END
     IF knob9Push == 1
+      # TEST
+      # ensure setLfo can't be turned on when knobPush on
+      LOG knobPush_ON_NO_setLfo
+      # END TEST
       BLOCK
       EXIT
     END
     IF knob10Push == 1
+      # TEST
+      # ensure setLfo can't be turned on when knobPush on
+      LOG knobPush_ON_NO_setLfo
+      # END TEST
       BLOCK
       EXIT
     END
     IF knob11Push == 1
+      # TEST
+      # ensure setLfo can't be turned on when knobPush on
+      LOG knobPush_ON_NO_setLfo
+      # END TEST
       BLOCK
       EXIT
     END
     IF knob12Push == 1
+      # TEST
+      # ensure setLfo can't be turned on when knobPush on
+      LOG knobPush_ON_NO_setLfo
+      # END TEST
       BLOCK
       EXIT
     END
     IF knob13Push == 1
+      # TEST
+      # ensure setLfo can't be turned on when knobPush on
+      LOG knobPush_ON_NO_setLfo
+      # END TEST
       BLOCK
       EXIT
     END
     IF knob14Push == 1
+      # TEST
+      # ensure setLfo can't be turned on when knobPush on
+      LOG knobPush_ON_NO_setLfo
+      # END TEST
       BLOCK
       EXIT
     END
     IF knob15Push == 1
+      # TEST
+      # ensure setLfo can't be turned on when knobPush on
+      LOG knobPush_ON_NO_setLfo
+      # END TEST
       BLOCK
       EXIT
     END
     IF knob16Push == 1
+      # TEST
+      # ensure setLfo can't be turned on when knobPush on
+      LOG knobPush_ON_NO_setLfo
+      # END TEST
       BLOCK
       EXIT
     END
@@ -1234,6 +1596,15 @@ IF MT == 90
     ELSE
       ASS setLfo = 0
     END
+    # TEST
+    # ensure setLfo is toggling
+    IF setLfo == 0
+      LOG LFO_SET_OFF
+    END
+    IF setLfo == 1
+      LOG LFO_SET_ON
+    END
+    # END TEST
   END
 
   # if it is a button 5 push toggle current lfo
@@ -1245,6 +1616,15 @@ IF MT == 90
         ASS lfo1OnOffToggle = 0
       END
       SEND F0 01 11 lfoNumMod lfo1OnOffToggle F7 +F
+      # TEST
+      # ensure lfo1OnOffToggle is toggling
+      IF lfo1OnOffToggle == 0
+        LOG LFO_OFF lfoNumMod
+      END
+      IF lfo1OnOffToggle == 1
+        LOG LFO_ON lfoNumMod
+      END
+      # END TEST
     END
     IF lfoNumMod == 1
       IF lfo2OnOffToggle == 0
@@ -1253,6 +1633,15 @@ IF MT == 90
         ASS lfo2OnOffToggle = 0
       END
       SEND F0 01 11 lfoNumMod lfo2OnOffToggle F7 +F
+      # TEST
+      # ensure lfo2OnOffToggle is toggling
+      IF lfo2OnOffToggle == 0
+        LOG LFO_OFF lfoNumMod
+      END
+      IF lfo2OnOffToggle == 1
+        LOG LFO_ON lfoNumMod
+      END
+      # END TEST
     END
     IF lfoNumMod == 2
       IF lfo3OnOffToggle == 0
@@ -1261,6 +1650,15 @@ IF MT == 90
         ASS lfo3OnOffToggle = 0
       END
       SEND F0 01 11 lfoNumMod lfo3OnOffToggle F7 +F
+      # TEST
+      # ensure lfo3OnOffToggle is toggling
+      IF lfo3OnOffToggle == 0
+        LOG LFO_OFF lfoNumMod
+      END
+      IF lfo3OnOffToggle == 1
+        LOG LFO_ON lfoNumMod
+      END
+      # END TEST
     END
     IF lfoNumMod == 3
       IF lfo4OnOffToggle == 0
@@ -1269,6 +1667,15 @@ IF MT == 90
         ASS lfo4OnOffToggle = 0
       END
       SEND F0 01 11 lfoNumMod lfo4OnOffToggle F7 +F
+      # TEST
+      # ensure lfo4OnOffToggle is toggling
+      IF lfo4OnOffToggle == 0
+        LOG LFO_OFF lfoNumMod
+      END
+      IF lfo4OnOffToggle == 1
+        LOG LFO_ON lfoNumMod
+      END
+      # END TEST
     END
   END
 
@@ -1280,18 +1687,36 @@ IF MT == 90
       ASS lfoMuteAll = 0
     END
     SEND F0 01 12 lfoMuteAll F7 +F
+    # TEST
+    # ensure lfoMuteAll is toggling
+    IF lfoMuteAll == 0
+      LOG lfoMuteAll_OFF
+    END
+    IF lfoMuteAll == 1
+      LOG lfoMuteAll_ON
+    END
+    # END TEST
   END
 
   # if it is a button 6 push restart lfo
   IF M1 == 0D 7F
     SEND F0 01 14 lfoNumMod F7 +F
 
+    # TEST
+    # ensure lfoNum restarts accordingly on lfoReset
+    LOG lfoNum lfoNumMod
+    LOG LFO_RESTART_SYSEX_SENT
+    # END TEST
   END
 
   # if it is a button 14 push restart all lfos
   IF M1 == 15 7F
     SEND F0 01 15 00 F7 +F
 
+    # TEST
+    # ensure all lfos restart on lfoResetAll
+    LOG LFO_ALL_RESTART_SYSEX_SENT
+    # END TEST
   END
 
   # if it is a button 7 push sync lfo to tempo
@@ -1303,6 +1728,15 @@ IF MT == 90
         ASS lfo1Sync = 0
       END
       SEND F0 01 0E lfoNumMod lfo1Sync F7 +F
+      # TEST
+      # ensure lfo1Sync is toggling
+      IF lfo1Sync == 0
+        LOG LFO_SYNC_OFF lfoNumMod
+      END
+      IF lfo1Sync == 1
+        LOG LFO_SYNC_ON lfoNumMod
+      END
+      # END TEST
     END
     IF lfoNumMod == 1
       IF lfo2Sync == 0
@@ -1311,6 +1745,15 @@ IF MT == 90
         ASS lfo2Sync = 0
       END
       SEND F0 01 0E lfoNumMod lfo2Sync F7 +F
+      # TEST
+      # ensure lfo2Sync is toggling
+      IF lfo2Sync == 0
+        LOG LFO_SYNC_OFF lfoNumMod
+      END
+      IF lfo2Sync == 1
+        LOG LFO_SYNC_ON lfoNumMod
+      END
+      # END TEST
     END
     IF lfoNumMod == 1
       IF lfo3Sync == 0
@@ -1319,6 +1762,15 @@ IF MT == 90
         ASS lfo3Sync = 0
       END
       SEND F0 01 0E lfoNumMod lfo3Sync F7 +F
+      # TEST
+      # ensure lfo3Sync is toggling
+      IF lfo3Sync == 0
+        LOG LFO_SYNC_OFF lfoNumMod
+      END
+      IF lfo3Sync == 1
+        LOG LFO_SYNC_ON lfoNumMod
+      END
+      # END TEST
     END
     IF lfoNumMod == 3
       IF lfo4Sync == 0
@@ -1327,6 +1779,15 @@ IF MT == 90
         ASS lfo4Sync = 0
       END
       SEND F0 01 0E lfoNumMod lfo4Sync F7 +F
+      # TEST
+      # ensure lfo4Sync is toggling
+      IF lfo4Sync == 0
+        LOG LFO_SYNC_OFF lfoNumMod
+      END
+      IF lfo4Sync == 1
+        LOG LFO_SYNC_ON lfoNumMod
+      END
+      # END TEST
     END
   END
 
@@ -1339,6 +1800,15 @@ IF MT == 90
         ASS lfo1Base = 0
       END
       SEND F0 01 0F lfoNumMod lfo1Base F7 +F
+      # TEST
+      # ensure lfo1Base is toggling
+      IF lfo1Base == 0
+        LOG LFO_BASE_BOTTOM lfoNumMod
+      END
+      IF lfo1Base == 1
+        LOG LFO_BASE_MIDDLE lfoNumMod
+      END
+      # END TEST
     END
     IF lfoNumMod == 1
       IF lfo2Base == 0
@@ -1347,6 +1817,15 @@ IF MT == 90
         ASS lfo2Base = 0
       END
       SEND F0 01 0F lfoNumMod lfo2Base F7 +F
+      # TEST
+      # ensure lfo2Base is toggling
+      IF lfo2Base == 0
+        LOG LFO_BASE_BOTTOM lfoNumMod
+      END
+      IF lfo2Base == 1
+        LOG LFO_BASE_MIDDLE lfoNumMod
+      END
+      # END TEST
     END
     IF lfoNumMod == 2
       IF lfo3Base == 0
@@ -1355,6 +1834,15 @@ IF MT == 90
         ASS lfo3Base = 0
       END
       SEND F0 01 0F lfoNumMod lfo3Base F7 +F
+      # TEST
+      # ensure lfo3Base is toggling
+      IF lfo3Base == 0
+        LOG LFO_BASE_BOTTOM lfoNumMod
+      END
+      IF lfo3Base == 1
+        LOG LFO_BASE_MIDDLE lfoNumMod
+      END
+      # END TEST
     END
     IF lfoNumMod == 3
       IF lfo4Base == 0
@@ -1363,6 +1851,15 @@ IF MT == 90
         ASS lfo4Base = 0
       END
       SEND F0 01 0F lfoNumMod lfo4Base F7 +F
+      # TEST
+      # ensure lfo4Base is toggling
+      IF lfo4Base == 0
+        LOG LFO_BASE_BOTTOM lfoNumMod
+      END
+      IF lfo4Base == 1
+        LOG LFO_BASE_MIDDLE lfoNumMod
+      END
+      # END TEST
     END
   END
 
@@ -1375,6 +1872,15 @@ IF MT == 90
         ASS lfo1Invert = 0
       END
       SEND F0 01 10 lfoNumMod lfo1Invert F7 +F
+      # TEST
+      # ensure lfo1Invert is toggling
+      IF lfo1Invert == 0
+        LOG LFO_INVERT_OFF lfoNumMod
+      END
+      IF lfo1Invert == 1
+        LOG LFO_INVERT_ON lfoNumMod
+      END
+      # END TEST
     END
     IF lfoNumMod == 1
       IF lfo2Invert == 0
@@ -1383,6 +1889,15 @@ IF MT == 90
         ASS lfo2Invert = 0
       END
       SEND F0 01 10 lfoNumMod lfo2Invert F7 +F
+      # TEST
+      # ensure lfo2Invert is toggling
+      IF lfo2Invert == 0
+        LOG LFO_INVERT_OFF lfoNumMod
+      END
+      IF lfo2Invert == 1
+        LOG LFO_INVERT_ON lfoNumMod
+      END
+      # END TEST
     END
     IF lfoNumMod == 2
       IF lfo3Invert == 0
@@ -1391,6 +1906,15 @@ IF MT == 90
         ASS lfo3Invert = 0
       END
       SEND F0 01 10 lfoNumMod lfo3Invert F7 +F
+      # TEST
+      # ensure lfo3Invert is toggling
+      IF lfo3Invert == 0
+        LOG LFO_INVERT_OFF lfoNumMod
+      END
+      IF lfo3Invert == 1
+        LOG LFO_INVERT_ON lfoNumMod
+      END
+      # END TEST
     END
     IF lfoNumMod == 3
       IF lfo4Invert == 0
@@ -1399,6 +1923,15 @@ IF MT == 90
         ASS lfo4Invert = 0
       END
       SEND F0 01 10 lfoNumMod lfo4Invert F7 +F
+      # TEST
+      # ensure lfo4Invert is toggling
+      IF lfo4Invert == 0
+        LOG LFO_INVERT_OFF lfoNumMod
+      END
+      IF lfo4Invert == 1
+        LOG LFO_INVERT_ON lfoNumMod
+      END
+      # END TEST
     END
   END
 
@@ -1488,6 +2021,10 @@ IF MT == 90
       END
     END
 
+    # TEST
+    # ensure 'pan' lighting and lfo lighting reset
+    LOG PAN_LIGHTING_SENT
+    # END TEST
   END
 
   # if it is a button 32 reset lfo modulation lighting
@@ -1524,6 +2061,10 @@ IF MT == 90
       END
     END
 
+    # TEST
+    # ensure lfo lighting reset for mode 'B'
+    LOG PAN_LIGHTING_SENT
+    # END TEST
   END
 
   # channel specific
@@ -1536,6 +2077,10 @@ IF MT == 90
     END
     SEND F0 11 1F trackingMode F7 +F
 
+    # TEST
+    # ensure trackingMode is assigned according to correct buttons
+    LOG trackingMode trackingMode
+    # END TEST
   END
 
   # tracking mode double
@@ -1546,6 +2091,10 @@ IF MT == 90
     END
     SEND F0 11 1F trackingMode F7 +F
 
+    # TEST
+    # ensure trackingMode is assigned according to correct buttons
+    LOG trackingMode trackingMode
+    # END TEST
   END
 
   # tracking mode single
@@ -1556,23 +2105,43 @@ IF MT == 90
     END
     SEND F0 11 1F trackingMode F7 +F
 
+    # TEST
+    # ensure trackingMode is assigned according to correct buttons
+    LOG trackingMode trackingMode
+    # END TEST
   END
 
   # if knob is pressed and a drumParam is changed, the value in the L array will not match up correctly
   # NOTE monitor for actions that this may be blocking that are unrelated to drum
   IF groupKnobPush == 1
+    # TEST
+    # ensure drumParams can't be changed when groupKnobPush on
+    LOG groupKnobPush groupKnobPush
+    # END TEST
     BLOCK
     EXIT
   END
   IF knob9Push == 1
+    # TEST
+    # ensure drumParams can't be changed when knob9Push on
+    LOG knob9Push knob9Push
+    # END TEST
     BLOCK
     EXIT
   END
   IF knob10Push == 1
+    # TEST
+    # ensure drumParams can't be changed when knob10Push on
+    LOG knob10Push knob10Push
+    # END TEST
     BLOCK
     EXIT
   END
   IF knob11Push == 1
+    # TEST
+    # ensure drumParams can't be changed when knob11Push on
+    LOG knob11Push knob11Push
+    # END TEST
     BLOCK
     EXIT
   END
@@ -1586,10 +2155,24 @@ IF MT == 90
     END
     SEND F0 0F EE BA 0B select1 F7 +F
     ASS L18 = select1
+    # TEST
+    LOG L18 L18
+    # END TEST
     SEND F0 0F EE BA 0C select2 F7 +F
     ASS L19 = select2
+    # TEST
+    LOG L19 L19
+    # END TEST
     SEND F0 0F EE BA 0D selectBoth F7 +F
     ASS L1A = selectBoth
+    # TEST
+    LOG L1A L1A
+    # END TEST
+    # TEST
+    # ensure drumparams are assigned according to correct buttons
+    # ensure 'select' lighting sent to knobs
+    LOG drumParams drumParams
+    # END TEST
   END
   # if it is button 2 - knobs control 'level'
   IF M1 == 21 7F
@@ -1599,10 +2182,24 @@ IF MT == 90
     END
     SEND F0 0F EE BA 0B level1 F7 +F
     ASS L18 = level1
+    # TEST
+    LOG L18 L18
+    # END TEST
     SEND F0 0F EE BA 0C level2 F7 +F
     ASS L19 = level2
+    # TEST
+    LOG L19 L19
+    # END TEST
     SEND F0 0F EE BA 0D levelBoth F7 +F
     ASS L1A = levelBoth
+    # TEST
+    LOG L1A L1A
+    # END TEST
+    # TEST
+    # ensure drumparams are assigned according to correct buttons
+    # ensure 'level' lighting sent to knobs
+    LOG drumParams drumParams
+    # END TEST
   END
   # if it is button 3 - knobs control 'attack'
   IF M1 == 22 7F
@@ -1612,10 +2209,24 @@ IF MT == 90
     END
     SEND F0 0F EE BA 0B attack1 F7 +F
     ASS L18 = attack1
+    # TEST
+    LOG L18 L18
+    # END TEST
     SEND F0 0F EE BA 0C attack2 F7 +F
     ASS L19 = attack2
+    # TEST
+    LOG L19 L19
+    # END TEST
     SEND F0 0F EE BA 0D attackBoth F7 +F
     ASS L1A = attackBoth
+    # TEST
+    LOG L1A L1A
+    # END TEST
+    # TEST
+    # ensure drumparams are assigned according to correct buttons
+    # ensure 'attack' lighting sent to knobs
+    LOG drumParams drumParams
+    # END TEST
   END
   # if it is button 4 - knobs control 'release'
   IF M1 == 23 7F
@@ -1625,10 +2236,24 @@ IF MT == 90
     END
     SEND F0 0F EE BA 0B release1 F7 +F
     ASS L18 = release1
+    # TEST
+    LOG L18 L18
+    # END TEST
     SEND F0 0F EE BA 0C release2 F7 +F
     ASS L19 = release2
+    # TEST
+    LOG L19 L19
+    # END TEST
     SEND F0 0F EE BA 0D releaseBoth F7 +F
     ASS L1A = releaseBoth
+    # TEST
+    LOG L1A L1A
+    # END TEST
+    # TEST
+    # ensure drumparams are assigned according to correct buttons
+    # ensure 'release' lighting sent to knobs
+    LOG drumParams drumParams
+    # END TEST
   END
   # if it is button 9 - knobs control 'pitch'
   IF M1 == 28 7F
@@ -1638,10 +2263,24 @@ IF MT == 90
     END
     SEND F0 0F EE BA 0B pitch1 F7 +F
     ASS L18 = pitch1
+    # TEST
+    LOG L18 L18
+    # END TEST
     SEND F0 0F EE BA 0C pitch2 F7 +F
     ASS L19 = pitch2
+    # TEST
+    LOG L19 L19
+    # END TEST
     SEND F0 0F EE BA 0D pitchBoth F7 +F
     ASS L1A = pitchBoth
+    # TEST
+    LOG L1A L1A
+    # END TEST
+    # TEST
+    # ensure drumparams are assigned according to correct buttons
+    # ensure 'pitch' lighting sent to knobs
+    LOG drumParams drumParams
+    # END TEST
   END
   # if it is button 10 - knobs control 'modAmount'
   IF M1 == 29 7F
@@ -1651,10 +2290,24 @@ IF MT == 90
     END
     SEND F0 0F EE BA 0B modAmount1 F7 +F
     ASS L18 = modAmount1
+    # TEST
+    LOG L18 L18
+    # END TEST
     SEND F0 0F EE BA 0C modAmount2 F7 +F
     ASS L19 = modAmount2
+    # TEST
+    LOG L19 L19
+    # END TEST
     SEND F0 0F EE BA 0D modAmountBoth F7 +F
     ASS L1A = modAmountBoth
+    # TEST
+    LOG L1A L1A
+    # END TEST
+    # TEST
+    # ensure drumparams are assigned according to correct buttons
+    # ensure 'modAmount' lighting sent to knobs
+    LOG drumParams drumParams
+    # END TEST
   END
   # if it is button 11 - knobs control 'modRate'
   IF M1 == 2A 7F
@@ -1664,10 +2317,24 @@ IF MT == 90
     END
     SEND F0 0F EE BA 0B modRate1 F7 +F
     ASS L18 = modRate1
+    # TEST
+    LOG L18 L18
+    # END TEST
     SEND F0 0F EE BA 0C modRate2 F7 +F
     ASS L19 = modRate2
+    # TEST
+    LOG L19 L19
+    # END TEST
     SEND F0 0F EE BA 0D modRateBoth F7 +F
     ASS L1A = modRateBoth
+    # TEST
+    LOG L1A L1A
+    # END TEST
+    # TEST
+    # ensure drumparams are assigned according to correct buttons
+    # ensure 'modRate' lighting sent to knobs
+    LOG drumParams drumParams
+    # END TEST
   END
   # order is decay, body, tune, send
   # if it is button 12 - knobs control 'waveguide'
@@ -1678,10 +2345,24 @@ IF MT == 90
     END
     SEND F0 0F EE BA 0B waveguideDecay F7 +F
     ASS L18 = waveguideDecay
+    # TEST
+    LOG L18 L18
+    # END TEST
     SEND F0 0F EE BA 0C waveguideBody F7 +F
     ASS L19 = waveguideBody
+    # TEST
+    LOG L19 L19
+    # END TEST
     SEND F0 0F EE BA 0D waveguideTune F7 +F
     ASS L1A = waveguideTune
+    # TEST
+    LOG L1A L1A
+    # END TEST
+    # TEST
+    # ensure drumparams are assigned according to correct buttons
+    # ensure 'waveguide' lighting sent to knobs
+    LOG drumParams drumParams
+    # END TEST
   END
 
   # end channel specific
@@ -1701,23 +2382,43 @@ IF MT == 80
       IF lfoNumMod == 0
 
         IF M1 == 03
+          # TEST
+          # ensure attempting to chain modulate from lfo 1 exits gracefully
+          LOG NO_LFO_TO_MODULATE
+          # END TEST
           BLOCK
           EXIT
         END
         IF M1 == 04
+          # TEST
+          # ensure attempting to chain modulate from lfo 1 exits gracefully
+          LOG NO_LFO_TO_MODULATE
+          # END TEST
           BLOCK
           EXIT
         END
 
         IF lfo2Knob == M1
+          # TEST
+          # ensure attempting to modulate with two lfos at once exits gracefully
+          LOG KNOB_ALREADY_MODULATED
+          # END TEST
           BLOCK
           EXIT
         END
         IF lfo3Knob == M1
+          # TEST
+          # ensure attempting to modulate with two lfos at once exits gracefully
+          LOG KNOB_ALREADY_MODULATED
+          # END TEST
           BLOCK
           EXIT
         END
         IF lfo4Knob == M1
+          # TEST
+          # ensure attempting to modulate with two lfos at once exits gracefully
+          LOG KNOB_ALREADY_MODULATED
+          # END TEST
           BLOCK
           EXIT
         END
@@ -1760,14 +2461,26 @@ IF MT == 80
         IF M1 != 3
           IF M1 != 4
             IF lfo1Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
               BLOCK
               EXIT
             END
             IF lfo3Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
               BLOCK
               EXIT
             END
             IF lfo4Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
               BLOCK
               EXIT
             END
@@ -1818,14 +2531,26 @@ IF MT == 80
         IF M1 != 3
           IF M1 != 4
             IF lfo1Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
               BLOCK
               EXIT
             END
             IF lfo2Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
               BLOCK
               EXIT
             END
             IF lfo4Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
               BLOCK
               EXIT
             END
@@ -1876,14 +2601,26 @@ IF MT == 80
         IF M1 != 3
           IF M1 != 4
             IF lfo1Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
               BLOCK
               EXIT
             END
             IF lfo2Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
               BLOCK
               EXIT
             END
             IF lfo3Knob == M1
+              # TEST
+              # ensure attempting to modulate with two lfos at once exits gracefully
+              LOG KNOB_ALREADY_MODULATED
+              # END TEST
               BLOCK
               EXIT
             END
@@ -1930,6 +2667,17 @@ IF MT == 80
       END
       ASS setLfo = 0
       SEND F0 0F EE 90 0B 00 F7 +F
+      # TEST
+      # ensure lfoKnob is correctly set for any knob that's pressed, and that nothing is negatively impacted by it
+      # ensure sequence setLfo on, then groupKnobPush on causes no issues
+        # setLfo on and buttons should function as expected
+        # setLfo on and knob turns should function as expected (values change, L array values only change if groupKnobPush is off)
+      # ensure sequence groupKnobPush on, then setLfo on causes no issues
+        # because this has no involvement or mutation of groupKnobPush functionality, this should  function as expected
+      LOG lfoNum lfoNumMod
+      LOG lfoKnob M1
+      LOG lfoKnob_SYSEX_SENT
+      # END TEST
       BLOCK
       EXIT
     END
@@ -1943,14 +2691,26 @@ IF MT == 80
         IF lfoNumMod == 0
 
           IF lfo2Knob == M1
+            # TEST
+            # ensure attempting to modulate with two lfos at once exits gracefully
+            LOG KNOB_ALREADY_MODULATED
+            # END TEST
             BLOCK
             EXIT
           END
           IF lfo3Knob == M1
+            # TEST
+            # ensure attempting to modulate with two lfos at once exits gracefully
+            LOG KNOB_ALREADY_MODULATED
+            # END TEST
             BLOCK
             EXIT
           END
           IF lfo4Knob == M1
+            # TEST
+            # ensure attempting to modulate with two lfos at once exits gracefully
+            LOG KNOB_ALREADY_MODULATED
+            # END TEST
             BLOCK
             EXIT
           END
@@ -1962,14 +2722,26 @@ IF MT == 80
         IF lfoNumMod == 1
 
           IF lfo1Knob == M1
+            # TEST
+            # ensure attempting to modulate with two lfos at once exits gracefully
+            LOG KNOB_ALREADY_MODULATED
+            # END TEST
             BLOCK
             EXIT
           END
           IF lfo3Knob == M1
+            # TEST
+            # ensure attempting to modulate with two lfos at once exits gracefully
+            LOG KNOB_ALREADY_MODULATED
+            # END TEST
             BLOCK
             EXIT
           END
           IF lfo4Knob == M1
+            # TEST
+            # ensure attempting to modulate with two lfos at once exits gracefully
+            LOG KNOB_ALREADY_MODULATED
+            # END TEST
             BLOCK
             EXIT
           END
@@ -1981,14 +2753,26 @@ IF MT == 80
         IF lfoNumMod == 2
 
           IF lfo1Knob == M1
+            # TEST
+            # ensure attempting to modulate with two lfos at once exits gracefully
+            LOG KNOB_ALREADY_MODULATED
+            # END TEST
             BLOCK
             EXIT
           END
           IF lfo2Knob == M1
+            # TEST
+            # ensure attempting to modulate with two lfos at once exits gracefully
+            LOG KNOB_ALREADY_MODULATED
+            # END TEST
             BLOCK
             EXIT
           END
           IF lfo4Knob == M1
+            # TEST
+            # ensure attempting to modulate with two lfos at once exits gracefully
+            LOG KNOB_ALREADY_MODULATED
+            # END TEST
             BLOCK
             EXIT
           END
@@ -2000,14 +2784,26 @@ IF MT == 80
         IF lfoNumMod == 3
 
           IF lfo1Knob == M1
+            # TEST
+            # ensure attempting to modulate with two lfos at once exits gracefully
+            LOG KNOB_ALREADY_MODULATED
+            # END TEST
             BLOCK
             EXIT
           END
           IF lfo2Knob == M1
+            # TEST
+            # ensure attempting to modulate with two lfos at once exits gracefully
+            LOG KNOB_ALREADY_MODULATED
+            # END TEST
             BLOCK
             EXIT
           END
           IF lfo3Knob == M1
+            # TEST
+            # ensure attempting to modulate with two lfos at once exits gracefully
+            LOG KNOB_ALREADY_MODULATED
+            # END TEST
             BLOCK
             EXIT
           END
@@ -2053,6 +2849,17 @@ IF MT == 80
           END
         END
 
+        # TEST
+        # ensure lfoKnob is correctly set for any knob that's pressed, and that nothing is negatively impacted by it
+        # ensure sequence setLfo on, then groupKnobPush on causes no issues
+          # setLfo on and buttons should function as expected
+          # setLfo on and knob turns should function as expected (values change, L array values only change if groupKnobPush is off)
+        # ensure sequence groupKnobPush on, then setLfo on causes no issues
+          # because this has no involvement or mutation of groupKnobPush functionality, this should  function as expected
+        LOG lfoNum lfoNumMod
+        LOG lfoKnob M1
+        LOG lfoKnob_SYSEX_SENT
+        # END TEST
         BLOCK
         EXIT
       END
@@ -2076,11 +2883,25 @@ IF MT == 80
         # no need to send lighting here, since tempo sends its own on injection
         ASS knob1Push = 0
         ASS knob1Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # tempoPulse
+        LOG M1 M1
+        LOG LM1 LM1
+        LOG knob1Push knob1Push
+        LOG knob1Turn knob1Turn
+        # END TEST
         # if using push control, releasing the knob button should not have any effect
         BLOCK
         EXIT
       ELSE
         ASS knob1Push = 0
+        # TEST
+        LOG knob1Push_RESET
+        # END TEST
       END
     END
 
@@ -2093,11 +2914,25 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp LM1 F7 +F
         ASS knob2Push = 0
         ASS knob2Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # gate
+        LOG M1 M1
+        LOG LM1 LM1
+        LOG knob2Push knob2Push
+        LOG knob2Turn knob2Turn
+        # END TEST
         # if using push control, releasing the knob button should not have any effect
         BLOCK
         EXIT
       ELSE
         ASS knob2Push = 0
+        # TEST
+        LOG knob2Push_RESET
+        # END TEST
       END
     END
 
@@ -2110,11 +2945,25 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp LM1 F7 +F
         ASS knob3Push = 0
         ASS knob3Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # velocity
+        LOG M1 M1
+        LOG LM1 LM1
+        LOG knob3Push knob3Push
+        LOG knob3Turn knob3Turn
+        # END TEST
         # if using push control, releasing the knob button should not have any effect
         BLOCK
         EXIT
       ELSE
         ASS knob3Push = 0
+        # TEST
+        LOG knob3Push_RESET
+        # END TEST
       END
     END
 
@@ -2127,11 +2976,25 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp LM1 F7 +F
         ASS knob4Push = 0
         ASS knob4Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # lfo rate
+        LOG M1 M1
+        LOG LM1 LM1
+        LOG knob4Push knob4Push
+        LOG knob4Turn knob4Turn
+        # END TEST
         # if using push control, releasing the knob button should not have any effect
         BLOCK
         EXIT
       ELSE
         ASS knob4Push = 0
+        # TEST
+        LOG knob4Push_RESET
+        # END TEST
       END
     END
 
@@ -2144,11 +3007,25 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp LM1 F7 +F
         ASS knob5Push = 0
         ASS knob5Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # lfo depth
+        LOG M1 M1
+        LOG LM1 LM1
+        LOG knob5Push knob5Push
+        LOG knob5Turn knob5Turn
+        # END TEST
         # if using push control, releasing the knob button should not have any effect
         BLOCK
         EXIT
       ELSE
         ASS knob5Push = 0
+        # TEST
+        LOG knob5Push_RESET
+        # END TEST
       END
     END
 
@@ -2161,11 +3038,26 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp LM1 F7 +F
         ASS knob6Push = 0
         ASS knob6Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # pan (DRUM)
+        # channel specific
+        LOG M1 M1
+        LOG LM1 LM1
+        LOG knob6Push knob6Push
+        LOG knob6Turn knob6Turn
+        # END TEST
         # if using push control, releasing the knob button should not have any effect
         BLOCK
         EXIT
       ELSE
         ASS knob6Push = 0
+        # TEST
+        LOG knob6Push_RESET
+        # END TEST
       END
     END
 
@@ -2178,11 +3070,26 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp LM1 F7 +F
         ASS knob7Push = 0
         ASS knob7Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # dry gain (DRUM)
+        # channel specific
+        LOG M1 M1
+        LOG LM1 LM1
+        LOG knob7Push knob7Push
+        LOG knob7Turn knob7Turn
+        # END TEST
         # if using push control, releasing the knob button should not have any effect
         BLOCK
         EXIT
       ELSE
         ASS knob7Push = 0
+        # TEST
+        LOG knob7Push_RESET
+        # END TEST
       END
     END
 
@@ -2195,11 +3102,26 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp LM1 F7 +F
         ASS knob8Push = 0
         ASS knob8Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # drive (DRUM)
+        # channel specific
+        LOG M1 M1
+        LOG LM1 LM1
+        LOG knob8Push knob8Push
+        LOG knob8Turn knob8Turn
+        # END TEST
         # if using push control, releasing the knob button should not have any effect
         BLOCK
         EXIT
       ELSE
         ASS knob8Push = 0
+        # TEST
+        LOG knob8Push_RESET
+        # END TEST
       END
     END
 
@@ -2212,11 +3134,25 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp LM1 F7 +F
         ASS knob9Push = 0
         ASS knob9Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # drumParam1
+        LOG M1 M1
+        LOG LM1 LM1
+        LOG knob9Push knob9Push
+        LOG knob9Turn knob9Turn
+        # END TEST
         # if using push control, releasing the knob button should not have any effect
         BLOCK
         EXIT
       ELSE
         ASS knob9Push = 0
+        # TEST
+        LOG knob9Push_RESET
+        # END TEST
       END
     END
 
@@ -2229,11 +3165,25 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp LM1 F7 +F
         ASS knob10Push = 0
         ASS knob10Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # drumParam2
+        LOG M1 M1
+        LOG LM1 LM1
+        LOG knob10Push knob10Push
+        LOG knob10Turn knob10Turn
+        # END TEST
         # if using push control, releasing the knob button should not have any effect
         BLOCK
         EXIT
       ELSE
         ASS knob10Push = 0
+        # TEST
+        LOG knob10Push_RESET
+        # END TEST
       END
     END
 
@@ -2246,11 +3196,25 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp LM1 F7 +F
         ASS knob11Push = 0
         ASS knob11Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # drumParam3
+        LOG M1 M1
+        LOG LM1 LM1
+        LOG knob11Push knob11Push
+        LOG knob11Turn knob11Turn
+        # END TEST
         # if using push control, releasing the knob button should not have any effect
         BLOCK
         EXIT
       ELSE
         ASS knob11Push = 0
+        # TEST
+        LOG knob11Push_RESET
+        # END TEST
       END
     END
 
@@ -2263,11 +3227,26 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp LM1 F7 +F
         ASS knob12Push = 0
         ASS knob12Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # waveguide send (DRUM)
+        # channel specific
+        LOG M1 M1
+        LOG LM1 LM1
+        LOG knob12Push knob12Push
+        LOG knob12Turn knob12Turn
+        # END TEST
         # if using push control, releasing the knob button should not have any effect
         BLOCK
         EXIT
       ELSE
         ASS knob12Push = 0
+        # TEST
+        LOG knob12Push_RESET
+        # END TEST
       END
     END
 
@@ -2280,11 +3259,26 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp LM1 F7 +F
         ASS knob13Push = 0
         ASS knob13Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # bit reduction (DRUM)
+        # channel specific
+        LOG M1 M1
+        LOG LM1 LM1
+        LOG knob13Push knob13Push
+        LOG knob13Turn knob13Turn
+        # END TEST
         # if using push control, releasing the knob button should not have any effect
         BLOCK
         EXIT
       ELSE
         ASS knob13Push = 0
+        # TEST
+        LOG knob13Push_RESET
+        # END TEST
       END
     END
 
@@ -2297,11 +3291,26 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp LM1 F7 +F
         ASS knob14Push = 0
         ASS knob14Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # fold (DRUM)
+        # channel specific
+        LOG M1 M1
+        LOG LM1 LM1
+        LOG knob14Push knob14Push
+        LOG knob14Turn knob14Turn
+        # END TEST
         # if using push control, releasing the knob button should not have any effect
         BLOCK
         EXIT
       ELSE
         ASS knob14Push = 0
+        # TEST
+        LOG knob14Push_RESET
+        # END TEST
       END
     END
 
@@ -2314,11 +3323,26 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp LM1 F7 +F
         ASS knob15Push = 0
         ASS knob15Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # unspecified (DRUM)
+        # channel specific
+        LOG M1 M1
+        LOG LM1 LM1
+        LOG knob15Push knob15Push
+        LOG knob15Turn knob15Turn
+        # END TEST
         # if using push control, releasing the knob button should not have any effect
         BLOCK
         EXIT
       ELSE
         ASS knob15Push = 0
+        # TEST
+        LOG knob15Push_RESET
+        # END TEST
       END
     END
 
@@ -2331,11 +3355,26 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp LM1 F7 +F
         ASS knob16Push = 0
         ASS knob16Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # unspecified (DRUM)
+        # channel specific
+        LOG M1 M1
+        LOG LM1 LM1
+        LOG knob16Push knob16Push
+        LOG knob16Turn knob16Turn
+        # END TEST
         # if using push control, releasing the knob button should not have any effect
         BLOCK
         EXIT
       ELSE
         ASS knob16Push = 0
+        # TEST
+        LOG knob16Push_RESET
+        # END TEST
       END
     END
   END
@@ -2406,22 +3445,39 @@ IF MT == 80
     IF tempoModeMod == 0
       SEND F0 0F EE BA 01 $26 F7 +F
       ASS L0 = $14
+      # TEST
+      LOG L0 L0
+      # END TEST
     END
     # set each tempoPulse to default value on switching
     # also send data to xtouch to reflect this
     IF tempoModeMod == 1
       SEND F0 0F EE BA 01 00 F7 +F
       ASS L0 = 00
+      # TEST
+      LOG L0 L0
+      # END TEST
     END
     IF tempoModeMod == 2
       SEND F0 0F EE BA 01 $50 F7 +F
       ASS L0 = $26
+      # TEST
+      LOG L0 L0
+      # END TEST
     END
     IF tempoModeMod == 3
       SEND F0 0F EE BA 01 $50 F7 +F
       ASS L0 = $26
+      # TEST
+      LOG L0 L0
+      # END TEST
     END
 
+    # TEST
+    # ensure tempoModeMod changes accordingly and tempoPulse correlates
+    LOG tempoMode tempoModeMod
+    LOG tempoPulse tempoPulse
+    # END TEST
   END
 
   # if it is a knob 2 button release, increase gate mode
@@ -2488,7 +3544,15 @@ IF MT == 80
 
     SEND F0 0F EE BA 02 00 F7 +F
     ASS L1 = 00
+    # TEST
+    LOG L1 L1
+    # END TEST
 
+    # TEST
+    # ensure gateModeMod changes accordingly and gate correlates
+    LOG gateMode gateModeMod
+    LOG gate gate
+    # END TEST
   END
 
   # if it is a knob 4 button release, change lfo type
@@ -2501,26 +3565,47 @@ IF MT == 80
       # set tempo mode to variable modulo 7
       MATH lfoTypeMod = lfo1Type % 7
       SEND F0 01 13 lfoNumMod lfoTypeMod F7 +F
+      # TEST
+      # ensure lfoType changes accordingly
+      LOG lfo1Type lfoTypeMod
+      # END TEST
     END
     IF lfoNumMod == 1
       MATH lfo2Type = lfo2Type + 1
       # set tempo mode to variable modulo 4
       MATH lfoTypeMod = lfo2Type % 7
       SEND F0 01 13 lfoNumMod lfoTypeMod F7 +F
+      # TEST
+      # ensure lfoType changes accordingly
+      LOG lfo2Type lfoTypeMod
+      # END TEST
     END
     IF lfoNumMod == 2
       MATH lfo3Type = lfo3Type + 1
       # set tempo mode to variable modulo 4
       MATH lfoTypeMod = lfo3Type % 7
       SEND F0 01 13 lfoNumMod lfoTypeMod F7 +F
+      # TEST
+      # ensure lfoType changes accordingly
+      LOG lfo3Type lfoTypeMod
+      # END TEST
     END
     IF lfoNumMod == 3
       MATH lfo4Type = lfo4Type + 1
       # set tempo mode to variable modulo 4
       MATH lfoTypeMod = lfo4Type % 7
       SEND F0 01 13 lfoNumMod lfoTypeMod F7 +F
+      # TEST
+      # ensure lfoType changes accordingly
+      LOG lfo4Type lfoTypeMod
+      # END TEST
     END
 
+    # TEST
+    # ensure lfoType changes accordingly
+    LOG lfoNum lfoNumMod
+    LOG lfoType_SYSEX_SENT
+    # END TEST
   END
 
   # if it is a knob 5 button release, change lfo num (the lfo that's being edited)
@@ -2545,6 +3630,10 @@ IF MT == 80
       SEND F0 0F EE BA 05 lfo1Depth F7 +F
       ASS L3 = lfo1Rate
       ASS L4 = lfo1Depth
+      # TEST
+      LOG lfo1Rate lfo1Rate
+      LOG lfo1Depth lfo1Depth
+      # END TEST
       # send lighting for lfo1OnOff, lfo1Sync, lfo1Base, and lfo1Invert
       IF lfo1OnOffToggle == 1
         SEND F0 0F EE 90 04 01 F7 +F
@@ -2588,6 +3677,10 @@ IF MT == 80
       SEND F0 0F EE BA 05 lfo2Depth F7 +F
       ASS L3 = lfo2Rate
       ASS L4 = lfo2Depth
+      # TEST
+      LOG lfo2Rate lfo2Rate
+      LOG lfo2Depth lfo2Depth
+      # END TEST
         # send lighting for lfo2OnOff, lfo2Sync, lfo2Base, and lfo2Invert
       IF lfo2OnOffToggle == 1
         SEND F0 0F EE 90 04 01 F7 +F
@@ -2631,6 +3724,10 @@ IF MT == 80
       SEND F0 0F EE BA 05 lfo3Depth F7 +F
       ASS L3 = lfo3Rate
       ASS L4 = lfo3Depth
+      # TEST
+      LOG lfo3Rate lfo3Rate
+      LOG lfo3Depth lfo3Depth
+      # END TEST
       # send lighting for lfo3OnOff, lfo3Sync, lfo3Base, and lfo3Invert
       IF lfo3OnOffToggle == 1
         SEND F0 0F EE 90 04 01 F7 +F
@@ -2674,6 +3771,10 @@ IF MT == 80
       SEND F0 0F EE BA 05 lfo4Depth F7 +F
       ASS L3 = lfo4Rate
       ASS L4 = lfo4Depth
+      # TEST
+      LOG lfo4Rate lfo4Rate
+      LOG lfo4Depth lfo4Depth
+      # END TEST
       # send lighting for lfo4OnOff, lfo4Sync, lfo4Base, and lfo4Invert
       IF lfo4OnOffToggle == 1
         SEND F0 0F EE 90 04 01 F7 +F
@@ -2697,6 +3798,11 @@ IF MT == 80
       END
     END
 
+    # TEST
+    # ensure lfoNum changes accordingly and lighting corresponds
+    LOG lfoNum lfoNumMod
+    LOG lfoNum_SYSEX_SENT
+    # END TEST
   END
 
   IF M1 == 08 00
@@ -2746,6 +3852,10 @@ IF MT == 80
           IF lfo3Knob != 0
             IF lfo4Knob != 0
               ASS knob1Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob1Push knob1Push
+              # END TEST
             END
           END
         END
@@ -2755,6 +3865,10 @@ IF MT == 80
           IF lfo3Knob != 1
             IF lfo4Knob != 1
               ASS knob2Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob2Push knob2Push
+              # END TEST
             END
           END
         END
@@ -2764,6 +3878,10 @@ IF MT == 80
           IF lfo3Knob != 2
             IF lfo4Knob != 2
               ASS knob3Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob3Push knob3Push
+              # END TEST
             END
           END
         END
@@ -2773,6 +3891,10 @@ IF MT == 80
           IF lfo3Knob != 3
             IF lfo4Knob != 3
               ASS knob4Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob4Push knob4Push
+              # END TEST
             END
           END
         END
@@ -2782,6 +3904,10 @@ IF MT == 80
           IF lfo3Knob != 4
             IF lfo4Knob != 4
               ASS knob5Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob5Push knob5Push
+              # END TEST
             END
           END
         END
@@ -2791,6 +3917,10 @@ IF MT == 80
           IF lfo3Knob != 5
             IF lfo4Knob != 5
               ASS knob6Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob6Push knob6Push
+              # END TEST
             END
           END
         END
@@ -2800,6 +3930,10 @@ IF MT == 80
           IF lfo3Knob != 6
             IF lfo4Knob != 6
               ASS knob7Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob7Push knob7Push
+              # END TEST
             END
           END
         END
@@ -2809,6 +3943,10 @@ IF MT == 80
           IF lfo3Knob != 7
             IF lfo4Knob != 7
               ASS knob8Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob8Push knob8Push
+              # END TEST
             END
           END
         END
@@ -2818,6 +3956,10 @@ IF MT == 80
           IF lfo3Knob != 18
             IF lfo4Knob != 18
               ASS knob9Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob9Push knob9Push
+              # END TEST
             END
           END
         END
@@ -2827,6 +3969,10 @@ IF MT == 80
           IF lfo3Knob != 19
             IF lfo4Knob != 19
               ASS knob10Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob10Push knob10Push
+              # END TEST
             END
           END
         END
@@ -2836,6 +3982,10 @@ IF MT == 80
           IF lfo3Knob != 1A
             IF lfo4Knob != 1A
               ASS knob11Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob11Push knob11Push
+              # END TEST
             END
           END
         END
@@ -2845,6 +3995,10 @@ IF MT == 80
           IF lfo3Knob != 1B
             IF lfo4Knob != 1B
               ASS knob12Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob12Push knob12Push
+              # END TEST
             END
           END
         END
@@ -2854,6 +4008,10 @@ IF MT == 80
           IF lfo3Knob != 1C
             IF lfo4Knob != 1C
               ASS knob13Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob13Push knob13Push
+              # END TEST
             END
           END
         END
@@ -2863,6 +4021,10 @@ IF MT == 80
           IF lfo3Knob != 1D
             IF lfo4Knob != 1D
               ASS knob14Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob14Push knob14Push
+              # END TEST
             END
           END
         END
@@ -2872,6 +4034,10 @@ IF MT == 80
           IF lfo3Knob != 1E
             IF lfo4Knob != 1E
               ASS knob15Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob15Push knob15Push
+              # END TEST
             END
           END
         END
@@ -2881,6 +4047,10 @@ IF MT == 80
           IF lfo3Knob != 1F
             IF lfo4Knob != 1F
               ASS knob16Push = 1
+              # TEST
+              # ensure knobPush turned on accordingly
+              LOG knob16Push knob16Push
+              # END TEST
             END
           END
         END
@@ -2895,8 +4065,21 @@ IF MT == 80
         # no need to send lighting here, since tempo sends its own on injection
         ASS knob1Push = 0
         ASS knob1Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # tempoPulse
+        LOG L0 L0
+        LOG knob1Push knob1Push
+        LOG knob1Turn knob1Turn
+        # END TEST
       ELSE
         ASS knob1Push = 0
+        # TEST
+        LOG knob1Push_RESET
+        # END TEST
       END
 
       IF knob2Turn == 1
@@ -2907,8 +4090,21 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp L1 F7 +F
         ASS knob2Push = 0
         ASS knob2Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # gate
+        LOG L1 L1
+        LOG knob2Push knob2Push
+        LOG knob2Turn knob2Turn
+        # END TEST
       ELSE
         ASS knob2Push = 0
+        # TEST
+        LOG knob2Push_RESET
+        # END TEST
       END
 
       IF knob3Turn == 1
@@ -2919,8 +4115,21 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp L2 F7 +F
         ASS knob3Push = 0
         ASS knob3Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # velocity
+        LOG L2 L2
+        LOG knob3Push knob3Push
+        LOG knob3Turn knob3Turn
+        # END TEST
       ELSE
         ASS knob3Push = 0
+        # TEST
+        LOG knob3Push_RESET
+        # END TEST
       END
 
       IF knob4Turn == 1
@@ -2931,8 +4140,21 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp L3 F7 +F
         ASS knob4Push = 0
         ASS knob4Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # lfo rate
+        LOG L3 L3
+        LOG knob4Push knob4Push
+        LOG knob4Turn knob4Turn
+        # END TEST
       ELSE
         ASS knob4Push = 0
+        # TEST
+        LOG knob4Push_RESET
+        # END TEST
       END
 
       IF knob5Turn == 1
@@ -2943,8 +4165,21 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp L4 F7 +F
         ASS knob5Push = 0
         ASS knob5Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # lfo depth
+        LOG L4 L4
+        LOG knob5Push knob5Push
+        LOG knob5Turn knob5Turn
+        # END TEST
       ELSE
         ASS knob5Push = 0
+        # TEST
+        LOG knob5Push_RESET
+        # END TEST
       END
 
       IF knob6Turn == 1
@@ -2955,8 +4190,22 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp L5 F7 +F
         ASS knob6Push = 0
         ASS knob6Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # pan (DRUM)
+        # channel specific
+        LOG L5 L5
+        LOG knob6Push knob6Push
+        LOG knob6Turn knob6Turn
+        # END TEST
       ELSE
         ASS knob6Push = 0
+        # TEST
+        LOG knob6Push_RESET
+        # END TEST
       END
 
       IF knob7Turn == 1
@@ -2967,8 +4216,22 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp L6 F7 +F
         ASS knob7Push = 0
         ASS knob7Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # dry gain (DRUM)
+        # channel specific
+        LOG L6 L6
+        LOG knob7Push knob7Push
+        LOG knob7Turn knob7Turn
+        # END TEST
       ELSE
         ASS knob7Push = 0
+        # TEST
+        LOG knob7Push_RESET
+        # END TEST
       END
 
       IF knob8Turn == 1
@@ -2979,8 +4242,22 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp L7 F7 +F
         ASS knob8Push = 0
         ASS knob8Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # drive (DRUM)
+        # channel specific
+        LOG L7 L7
+        LOG knob8Push knob8Push
+        LOG knob8Turn knob8Turn
+        # END TEST
       ELSE
         ASS knob8Push = 0
+        # TEST
+        LOG knob8Push_RESET
+        # END TEST
       END
 
       IF knob9Turn == 1
@@ -2996,8 +4273,21 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp L18 F7 +F
         ASS knob9Push = 0
         ASS knob9Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # drumParam1
+        LOG L18 L18
+        LOG knob9Push knob9Push
+        LOG knob9Turn knob9Turn
+        # END TEST
       ELSE
         ASS knob9Push = 0
+        # TEST
+        LOG knob9Push_RESET
+        # END TEST
       END
 
       IF knob10Turn == 1
@@ -3013,8 +4303,21 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp L19 F7 +F
         ASS knob10Push = 0
         ASS knob10Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # drumParam2
+        LOG L19 L19
+        LOG knob10Push knob10Push
+        LOG knob10Turn knob10Turn
+        # END TEST
       ELSE
         ASS knob10Push = 0
+        # TEST
+        LOG knob10Push_RESET
+        # END TEST
       END
 
       IF knob11Turn == 1
@@ -3030,8 +4333,21 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp L1A F7 +F
         ASS knob11Push = 0
         ASS knob11Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # drumParam3
+        LOG L1A L1A
+        LOG knob11Push knob11Push
+        LOG knob11Turn knob11Turn
+        # END TEST
       ELSE
         ASS knob11Push = 0
+        # TEST
+        LOG knob11Push_RESET
+        # END TEST
       END
 
       IF knob12Turn == 1
@@ -3047,8 +4363,22 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp L1B F7 +F
         ASS knob12Push = 0
         ASS knob12Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # waveguide send (DRUM)
+        # channel specific
+        LOG L1B L1B
+        LOG knob12Push knob12Push
+        LOG knob12Turn knob12Turn
+        # END TEST
       ELSE
         ASS knob12Push = 0
+        # TEST
+        LOG knob12Push_RESET
+        # END TEST
       END
 
       IF knob13Turn == 1
@@ -3064,8 +4394,22 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp L1C F7 +F
         ASS knob13Push = 0
         ASS knob13Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # bit reduction (DRUM)
+        # channel specific
+        LOG L1C L1C
+        LOG knob13Push knob13Push
+        LOG knob13Turn knob13Turn
+        # END TEST
       ELSE
         ASS knob13Push = 0
+        # TEST
+        LOG knob13Push_RESET
+        # END TEST
       END
 
       IF knob14Turn == 1
@@ -3081,8 +4425,22 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp L1D F7 +F
         ASS knob14Push = 0
         ASS knob14Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # fold (DRUM)
+        # channel specific
+        LOG L1D L1D
+        LOG knob14Push knob14Push
+        LOG knob14Turn knob14Turn
+        # END TEST
       ELSE
         ASS knob14Push = 0
+        # TEST
+        LOG knob14Push_RESET
+        # END TEST
       END
 
       IF knob15Turn == 1
@@ -3098,8 +4456,22 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp L1E F7 +F
         ASS knob15Push = 0
         ASS knob15Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # unspecified (DRUM)
+        # channel specific
+        LOG L1E L1E
+        LOG knob15Push knob15Push
+        LOG knob15Turn knob15Turn
+        # END TEST
       ELSE
         ASS knob15Push = 0
+        # TEST
+        LOG knob15Push_RESET
+        # END TEST
       END
 
       IF knob16Turn == 1
@@ -3115,8 +4487,22 @@ IF MT == 80
         SEND F0 0F EE BA knobTemp L1F F7 +F
         ASS knob16Push = 0
         ASS knob16Turn = 0
+        # TEST
+        # ensure push control release handled correctly
+        # ensure lighting matches with L array
+        # ensure L array matches with previous value
+        # ensure parameter associated with knob lighting also changed
+        # unspecified (DRUM)
+        # channel specific
+        LOG L1F L1F
+        LOG knob16Push knob16Push
+        LOG knob16Turn knob16Turn
+        # END TEST
       ELSE
         ASS knob16Push = 0
+        # TEST
+        LOG knob16Push_RESET
+        # END TEST
       END
       # send program change to ensure lighting correctly appears after change - necessary for 'B' knobs
       IF programChange == 1
@@ -3650,6 +5036,15 @@ IF MT == 80
       # NOTE this is a little janky - waveguide doesn't seem to reset visually and requires a press on the machine itself
       SEND F0 11 EE channelCC $116 00 F7 +F
     END
+    # TEST
+    # ensure waveguide is toggled properly
+    IF waveguideToggle == 0
+      LOG WAVEGUIDE_STRING
+    END
+    IF waveguideToggle == 1
+      LOG WAVEGUIDE_TUBE
+    END
+    # END TEST
   END
 
   # if it is a knob 10 button release, toggle pitch quantize
@@ -3661,6 +5056,15 @@ IF MT == 80
       ASS pitchQuantize = 0
       SEND F0 11 EE channelCC $53 00 F7 +F
     END
+    # TEST
+    # ensure pitchQuantize is toggled properly
+    IF pitchQuantize == 0
+      LOG PITCH_NOT_QUANTIZED
+    END
+    IF pitchQuantize == 1
+      LOG PITCH_QUANTIZED
+    END
+    # END TEST
   END
 
   IF M1 == 25 00
@@ -3976,83 +5380,150 @@ IF MT == B0
   IF knob1Push == 1
     IF M1 == 1
       ASS knob1Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob1Turn knob1Turn
+      # END TEST
     END
   END
   IF knob2Push == 1
     IF M1 == 2
       ASS knob2Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob2Turn knob2Turn
+      # END TEST
     END
   END
   IF knob3Push == 1
     IF M1 == 3
       ASS knob3Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob3Turn knob3Turn
+      # END TEST
     END
   END
   IF knob4Push == 1
     IF M1 == 4
       ASS knob4Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob4Turn knob4Turn
+      # END TEST
     END
   END
   IF knob5Push == 1
     IF M1 == 5
       ASS knob5Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob5Turn knob5Turn
+      # END TEST
     END
   END
   IF knob6Push == 1
     IF M1 == 6
       ASS knob6Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob6Turn knob6Turn
+      # END TEST
     END
   END
   IF knob7Push == 1
     IF M1 == 7
       ASS knob7Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob7Turn knob7Turn
+      # END TEST
     END
   END
   IF knob8Push == 1
     IF M1 == 8
       ASS knob8Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob8Turn knob8Turn
+      # END TEST
     END
   END
   IF knob9Push == 1
     IF M1 == 0B
       ASS knob9Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob9Turn knob9Turn
+      # END TEST
     END
   END
   IF knob10Push == 1
     IF M1 == 0C
       ASS knob10Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob10Turn knob10Turn
+      # END TEST
     END
   END
   IF knob11Push == 1
     IF M1 == 0D
       ASS knob11Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob11Turn knob11Turn
+      # END TEST
     END
   END
   IF knob12Push == 1
     IF M1 == 0E
       ASS knob12Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob12Turn knob12Turn
+      # END TEST
     END
   END
   IF knob13Push == 1
     IF M1 == 0F
       ASS knob13Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob13Turn knob13Turn
+      # END TEST
     END
   END
   IF knob14Push == 1
     IF M1 == 10
       ASS knob14Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob14Turn knob14Turn
+      # END TEST
     END
   END
   IF knob15Push == 1
     IF M1 == 11
       ASS knob15Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob15Turn knob15Turn
+      # END TEST
     END
   END
   IF knob16Push == 1
     IF M1 == 12
       ASS knob16Turn = 1
+      # TEST
+      # ensure that if knob is turned while knob is pressed, knob turn is set to true
+      LOG knob16Turn knob16Turn
+      # END TEST
     END
   END
+  # TEST
+  # ensure tempo lighting functions as expected
+  # END TEST
   # if knob is 1 (tempo)
   # knob is sensitive down to one notch
   IF M1 == 1
@@ -4680,6 +6151,13 @@ IF MT == B0
         END
       END
     END
+    # TEST
+    # ensure tempoPulse aligns with tempoMode
+    LOG tempoPulse tempoPulse
+    LOG L0_SET
+    LOG L0 L0
+    LOG tempoModeMod tempoModeMod
+    # END TEST
   END
   # if knob is 2 (gate)
   # starting points: max will be ~5 seconds (5000), min will be .1 seconds (100)
@@ -4692,6 +6170,13 @@ IF MT == B0
     IF knob2Push == 0
       ASS L1 = M2
     END
+    # TEST
+    # ensure gate aligns with gate
+    # ensure gateFactor is correct
+    LOG gate gate
+    LOG gateFactor gateFactor
+    LOG L1 L1
+    # END TEST
   END
   # if knob is 3 (velocity)
   IF M1 == 3
@@ -4700,6 +6185,11 @@ IF MT == B0
     IF knob3Push == 0
       ASS L2 = M2
     END
+    # TEST
+    # ensure velocity aligns with velocity
+    LOG velocity velocity
+    LOG L2 L2
+    # END TEST
   END
   # if knob is 4 (lfo rate)
   IF M1 == 4
@@ -4708,6 +6198,12 @@ IF MT == B0
     IF knob4Push == 0
       ASS L3 = M2
     END
+    # TEST
+    # ensure lfoRate aligns with lfoRate
+    LOG lfoNum lfoNum
+    LOG lfoRate M2
+    LOG L3 L3
+    # END TEST
     IF lfoNumMod == 0
       ASS lfo1Rate = M2
       SEND F0 01 16 lfoNumMod lfo1Rate F7 +F
@@ -4732,6 +6228,12 @@ IF MT == B0
     IF knob5Push == 0
       ASS L4 = M2
     END
+    # TEST
+    # ensure lfoDepth aligns with lfoDepth
+    LOG lfoNum lfoNum
+    LOG lfoDepth M2
+    LOG L4 L4
+    # END TEST
     IF lfoNumMod == 0
       ASS lfo1Depth = M2
       SEND F0 01 17 lfoNumMod lfo1Depth F7 +F
@@ -4760,6 +6262,9 @@ IF MT == B0
       ASS L5 = M2
     END
     ASS knob6CurrentVal = M2
+    # TEST
+    LOG L5 L5
+    # END TEST
 
     # send channel specific val
     SEND F0 11 EE channelCC knob6Val M2 F7 +F
@@ -4772,6 +6277,9 @@ IF MT == B0
       ASS L6 = M2
     END
     ASS knob7CurrentVal = M2
+    # TEST
+    LOG L6 L6
+    # END TEST
 
     # send channel specific val
     SEND F0 11 EE channelCC knob7Val M2 F7 +F
@@ -4784,6 +6292,9 @@ IF MT == B0
       ASS L7 = M2
     END
     ASS knob8CurrentVal = M2
+    # TEST
+    LOG L7 L7
+    # END TEST
 
     # send channel specific val
     SEND F0 11 EE channelCC knob8Val M2 F7 +F
@@ -4795,6 +6306,9 @@ IF MT == B0
     IF knob9Push == 0
       ASS L18 = M2
     END
+    # TEST
+    LOG L18 L18
+    # END TEST
     # if drumParams are 'select'
     IF drumParams == $14 $15 $16
       SEND F0 11 EE channelCC $14 M2 F7 +F
@@ -4843,6 +6357,9 @@ IF MT == B0
     IF knob10Push == 0
       ASS L19 = M2
     END
+    # TEST
+    LOG L19 L19
+    # END TEST
     # if drumParams are 'select'
     IF drumParams == $14 $15 $16
       SEND F0 11 EE channelCC $15 M2 F7 +F
@@ -4891,6 +6408,9 @@ IF MT == B0
     IF knob11Push == 0
       ASS L1A = M2
     END
+    # TEST
+    LOG L1A L1A
+    # END TEST
     # if drumParams are 'select'
     IF drumParams == $14 $15 $16
       SEND F0 11 EE channelCC $16 M2 F7 +F
@@ -4932,6 +6452,17 @@ IF MT == B0
       ASS waveguideTune = M2
     END
   END
+  # TEST
+  # ensure correct drumParam sent on knob turn
+  # ensure drumParam changed to the correct value
+  IF M1 > A
+    LOG ASSIGNED_VALUE M2
+    LOG drumParams1 K1A
+    LOG drumParams2 K1B
+    LOG drumParamsBoth K1C
+    LOG M1 M1
+  END
+  # END TEST
 
   # if knob is E (waveguide send)
   IF M1 == E
@@ -4941,6 +6472,9 @@ IF MT == B0
       ASS L1B = M2
     END
     ASS knob12CurrentVal = M2
+    # TEST
+    LOG L1B L1B
+    # END TEST
 
     # send channel specific val
     SEND F0 11 EE channelCC knob12Val M2 F7 +F
@@ -4953,6 +6487,9 @@ IF MT == B0
       ASS L1C = M2
     END
     ASS knob13CurrentVal = M2
+    # TEST
+    LOG L1C L1C
+    # END TEST
 
     # send channel specific val
     SEND F0 11 EE channelCC knob13Val M2 F7 +F
@@ -4965,6 +6502,9 @@ IF MT == B0
       ASS L1D = M2
     END
     ASS knob14CurrentVal = M2
+    # TEST
+    LOG L1D L1D
+    # END TEST
 
     # send channel specific val
     # SEND F0 11 EE channelCC knob14Val M2 F7 +F
@@ -4977,6 +6517,9 @@ IF MT == B0
       ASS L1E = M2
     END
     ASS knob15CurrentVal = M2
+    # TEST
+    LOG L1E L1E
+    # END TEST
 
     # send channel specific val
     # SEND F0 11 EE channelCC knob15Val M2 F7 +F
@@ -4989,6 +6532,9 @@ IF MT == B0
       ASS L1F = M2
     END
     ASS knob16CurrentVal = M2
+    # TEST
+    LOG L1F L1F
+    # END TEST
 
     # send channel specific val
     # SEND F0 11 EE channelCC knob16Val M2 F7 +F

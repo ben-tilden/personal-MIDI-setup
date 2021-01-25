@@ -82,7 +82,7 @@ IF LOAD
 
   # constant
 
-  ALIAS 00 channelVal # channel specific (obviously)
+  ALIAS 02 channelVal # channel specific (obviously)
   ALIAS 20 arpIndexOffset
   ALIAS C8 latchInterval
 
@@ -147,8 +147,6 @@ IF LOAD
   ASS tempPhraseVal = AAAA
   ASS overload = 0
   ASS initLatch = 1
-
-  ASS channel = 00 # channel specific (channel 0 only)
 
   # reset xtouch lighting and params
   SEND F0 FF 1B 00 F7 +F

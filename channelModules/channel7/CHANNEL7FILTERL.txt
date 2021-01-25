@@ -1,0 +1,18 @@
+# channel 7 hardware filter
+
+IF LOAD
+  # global
+  ALIAS G0 globalChannel
+
+  # constant
+  ALIAS 06 thisChannel
+END
+
+IF globalChannel != thisChannel
+  IF M1 != 6B 00
+    IF M1 != 68 7F
+      BLOCK
+      EXIT
+    END
+  END
+END
