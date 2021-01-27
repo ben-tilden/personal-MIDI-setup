@@ -290,24 +290,24 @@ IF M0 == F0
 
   IF M2 == 0B
     ASS latch = M3
-      IF latch == 0
-        ASS iter = arpIndexOffset
-        WHILE iter < arpIndex
-          SEND channelNoteOff JI3 00
-          ASS JI3 = 0
-          ASS KI3 = 0
-          MATH iter = iter + 1
-        END
-        ASS numPressed = 0
-        ASS numPressedTotal = 0
-        ASS arpIndex = arpIndexOffset
-        # SEND SYSEX
-        SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
-        # END SYSEX
-        # SEND SYSEX
-        SEND F0 CC 00 numPressed F7 +F
-        # END SYSEX
+    IF latch == 0
+      ASS iter = arpIndexOffset
+      WHILE iter < arpIndex
+        SEND channelNoteOff JI3 00
+        ASS JI3 = 0
+        ASS KI3 = 0
+        MATH iter = iter + 1
       END
+      ASS numPressed = 0
+      ASS numPressedTotal = 0
+      ASS arpIndex = arpIndexOffset
+      # SEND SYSEX
+      SEND F0 CC 20 J20 J21 J22 J23 J24 J25 J26 J27 J28 J29 F7 +F
+      # END SYSEX
+      # SEND SYSEX
+      SEND F0 CC 00 numPressed F7 +F
+      # END SYSEX
+    END
     # TEST
     # ensure launchkey receives latch
     # ensure note release properly sent when latch turned off
@@ -679,13 +679,7 @@ IF M0 == channelNoteOn
 END
 
 
-LOG channelNoteOnPre channelNoteOn
-LOG channelNoteOffPre channelNoteOff
-LOG M0 M0
 IF M0 == channelNoteOff
-  LOG channelNoteOff channelNoteOff
-  LOG MT MT
-  LOG M0 M0
 
   # if reset (key pressed limit exceeded), handle differently
   IF overload == 1
