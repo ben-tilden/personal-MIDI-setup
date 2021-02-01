@@ -16,7 +16,6 @@
 # BLOCK | F0 C1    06    val  F7      arpValueModeMod
 # BLOCK | F0 11/FF 07    val  F7      setPhrase
 # BLOCK | F0 11    0B    val  F7      latch
-# BLOCK | F0 11    0C    val  F7      padMode
 # BLOCK | F0 CC/FF 19    60   F7      gateOpened
 
 # ALLOW | F0 01    0D    val1 val2 F7 lfoKnob

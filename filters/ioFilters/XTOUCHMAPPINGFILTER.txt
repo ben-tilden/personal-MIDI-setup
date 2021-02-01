@@ -1,0 +1,14 @@
+# xtouch mapping filter
+
+IF LOAD
+  # global
+  ALIAS G0 globalChannel
+
+END
+
+# uncomment if virtual ports do not work
+#IF MT != B0
+#  BLOCK
+#  EXIT
+#END
+MATH M0 = MT + globalChannel

@@ -90,6 +90,10 @@
 
 IF LOAD
 
+  # global
+
+  ALIAS G1 padMode
+
   # constant
 
   # channel specific
@@ -187,7 +191,7 @@ IF LOAD
   ALIAS J6 arpValueModeMod
   ALIAS J7 setPhrase
   ALIAS JB latch
-  ALIAS JC padMode
+  # TODO
   ALIAS JD lfoNumMod
   ALIAS JE trackingMode # channel specific
   # TODO
@@ -327,7 +331,7 @@ IF LOAD
   ASS lfo3PushPass = FFFF
   ASS lfo4PushPass = FFFF
 
-  ASS knob6CurrentVal = 0
+  ASS knob6CurrentVal = 40 # channel specific
   ASS knob7CurrentVal = 0
   ASS knob8CurrentVal = 0
   # channel specific - not necessary here due to drumParams setup
@@ -342,7 +346,7 @@ IF LOAD
 
   # NOTE L array is used for lighting storage for push control - these are init values
   # channel specific
-  ASS L0 = 0E 00 64 00 00 00 00 00
+  ASS L0 = 0E 00 64 00 00 40 00 00
   ASS L18 = 00 00 00 00 00 00 00 00
 
   # assign channel specific
@@ -352,6 +356,16 @@ IF LOAD
 END
 
 # sysex reception
+
+# clock message triggered by host clock starting
+# NOTE only needs to be blocked in files where arpPhraseToggle is processed, since sb automatically blocks passage
+IF M0 == F0 7D 01
+  # TEST
+  LOG CLOCK_BLOCK
+  # END TEST
+  BLOCK
+  EXIT
+END
 
 IF M0 == F0
 
@@ -456,7 +470,6 @@ IF M0 == F0
     ASS arpValueModeMod = 0
     ASS setPhrase = 0
     ASS latch = 0
-    ASS padMode = 0
     ASS lfoNumMod = 0
     ASS trackingMode = 0 # channel specific
     ASS lfoTypeMod = 0
@@ -550,7 +563,7 @@ IF M0 == F0
     ASS lfo3PushPass = FFFF
     ASS lfo4PushPass = FFFF
 
-    ASS knob6CurrentVal = 0
+    ASS knob6CurrentVal = 40 # channel specific
     ASS knob7CurrentVal = 0
     ASS knob8CurrentVal = 0
     # channel specific - not necessary here due to drumParams setup
@@ -571,9 +584,6 @@ IF M0 == F0
     # reset channel specific
 
     ASS K0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0E 0F 10 00 05
-
-    # send pad mode
-    SEND F0 11 0C padMode F7 +F
 
     # send init tempo lighting
     SEND F0 0F EE BA 01 $26 F7 +F
@@ -1301,7 +1311,7 @@ IF MT == 90
   END
 
   # if it is a button 1 push
-  IF M0 == 9A 08 7F
+  IF M1 == 08 7F
     # if arp then increase variable
     IF arpPhraseToggle == 0
       MATH arpValueMode = arpValueMode + 1
@@ -1328,7 +1338,7 @@ IF MT == 90
   END
 
   # if it is a button 9 push
-  IF M0 == 9A 10 7F
+  IF M1 == 10 7F
     # if arp then decrease variable
     IF arpPhraseToggle == 0
       MATH arpValueMode = arpValueMode - 1
@@ -1447,7 +1457,6 @@ IF MT == 90
     ELSE
       ASS padMode = 0
     END
-    SEND F0 11 0C padMode F7 +F
     # TEST
     # ensure padMode is toggling
     IF padMode == 0
@@ -6164,6 +6173,7 @@ IF MT == B0
   # 2.5 seconds should be enough to handle 96 pulses at 120 bpm,  but slower bpm's can move up to 5 seconds
   # overall: 0-127 (*2) (*5) (*10) (*20) (*40)
   IF M1 == 2
+    # NOTE none of the values here end up sending an F7, but if changed it's possible they could, which would cause issues
     MATH gate = M2 * gateFactor
     MATH gateTemp = gate / 100
     SEND F0 CC 04 gateTemp gate F7 +F

@@ -1,0 +1,24 @@
+# launchkey to output filter
+
+# filter out sysex messages
+
+# messages expected:
+
+# BLOCK | F0 FF 1B 00 F7 - message sent from launchkey to xtouch to reset lighting
+# BLOCK | F0 CC 1C 00 F7 - message sent from launchkey to channel (and processing filter) to reset channel
+# BLOCK | F0 FF 1D CC F7 - message sent from launchkey to xtouch at change channel - send xtouch lights to xtouch for new channel
+
+# BLOCK | F0 CC    00    val  F7      numPressed                  
+# BLOCK | F0 FF/11 07    val  F7      setPhrase                
+# BLOCK | F0 CC    08    val  F7      phraseVal                
+# BLOCK | F0 FF    09    val  F7      phraseIndex              
+# BLOCK | F0 CC    0A    val  F7      phraseLengthPlusOffset   
+# ALLOW | F0 11    0C    val  F7      padMode
+# BLOCK | F0 CC/FF 19    60   F7      gateOpened               
+# BLOCK | F0 CC    index val1 val2 F7 phraseOffsetValues               
+# ALLOW | F0 11    1F    val  F7      trackingMode
+# BLOCK | F0 CC 20 val1 val2 val3 val4 val5 val6 val7 val8 val9 val10 F7 arpValues
+
+# ALLOW | any channel specific note and CC messages
+
+FX = XX +B

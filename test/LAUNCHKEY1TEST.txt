@@ -96,6 +96,7 @@ IF LOAD
   # global
 
   ALIAS G0 channel
+  ALIAS G1 padMode
 
   # constant
 
@@ -133,6 +134,7 @@ IF LOAD
   ALIAS J9 phraseIndex
   ALIAS JA phraseLengthPlusOffset
   ALIAS JB latch
+  ALIAS JC arpMute
 
   # assign sysex variables
 
@@ -146,6 +148,7 @@ IF LOAD
   ASS phraseIndex = 2A
   ASS phraseLengthPlusOffset = 2A
   ASS latch = 0
+  ASS arpMute = 0
   ASS J20 = 00 00 00 00 00 00 00 00 00 00 # arp values (J10 J11 J12 J13 J14 J15 J16 J17 J18 J19)
   ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
   # TEST
@@ -175,6 +178,7 @@ IF LOAD
   ASS initLatch = 1
 
   ASS channel = 00 # channel specific (channel 0 only)
+  ASS padMode = 00 # channel specific (channel 0 only)
 
   # reset xtouch lighting and params
   SEND F0 FF 1B 00 F7 +F
@@ -193,6 +197,15 @@ IF LOAD
 END
 
 # sysex reception
+
+# clock message triggered by host clock starting
+IF M0 == F0 7D 01
+  # TEST
+  LOG CLOCK_BLOCK
+  # END TEST
+  BLOCK
+  EXIT
+END
 
 IF M0 == F0
 
@@ -307,6 +320,12 @@ IF M0 == F0
       # SEND SYSEX
       SEND F0 CC 00 numPressed F7 +F
       # END SYSEX
+    ELSE
+      # handle if latch turned on after notes have been pressed
+      IF numPressed > 0
+        ASS latchTiming = T0
+        ASS initLatch = 0
+      END
     END
     # TEST
     # ensure launchkey receives latch
@@ -355,6 +374,7 @@ IF MT == B0
     ASS phraseIndex = 2A
     ASS phraseLengthPlusOffset = 2A
     ASS latch = 0
+    ASS arpMute = 0
     ASS J20 = 00 00 00 00 00 00 00 00 00 00 # arp values (J10 J11 J12 J13 J14 J15 J16 J17 J18 J19)
     ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
     # TEST
@@ -396,6 +416,25 @@ IF MT == B0
     EXIT
   END
 
+  # arp mute
+  IF M1 == 69 7F
+    ASS arpMute = 1
+    SEND F0 CC 48 arpMute F7 +F
+    # TEST
+    # ensure arpMute set
+    LOG arpMute_SYSEX_SENT arpMute
+    # END TEST
+  END
+
+  IF M1 == 69 00
+    ASS arpMute = 0
+    SEND F0 CC 48 arpMute F7 +F
+    # TEST
+    # ensure arpMute set
+    LOG arpMute_SYSEX_SENT arpMute
+    # END TEST
+  END
+
   # channel reset
   IF M1 == 6A 7F
 
@@ -411,8 +450,9 @@ IF MT == B0
     ASS phraseIndex = 2A
     ASS phraseLengthPlusOffset = 2A
     ASS latch = 0
+    ASS arpMute = 0
     ASS J20 = 00 00 00 00 00 00 00 00 00 00 # arp values (J10 J11 J12 J13 J14 J15 J16 J17 J18 J19)
-    ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
+    ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.) (47)
     # TEST
     # ensure phrase and arp values reset
     ASS LFF = 20
@@ -553,7 +593,9 @@ IF M0 == channelNoteOn
           # NOTE if the note value is the same as a value that has just been pressed, we need to resend the value, since that is what will be happening with any other overlapping values pressed
           SEND channelNoteOff JI3 00
           IF M1 == JI3
-            SEND channelNoteOn JI3 velocity
+            IF arpPhraseOnOffToggle != 1
+              SEND channelNoteOn JI3 velocity
+            END
           END
           ASS JI3 = 0
           ASS KI3 = 0
@@ -619,17 +661,12 @@ IF M0 == channelNoteOn
 
   # ALL
 
-  IF numPressed == 1
+  IF numPressed >= 1
     # gateOpened
     # SEND SYSEX
     SEND F0 CC 19 60 F7 +F
     # END SYSEX
   END
-  # TEST TRY
-  #IF numPressed > 1
-  #  ASS gateOpened = 2
-  #END
-  # END TEST TRY
 
   # TEST
   # ensure J array contains correct key values pressed on key press

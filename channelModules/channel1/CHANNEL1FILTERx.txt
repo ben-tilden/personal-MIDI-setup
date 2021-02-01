@@ -1,14 +1,12 @@
 # channel 1 hardware filter
 
 IF LOAD
-  # global
-  ALIAS G0 globalChannel
-
   # constant
   ALIAS 00 thisChannel
+  
 END
 
-IF globalChannel != thisChannel
+IF MC != thisChannel
   BLOCK
   EXIT
 END

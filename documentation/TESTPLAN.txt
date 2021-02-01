@@ -210,6 +210,8 @@
 # ensure channel change properly affects filters
   # ensure latch, etc. stay on for channel switched
 
+# ensure arpMute set
+
 # ensure J array contains correct key values pressed on reset (0)
 # ensure K array contains correct order of keys pressed on reset (0)
 # ensure numPressed aligns with number of keys pressed on reset (0)
@@ -266,6 +268,7 @@
 # ensure channel receives gateOpened
 # ensure channel receives arpValues
 # ensure channel receives phraseValues
+# ensure channel receives arpMute
 
 # ensure maxValClockNum mod any possible tempoPulse is equal to 0 mod the same tempoPulse
 
@@ -274,6 +277,8 @@
 # ensure notes are processed if clockNumMod is zero
 
 # ensure arp only goes to arp
+
+# ensure arpMute mutes arp
 
   # mode 0
   # ensure arpValueMode is correct

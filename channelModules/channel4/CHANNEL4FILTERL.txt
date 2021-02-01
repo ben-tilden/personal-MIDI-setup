@@ -1,18 +1,107 @@
 # channel 4 hardware filter
+# NOTE this is not changed on init due to routing / filter complications - should only impact velocity
 
 IF LOAD
-  # global
-  ALIAS G0 globalChannel
-
   # constant
   ALIAS 03 thisChannel
+
+  # see 6.
+  SET Q1 VELOCITY
+  ASS Q1 = 64 # current fixed velocity
+  
 END
 
-IF globalChannel != thisChannel
-  IF M1 != 6B 00
-    IF M1 != 68 7F
-      BLOCK
-      EXIT
+# uncomment if virtual ports do not work
+# block if a message meant for xtouch
+#IF MT == B0
+#  IF M1 < 13
+#    BLOCK
+#    EXIT
+#  END
+#END
+
+IF MC != thisChannel
+  IF M1 != 68 7F
+    # commenting these out because the intention at this point is to use modstep as the sequencer - this would start hardware sequencers along with modstep sequencers
+    # can change later if desired
+    #IF M0 != FA
+      #IF M0 != FC
+        BLOCK
+        EXIT
+      #END
+    #END
+  END
+END
+
+# mapping drum (1-6 channel specific)
+
+IF MC < 6
+  IF MT == B0
+    # bit reduction to knob 1
+    IF M1 == 15
+      ASS M1 = 31
     END
+
+    # fold to knob 2
+    IF M1 == 16
+      ASS M1 = 32
+    END
+
+    # drive to knob 3
+    IF M1 == 17
+      ASS M1 = 33
+    END
+
+    # dry gain to knob 4
+    IF M1 == 18
+      ASS M1 = 34
+    END
+
+    # pan to knob 5
+    IF M1 == 19
+      ASS M1 = 0A
+    END
+
+    # waveguide send to knob 6
+    IF M1 == 1A
+      ASS M1 = 67
+    END
+  END
+END
+
+# 6. velocity fixer (remote controllable)
+# if velocity becomes a consistent issue, add scene for non-fixed velocity
+
+# deassign knob 8 to free it up for velocity
+IF MT == B0
+  IF M1 == 1C
+    ASS M1 = 7F
+  END
+END
+
+# handle remote control of velocity
+IF MT == B0
+  IF M1 == 7F
+    # this causes issues with launchkey if velocity is zero, since it registers as a note off
+    IF M2 == 0
+      ASS M2 = 1
+    END
+    ASS Q1 = M2 # assign velocity
+  END
+END
+
+# fix velocity
+IF MT == 90
+  IF M2 > 0
+    ASS M2 = Q1
+  END
+END
+
+# 7. interval setter (1-6 channel specific)
+
+# deassign knob 7 to free it up for interval level
+IF MT == B0
+  IF M1 == 1B
+    ASS M1 = 7E
   END
 END
