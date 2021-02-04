@@ -1,4 +1,4 @@
-# channel one
+# channel four
 
 # this instance will constantly be receiving clock, the question will be whether it responds to it or not
 # there will be another service receiving note in - if arpPhraseOnOffToggle is on, notes will be processed, otherwise, they will not
