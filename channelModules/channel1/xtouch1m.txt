@@ -1,0 +1,1871 @@
+// xtouch mini
+
+// this file builds out the arpeggiator / drum roll for each channel
+// because tempo will be determined by ableton link midi clock, the first knob will determine which clock messages are heeded and which are ignored
+// link runs clock at 24 ppqn, or 24 pulses per quarter note / beat
+// there are multiple tempos, determined by knob 1 on the xtouch:
+
+// 0. full range - this is as many tempos as we can fit
+// 8/1 - 48
+// 6/1 - 36
+// 4/1 - 24
+// 3/1 - 18
+// 2/1 - 12
+// 3/2 - 9
+// 1/1 - 6
+// 2/3 - 4
+// 1/2 - 3
+// 1/3 - 2
+// 1/6 - 1
+
+// 1. beatmaker - based on the default tempos of the drum roll in beatmaker pro - slightly fewer options than full range
+// 4/1 - 24
+// 2/1 - 12
+// 3/2 - 9
+// 1/1 - 6
+// 2/3 - 4
+// 1/2 - 3
+
+// 2. factor of two - any tempo that is a factor of 2 of a 4/4 beat
+// 16/1 - 96
+// 8/1 - 48
+// 4/1 - 24
+// 2/1 - 12
+// 1/1 - 6
+// 1/2 - 3
+
+// 3. factor of three - any tempo that is a factor of 3 of a 4/4 beat
+// 12/1 - 72
+// 6/1 - 36
+// 3/1 - 18
+// 3/2 - 9
+// 2/3 - 4
+// 1/3 - 2
+
+// For the first, we have 11 modes, which translates to around 11.5 per
+// 12 11 11 12 12 12 12 12 11 11 12
+// For the second, we have 6 modes, which translates to around 21 per
+// 22 21 21 21 21 22
+// button 1 will decrease arp type / turn on set phrase mode
+// button 9 will increase arp type / add rest as part of phrase
+// button 2 will toggle arp / phrase
+// button 10 will turn arp / phrase on or off
+
+// NOTE compatible and incompatible functionality
+// groupPushKnob and pushKnob:
+  // with groupPushKnob on, pushKnob will not do anything
+  // with pushKnob on, groupPushKnob will prevent knob release from doing anything
+// groupPushKnob / pushKnob and drumParams
+  // with either on (knob // 6, 7, and 8 for pushKnob), drumParams will not be able to be changed
+// groupPushKnob / pushKnob and lfoNum
+  // with either on (knob // 4 for pushKnob), lfoNum will not be able to be changed
+
+//TODO need to ensure we're resetting padMode on init
+
+@OnLoad
+
+  // minimal layout
+
+  ShowLayout 4
+
+  // constant
+
+  tempoMode0Vals = [0x48, 0x36, 0x24, 0x18, 0x12, 0x09, 0x06, 0x04, 0x03, 0x02, 0x01]
+  tempoMode1Vals = [0x24, 0x12, 0x09, 0x06, 0x04, 0x03]
+  tempoMode2Vals = [0x96, 0x48, 0x24, 0x12, 0x06, 0x03]
+  tempoMode3Vals = [0x72, 0x36, 0x18, 0x09, 0x04, 0x02]
+
+  gateFactorArr = [1, 2, 5, 16, 32, 64]
+
+  // channel specific
+
+  channelVal = 0x00
+
+  // TODO should this array be used for all values?
+  // this always starts on knob 6
+  // first set of 0xFFFF are drumParams, second set are unspecified
+  knobSendVals = [0x0A, 0x34, 0x33, 0xFFFF, 0xFFFF, 0xFFFF, 0x67, 0x31, 0x32, 0xFFFF, 0xFFFF]
+
+  // assign local
+
+  // NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
+  tempoMode = 0
+  // NOTE needs to be done in case reset occurs when on other tempoMode, since this isn't reset by sysex
+  tempoModeMod = 0
+  // NOTE if this isn't reset on each 'install', then it's technically possible it could decrease/increase to the value min/max
+  arpValueMode = 0
+  // NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
+  gateMode = 0
+  // NOTE needs to be done in case reset occurs when on other gateMode, since this isn't reset by sysex
+  gateModeMod = 0
+  // NOTE if these aren't reset on each 'install', then it's technically possible they could increase to the value max
+  lfoTypes = [0x0,, 0x0,, 0, 0]
+  // NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
+  lfoNum = 0
+
+  // NOTE this is set to 'select' on initial load
+  gateFactor = 1
+  programChange = 0
+
+  // TODO while loop
+  knobPush = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  knobTurn = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  groupKnobPush = 0
+
+
+  // TODO should this array be used for all values?
+  // this always starts on knob 6 // should it though?
+  // first set of 0xFFFF are drumParams (channel specific)
+  // 0x40 is channel specific
+  knobCurrentVal = [0x40, 0x00, 0x00, 0xFFFF, 0xFFFF, 0xFFFF, 0x00, 0x00, 0x00, 0x00, 0x00] // TODO
+
+  // NOTE L array is used for lighting storage for push control - these are init values
+  // channel specific
+  // originally assigned L0 and L18 for 8 and 8 TODO will likely have to change
+  pushReset = [0x0E, 0x00, 0x64, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+
+  // assign channel specific
+
+  pitchQuantize = 0
+  waveguideToggle = 0
+  previousDrumVal = 0
+  previousTrackingMode = 5
+
+  drumParam1 = [14, 17, 20, 23, 26, 29, 46, 117]
+  drumParam2 = [15, 18, 21, 24, 27, 30, 47, 118]
+  drumParam3 = [16, 19, 22, 25, 28, 31, 48, 119]
+
+  drumParam1CurrentVal = [0, 0, 0, 0, 0, 0, 0, 0]
+  drumParam2CurrentVal = [0, 0, 0, 0, 0, 0, 0, 0]
+  drumParam3CurrentVal = [0, 0, 0, 0, 0, 0, 0, 0]
+
+  drumButtons[0, 1, 2, 3, 8, 9, 10, 11]
+
+@End
+
+// sysex reception
+
+// TODO could add filter conditional here and remove actual filter
+@OnSysex
+
+  ReceiveSysex sysexData
+
+  // clock message triggered by host clock starting
+  if sysexData[0] = 0x7D and sysexData[1] = 0x01
+    Exit
+
+  elseif sysexData[1] = 0x07
+    setPhrase = sysexData[2]
+    // Turn off setPhrase light when sysex received
+    if setPhrase = 0
+      sendData = [0x0F, 0xEE, 0x90, 0x00, 0x00]
+      SendSysex sendData, 3
+    endif
+    Exit
+
+  // Turn off lights when init sysex received
+  elseif sysexData[1] = 0x1B
+
+    // reset lfo
+    sendData = [0x01, 0x1D, 0x00]
+    SendSysex sendData, 3
+
+    // reset lights for mode 'B'
+    SendMIDIOut 0xC0, 0x01
+
+    // TODO create handler for this?
+    // loop until this is done for all sixteen buttons
+    for i = 0 to 15
+      // these should only go up to eight
+      if i < 8
+        // reset lighting on knobs
+        sendData = [0x0F, 0xEE, 0xBA, i + 11, 0x00]
+        SendSysex sendData, 5
+      endif
+      // reset button lighting
+      sendData = [0x0F, 0xEE, 0x90, i, 0x00]
+      SendSysex sendData, 5
+    endfor
+
+    // send init drum lighting
+    sendData = [0x0F, 0xEE, 0x90, 0x00, 0x01]
+    SendSysex sendData, 5
+
+    // send init trackingMode lighting
+    sendData = [0x0F, 0xEE, 0x90, 0x05, 0x01]
+    SendSysex sendData, 5
+
+    SendMIDIOut 0xC0, 0x00
+
+    // loop until this is done for all sixteen buttons
+    for i = 0 to 15
+      // these should only go up to eight
+      if i < 8
+        // reset lighting on knobs
+        sendData = [0x0F, 0xEE, 0xBA, i + 1, 0x00]
+        SendSysex sendData, 5
+        // set lighting to 'pan'
+        sendData = [0x0F, 0xEE, 0xB0, i + 1, 0x02]
+        SendSysex sendData, 5
+      endif
+      // reset button lighting
+      sendData = [0x0F, 0xEE, 0x90, i, 0x00]
+      SendSysex sendData, 5
+    endif
+
+    // (re)set sysex variables
+    // NOTE could move this also into the init load for completeness (or remove local from init load?)
+
+    // TODO arpModeSwitched
+
+    arpPhraseToggle = 0
+    arpPhraseOnOffToggle = 0
+    tempoPulse = 0x24
+    gate = 0
+    velocity = 0x64
+    arpValueModeMod = 0
+    setPhrase = 0
+    latch = 0
+    lfoNumMod = 0
+    trackingMode = 0 // channel specific
+    lfoTypeMod = 0
+    lfoRate = [0, 0, 0, 0]
+    lfoDepth = [0, 0, 0, 0]
+    lfoOnOffToggle = [0, 0, 0, 0]
+    lfoSync = [0, 0, 0, 0]
+    lfoBase = [0, 0, 0, 0]
+    lfoInvert = [0, 0, 0, 0]
+    lfoKnob = [0x26, 0x26, 0x26, 0x26] // NOTE set not to modulate anything initially
+    lfoMuteAll = 0
+
+    // reset necessary local variables // TODO
+    // NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
+    tempoMode = 0
+    // NOTE needs to be done in case reset occurs when on other tempoMode, since this isn't reset by sysex
+    tempoModeMod = 0
+    // NOTE if this isn't reset on each 'install', then it's technically possible it could decrease/increase to the value min/max
+    arpValueMode = 0
+    // NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
+    gateMode = 0
+    // NOTE needs to be done in case reset occurs when on other gateMode, since this isn't reset by sysex
+    gateModeMod = 0
+    // NOTE if these aren't reset on each 'install', then it's technically possible they could increase to the value max
+    lfoTypes = [0x0,, 0x0,, 0, 0]
+    // NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
+    lfoNum = 0
+
+    // NOTE this is set to 'select' on initial load
+    gateFactor = 1
+    programChange = 0
+
+    // TODO while loop
+    knobPush = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    knobTurn = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    groupKnobPush = 0
+
+
+    // TODO should this array be used for all values?
+    // this always starts on knob 6 // should it though?
+    // first set of 0xFFFF are drumParams (channel specific)
+    // 0x40 is channel specific
+    knobCurrentVal = [0x40, 0x00, 0x00, 0xFFFF, 0xFFFF, 0xFFFF, 0x00, 0x00, 0x00, 0x00, 0x00]
+
+    // NOTE L array is used for lighting storage for push control - these are init values
+    // channel specific
+    // originally assigned L0 and L18 for 8 and 8 TODO will likely have to change
+    pushReset = [0x0E, 0x00, 0x64, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+
+    // assign channel specific
+
+    pitchQuantize = 0
+    waveguideToggle = 0
+    previousDrumVal = 0
+    previousTrackingMode = 5
+
+    drumParam1 = [14, 17, 20, 23, 26, 29, 46, 117]
+    drumParam2 = [15, 18, 21, 24, 27, 30, 47, 118]
+    drumParam3 = [16, 19, 22, 25, 28, 31, 48, 119]
+
+    drumParam1CurrentVal = [0, 0, 0, 0, 0, 0, 0, 0]
+    drumParam2CurrentVal = [0, 0, 0, 0, 0, 0, 0, 0]
+    drumParam3CurrentVal = [0, 0, 0, 0, 0, 0, 0, 0]
+
+    drumButtons[0, 1, 2, 3, 8, 9, 10, 11]
+
+    // send init tempo lighting
+    sendData = [0x0F, 0xEE, 0xBA, 0x01, 26]
+    SendSysex sendData, 5
+    // send init velocity lighting
+    sendData = [0x0F, 0xEE, 0xBA, 0x03, 100]
+    SendSysex sendData, 5
+
+    Exit
+
+  // Send lights when channel change sysex received
+  elseif sysexData[2] = 0x1E
+
+    // reset lights for mode 'B'
+    SendMIDI 0xC0, 0x01
+
+    resetIndex = 0
+    // need to reset lights from other channel
+    // loop until this is done for all sixteen buttons
+    WHILE resetIndex < 10
+      // reset button lighting
+      sendData = [0x0F, 0xEE, 0x90, resetIndex, 0x00]
+      SendSysex sendData, 3 //TODO
+      resetIndex = resetIndex + 1
+    endif
+
+    // channel specific
+
+    // send trackingMode lighting
+    sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x01]
+    SendSysex sendData, 3 //TODO
+
+    // send drum lighting
+    sendData = [0x0F, 0xEE, 0x90, previousDrumVal, 0x01]
+    SendSysex sendData, 3 //TODO
+
+    if drumParams = 14
+      sendData = [0x0F, 0xEE, 0xBA, 0x0B, select1]
+      SendSysex sendData, 3 //TODO
+      sendData = [0x0F, 0xEE, 0xBA, 0x0C, select2]
+      SendSysex sendData, 3 //TODO
+      sendData = [0x0F, 0xEE, 0xBA, 0x0D, selectBoth]
+      SendSysex sendData, 3 //TODO
+    endif
+    if drumParams = 17
+      sendData = [0x0F, 0xEE, 0xBA, 0x0B, level1]
+      SendSysex sendData, 3 //TODO
+      sendData = [0x0F, 0xEE, 0xBA, 0x0C, level2]
+      SendSysex sendData, 3 //TODO
+      sendData = [0x0F, 0xEE, 0xBA, 0x0D, levelBoth]
+      SendSysex sendData, 3 //TODO
+    endif
+    if drumParams = 20
+      sendData = [0x0F, 0xEE, 0xBA, 0x0B, attack1]
+      SendSysex sendData, 3 //TODO
+      sendData = [0x0F, 0xEE, 0xBA, 0x0C, attack2]
+      SendSysex sendData, 3 //TODO
+      sendData = [0x0F, 0xEE, 0xBA, 0x0D, attackBoth]
+      SendSysex sendData, 3 //TODO
+    endif
+    if drumParams = 23
+      sendData = [0x0F, 0xEE, 0xBA, 0x0B, release1]
+      SendSysex sendData, 3 //TODO
+      sendData = [0x0F, 0xEE, 0xBA, 0x0C, release2]
+      SendSysex sendData, 3 //TODO
+      sendData = [0x0F, 0xEE, 0xBA, 0x0D, releaseBoth]
+      SendSysex sendData, 3 //TODO
+    endif
+    if drumParams = 26
+      sendData = [0x0F, 0xEE, 0xBA, 0x0B, pitch1]
+      SendSysex sendData, 3 //TODO
+      sendData = [0x0F, 0xEE, 0xBA, 0x0C, pitch2]
+      SendSysex sendData, 3 //TODO
+      sendData = [0x0F, 0xEE, 0xBA, 0x0D, pitchBoth]
+      SendSysex sendData, 3 //TODO
+    endif
+    if drumParams = 29
+      sendData = [0x0F, 0xEE, 0xBA, 0x0B, modAmount1]
+      SendSysex sendData, 3 //TODO
+      sendData = [0x0F, 0xEE, 0xBA, 0x0C, modAmount2]
+      SendSysex sendData, 3 //TODO
+      sendData = [0x0F, 0xEE, 0xBA, 0x0D, modAmountBoth]
+      SendSysex sendData, 3 //TODO
+    endif
+    if drumParams = 46
+      sendData = [0x0F, 0xEE, 0xBA, 0x0B, modRate1]
+      SendSysex sendData, 3 //TODO
+      sendData = [0x0F, 0xEE, 0xBA, 0x0C, modRate2]
+      SendSysex sendData, 3 //TODO
+      sendData = [0x0F, 0xEE, 0xBA, 0x0D, modRateBoth]
+      SendSysex sendData, 3 //TODO
+    endif
+    if drumParams = 117
+      sendData = [0x0F, 0xEE, 0xBA, 0x0B, waveguideDecay]
+      SendSysex sendData, 3 //TODO
+      sendData = [0x0F, 0xEE, 0xBA, 0x0C, waveguideBody]
+      SendSysex sendData, 3 //TODO
+      sendData = [0x0F, 0xEE, 0xBA, 0x0D, waveguideTune]
+      SendSysex sendData, 3 //TODO
+    endif
+
+
+    // end channel specific
+
+    // send knob12CurrentVal lighting
+    sendData = [0x0F, 0xEE, 0xBA, 0x0E, knob12CurrentVal]
+    SendSysex sendData, 3 //TODO
+
+    // send knob13CurrentVal lighting
+    sendData = [0x0F, 0xEE, 0xBA, 0x0F, knob13CurrentVal]
+    SendSysex sendData, 3 //TODO
+
+    // send knob14CurrentVal lighting
+    sendData = [0x0F, 0xEE, 0xBA, 0x10, knob14CurrentVal]
+    SendSysex sendData, 3 //TODO
+
+    // send knob15CurrentVal lighting
+    sendData = [0x0F, 0xEE, 0xBA, 0x11, knob15CurrentVal]
+    SendSysex sendData, 3 //TODO
+
+    // send knob16CurrentVal lighting
+    sendData = [0x0F, 0xEE, 0xBA, 0x12, knob16CurrentVal]
+    SendSysex sendData, 3 //TODO
+
+    // change program back to 'A'
+    Sendif C0 00
+
+    resetIndex = 0
+    // need to reset lights from other channel
+    // loop until this is done for all sixteen buttons
+    WHILE resetIndex < 10
+      resetIndexTemp = resetIndex + 1
+      // these should only go up to eight
+      if resetIndex < 8
+        // set lighting to 'pan'
+        sendData = [0x0F, 0xEE, 0xB0, resetIndexTemp, 0x02]
+        SendSysex sendData, 3 //TODO
+        LOG PAN_SENT
+      endif
+      // reset button lighting
+      sendData = [0x0F, 0xEE, 0x90, resetIndex, 0x00]
+      SendSysex sendData, 3 //TODO
+      resetIndex = resetIndex + 1
+    endif
+
+    if arpPhraseToggle = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x01, 0x01]
+      SendSysex sendData, 3 //TODO
+      if setPhrase = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x00, 0x01]
+        SendSysex sendData, 3 //TODO
+      endif
+    endif
+    if arpPhraseOnOffToggle = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x09, 0x01]
+      SendSysex sendData, 3 //TODO
+    endif
+    if latch = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x02, 0x01]
+      SendSysex sendData, 3 //TODO
+    endif
+    // NOTE because setLfo is a temporary and restrictive state, it should reset on channel switching
+    if setLfo = 1
+      setLfo = 0
+    endif
+    // NOTE knobPush in general is complicated - pushing knobs while switching channel will almost certainly break something (esp with setLfo on), since knobPush will not be reset on switch. Should resolve itself on the next knobPush for that number and channel, but might be confusing to see
+    // because switching channel is designed to use two hands, hoping this won't come up
+    // would be fairly simple to resolve, just possibly a little convoluted (see conditionals when groupPushKnob is turned off; these would likely just be copied and pasted here)
+    if groupKnobPush = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x0A, 0x01]
+      SendSysex sendData, 3 //TODO
+    endif
+    if padMode = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x03, 0x01]
+      SendSysex sendData, 3 //TODO
+    endif
+    if lfoMuteAll = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x0C, 0x01]
+      SendSysex sendData, 3 //TODO
+    endif
+
+    // NOTE other lfo specific button lighting sent later, with flashing knob lighting
+
+    // NOTE can't be done via L array due to groupKnobPush being possibly on
+    // send tempo lighting
+    if tempoModeMod = 0
+      if tempoPulse = 48
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 0x0]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 36
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 13]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 24
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 26]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 18
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 39]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 12
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 52]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 9
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 65]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 6
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 78]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 4
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 91]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 3
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 104]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 2
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 117]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 1
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 127]
+        SendSysex sendData, 3 //TODO
+      endif
+    endif
+    if tempoModeMod = 1
+      if tempoPulse = 24
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 0x00]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 12
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 25]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 9
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 50]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 6
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 75]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 4
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 100]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 3
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 127]
+        SendSysex sendData, 3 //TODO
+      endif
+    endif
+    if tempoModeMod = 2
+      if tempoPulse = 96
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 0x00]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 48
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 25]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 24
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 50]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 12
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 75]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 6
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 100]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 3
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 127]
+        SendSysex sendData, 3 //TODO
+      endif
+    endif
+    if tempoModeMod = 3
+      if tempoPulse = 72
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 0x00]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 36
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 25]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 18
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 50]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 9
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 75]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 4
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 100]
+        SendSysex sendData, 3 //TODO
+      endif
+      if tempoPulse = 2
+        sendData = [0x0F, 0xEE, 0xBA, 0x01, 127]
+        SendSysex sendData, 3 //TODO
+      endif
+    endif
+
+    // send gate lighting
+    gateTemp = gate / gateFactor
+    sendData = [0x0F, 0xEE, 0xBA, 0x02, gateTemp]
+    SendSysex sendData, 3 //TODO
+    
+    // send velocity lighting
+    sendData = [0x0F, 0xEE, 0xBA, 0x03, velocity]
+    SendSysex sendData, 3 //TODO
+
+    // send knob6CurrentVal lighting
+    sendData = [0x0F, 0xEE, 0xBA, 0x06, knob6CurrentVal]
+    SendSysex sendData, 3 //TODO
+
+    // send knob7CurrentVal lighting
+    sendData = [0x0F, 0xEE, 0xBA, 0x07, knob7CurrentVal]
+    SendSysex sendData, 3 //TODO
+
+    // send knob8CurrentVal lighting
+    sendData = [0x0F, 0xEE, 0xBA, 0x08, knob8CurrentVal]
+    SendSysex sendData, 3 //TODO
+
+
+    // lfo flashing lights, if present, need to be send regardless of lfoNumMod under some conditions
+    if lfoMuteAll = 0
+      if lfo1OnOffToggle = 1
+        if lfo1Knob < 8
+          lfoTemp = lfo1Knob + 9
+          sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+          SendSysex sendData, 3 //TODO
+        endif
+      endif
+      if lfo2OnOffToggle = 1
+        if lfo2Knob < 8
+          if lfo2Knob < 3
+            lfoTemp = lfo2Knob + 9
+            sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+            SendSysex sendData, 3 //TODO
+          endif
+          if lfo2Knob > 4
+            lfoTemp = lfo2Knob + 9
+            sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+            SendSysex sendData, 3 //TODO
+          endif
+        endif
+      endif
+      if lfo3OnOffToggle = 1
+        if lfo3Knob < 8
+          if lfo3Knob < 3
+            lfoTemp = lfo3Knob + 9
+            sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+            SendSysex sendData, 3 //TODO
+          endif
+          if lfo3Knob > 4
+            lfoTemp = lfo3Knob + 9
+            sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+            SendSysex sendData, 3 //TODO
+          endif
+        endif
+      endif
+      if lfo4OnOffToggle = 1
+        if lfo4Knob < 8
+          if lfo4Knob < 3
+            lfoTemp = lfo4Knob + 9
+            sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+            SendSysex sendData, 3 //TODO
+          endif
+          if lfo4Knob > 4
+            lfoTemp = lfo4Knob + 9
+            sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+            SendSysex sendData, 3 //TODO
+          endif
+        endif
+      endif
+    endif
+
+    if lfoNumMod = 0
+      sendData = [0x0F, 0xEE, 0xBA, 0x04, lfo1Rate]
+      SendSysex sendData, 3 //TODO // lfo rate
+      sendData = [0x0F, 0xEE, 0xBA, 0x05, lfo1Depth]
+      SendSysex sendData, 3 //TODO // lfo depth
+      if lfo1OnOffToggle = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x04, 0x01]
+        SendSysex sendData, 3 //TODO
+      endif
+      if lfoMuteAll = 0
+        if lfo2OnOffToggle = 1
+          if lfo2Knob = 3
+            sendData = [0x0F, 0xEE, 0xB0, 0x0C, 0x1C]
+            SendSysex sendData, 3 //TODO
+          endif
+          if lfo2Knob = 4
+            sendData = [0x0F, 0xEE, 0xB0, 0x0D, 0x1C]
+            SendSysex sendData, 3 //TODO
+          endif
+        endif
+      endif
+      if lfo1Sync = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x06, 0x01]
+        SendSysex sendData, 3 //TODO
+      endif
+      if lfo1Base = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x0E, 0x01]
+        SendSysex sendData, 3 //TODO
+      endif
+      if lfo1Invert = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x07, 0x01]
+        SendSysex sendData, 3 //TODO
+      endif
+    endif
+    if lfoNumMod = 1
+      sendData = [0x0F, 0xEE, 0xBA, 0x04, lfo2Rate]
+      SendSysex sendData, 3 //TODO // lfo rate
+      sendData = [0x0F, 0xEE, 0xBA, 0x05, lfo2Depth]
+      SendSysex sendData, 3 //TODO // lfo depth
+      if lfo2OnOffToggle = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x04, 0x01]
+        SendSysex sendData, 3 //TODO
+      endif
+      if lfoMuteAll = 0
+        if lfo3OnOffToggle = 1
+          if lfo3Knob = 3
+            sendData = [0x0F, 0xEE, 0xB0, 0x0C, 0x1C]
+            SendSysex sendData, 3 //TODO
+          endif
+          if lfo3Knob = 4
+            sendData = [0x0F, 0xEE, 0xB0, 0x0D, 0x1C]
+            SendSysex sendData, 3 //TODO
+          endif
+        endif
+      endif
+      if lfo2Sync = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x06, 0x01]
+        SendSysex sendData, 3 //TODO
+      endif
+      if lfo2Base = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x0E, 0x01]
+        SendSysex sendData, 3 //TODO
+      endif
+      if lfo2Invert = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x07, 0x01]
+        SendSysex sendData, 3 //TODO
+      endif
+    endif
+    if lfoNumMod = 2
+      sendData = [0x0F, 0xEE, 0xBA, 0x04, lfo3Rate]
+      SendSysex sendData, 3 //TODO // lfo rate
+      sendData = [0x0F, 0xEE, 0xBA, 0x05, lfo3Depth]
+      SendSysex sendData, 3 //TODO // lfo depth
+      if lfo3OnOffToggle = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x04, 0x01]
+        SendSysex sendData, 3 //TODO
+      endif
+      if lfoMuteAll = 0
+        if lfo4OnOffToggle = 1
+          if lfo4Knob = 3
+            sendData = [0x0F, 0xEE, 0xB0, 0x0C, 0x1C]
+            SendSysex sendData, 3 //TODO
+          endif
+          if lfo4Knob = 4
+            sendData = [0x0F, 0xEE, 0xB0, 0x0D, 0x1C]
+            SendSysex sendData, 3 //TODO
+          endif
+        endif
+      endif
+      if lfo3Sync = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x06, 0x01]
+        SendSysex sendData, 3 //TODO
+      endif
+      if lfo3Base = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x0E, 0x01]
+        SendSysex sendData, 3 //TODO
+      endif
+      if lfo3Invert = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x07, 0x01]
+        SendSysex sendData, 3 //TODO
+      endif
+    endif
+    if lfoNumMod = 3
+      sendData = [0x0F, 0xEE, 0xBA, 0x04, lfo4Rate]
+      SendSysex sendData, 3 //TODO // lfo rate
+      sendData = [0x0F, 0xEE, 0xBA, 0x05, lfo4Depth]
+      SendSysex sendData, 3 //TODO // lfo depth
+      if lfo4OnOffToggle = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x04, 0x01]
+        SendSysex sendData, 3 //TODO
+      endif
+      if lfo4Sync = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x06, 0x01]
+        SendSysex sendData, 3 //TODO
+      endif
+      if lfo4Base = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x0E, 0x01]
+        SendSysex sendData, 3 //TODO
+      endif
+      if lfo4Invert = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x07, 0x01]
+        SendSysex sendData, 3 //TODO
+      endif
+    endif
+
+
+
+    Exit
+  endif
+
+@End
+
+// end sysex reception
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+// if it is a button push // TODO this might actually get converted to CC, for mapping purposes
+@OnMIDINoteOn
+
+  Call @HandlePushControl
+
+  // if it is a button 1 push
+  if MIDINote = 0x08 and MIDIVelocity = 0x7F
+    // if arp then increase variable
+    if arpPhraseToggle = 0
+      arpValueMode = arpValueMode + 1
+      // set value mode to variable modulo 12
+      arpValueModeMod = arpValueMode % 12
+      sendData = [0xC1, 0x06, arpValueModeMod]
+      SendSysex sendData, 3
+    // if phrase then toggle setPhrase
+    else
+      if setPhrase = 0
+        setPhrase = 1
+        sendData = [0x11, 0x07, setPhrase]
+        SendSysex sendData, 3
+      else
+        setPhrase = 0
+        sendData = [0x11, 0x07, setPhrase]
+        SendSysex sendData, 3 
+      endif
+    endif
+  endif
+
+  // if it is a button 9 push
+  if MIDINote = 0x10 and MIDIVelocity = 0x7F
+    // if arp then decrease variable
+    if arpPhraseToggle = 0
+      arpValueMode = arpValueMode - 1
+      // set value mode to variable modulo 12
+      arpValueModeMod = arpValueMode % 12
+      sendData = [0xC1, 0x06, arpValueModeMod]
+      SendSysex sendData, 3
+    // if phrase then add rest to phrase sequence
+    else
+      if setPhrase = 1
+        sendData = [0x11, 0x1A, 0x2E]
+        SendSysex sendData, 3
+        // NOTE not currently planning on handling this, but there may is likely a race condition between rest and note that could cause issues
+      endif
+    endif
+  endif
+
+  // if it is a button 2 push toggle arp / phrase
+  if MIDINote = 0x09 and MIDIVelocity = 0x7F
+    if arpPhraseToggle = 0
+      arpPhraseToggle = 1
+      sendData = [0xC1, 0x01, arpPhraseToggle]
+      SendSysex sendData, 3
+    else
+      arpPhraseToggle = 0
+      sendData = [0xC1, 0x01, arpPhraseToggle]
+      SendSysex sendData, 3
+      if setPhrase = 1
+        setPhrase = 0
+        sendData = [0x11, 0x07, setPhrase]
+        SendSysex sendData, 3
+      endif
+    endif
+  endif
+
+  // if it is a button 10 push toggle button 2 selection on / off
+  if MIDINote = 0x11 and MIDIVelocity = 0x7F
+    if arpPhraseOnOffToggle = 0
+      arpPhraseOnOffToggle = 1
+      sendData = [0xC1, 0x02, arpPhraseOnOffToggle]
+      SendSysex sendData, 3
+    else
+      arpPhraseOnOffToggle = 0
+      sendData = [0xC1, 0x02, arpPhraseOnOffToggle]
+      SendSysex sendData, 3
+    endif
+  endif
+
+  // if it is a button 3 push toggle latch
+  if MIDINote = 0x0A and MIDIVelocity = 0x7F
+    if latch = 0
+      latch = 1
+      sendData = [0x11, 0x0B, latch]
+      SendSysex sendData, 3
+    else
+      latch = 0
+      sendData = [0x11, 0x0B, latch]
+      SendSysex sendData, 3
+    endif
+  endif
+
+  // if it is a button 11 push toggle groupKnobPush
+  if MIDINote = 0x12 and MIDIVelocity = 0x7F
+    if groupKnobPush = 0
+      groupKnobPush = 1
+    else
+      groupKnobPush = 0
+    endif
+    // NOTE currently when turning on and off, this exits during the following conditionals, which can be inconsistent // TODO
+    // the main point is that once this action is complete, there should be no need for further action anyway
+    // might be good at some point to BLOCK and EXIT out of all of the conditional statements in each section
+  endif
+
+  // if it is a button 4 push toggle padMode //TODO not global anymore
+  if MIDINote = 0x0B and MIDIVelocity = 0x7F
+    // isBeats
+    if padMode = 0
+      padMode = 1
+    // isSample
+    else
+      padMode = 0
+    endif
+  endif
+
+  // if it is a button 12 set lfo
+  if MIDINote = 0x13 and MIDIVelocity = 0x7F
+    // setLfo prevents knobPush when on - this is in place to ensure knobPush and Turn can't set lfoKnob and not reset push control
+    // see blocks for handling of setLfo in release below - no handling for push control
+    for i = 0 to 15
+      if knobPush[i] = 1
+        Exit
+      endif
+    endfor
+    if setLfo = 0
+      setLfo = 1
+    else
+      setLfo = 0
+    endif
+  endif
+
+  // if it is a button 5 push toggle current lfo
+  if MIDINote = 0x0C and MIDIVelocity = 0x7F
+    if lfoOnOffToggle[lfoNumMod] = 0
+      lfoOnOffToggle[lfoNumMod] = 1
+    else
+      lfoOnOffToggle[lfoNumMod] = 0
+    endif
+    sendData = [0x01, 0x11, lfoNumMod, lfoOnOffToggle[lfoNumMod]]
+    SendSysex sendData, 4
+  endif
+
+  // if it is a button 13 push toggle mute of all lfos
+  if MIDINote = 0x14 and MIDIVelocity = 0x7F
+    if lfoMuteAll = 0
+      lfoMuteAll = 1
+    else
+      lfoMuteAll = 0
+    endif
+    sendData = [0x01, 0x12, lfoMuteAll]
+    SendSysex sendData, 3
+  endif
+
+  // if it is a button 6 push restart lfo
+  if MIDINote = 0x0D and MIDIVelocity = 0x7F
+    sendData = [0x01, 0x14, lfoNumMod]
+    SendSysex sendData, 3
+  endif
+
+  // if it is a button 14 push restart all lfos
+  if MIDINote = 0x15 and MIDIVelocity = 0x7F
+    sendData = [0x01, 0x15, 0x00]
+    SendSysex sendData, 3
+  endif
+
+  // if it is a button 7 push sync lfo to tempo
+  if MIDINote = 0x0E and MIDIVelocity = 0x7F
+    if lfoSync[lfoNumMod] = 0
+      lfoSync[lfoNumMod] = 1
+    else
+      lfoSync[lfoNumMod] = 0
+    endif
+    sendData = [0x01, 0x0E, lfoNumMod, lfoSync[lfoNumMod]]
+    SendSysex sendData, 4
+  endif
+
+  // if it is a button 15 push toggle lfo base (1: middle or 0: bottom)
+  if MIDINote = 0x16 and MIDIVelocity = 0x7F
+    if lfoBase[lfoNumMod] = 0
+      lfoBase[lfoNumMod] = 1
+    else
+      lfoBase[lfoNumMod] = 0
+    endif
+    sendData = [0x01, 0x0F, lfoNumMod, lfoBase[lfoNumMod]]
+    SendSysex sendData, 4
+  endif
+
+  // if it is a button 8 push toggle lfo inversion
+  if MIDINote = 0x0F and MIDIVelocity = 0x7F
+    if lfoInvert[lfoNumMod] = 0
+      lfoInvert[lfoNumMod] = 1
+    else
+      lfoInvert[lfoNumMod] = 0
+    endif
+    sendData = [0x01, 0x10, lfoNumMod, lfoInvert[lfoNumMod]]
+    SendSysex sendData, 4
+  endif
+
+  // if it is a button 16 send 'pan' lighting (reset after mode change)
+  if MIDINote = 0x17 and MIDIVelocity = 0x7F
+    Call @ResetModeALighting
+  endif
+
+  // if it is a button 32 reset lfo modulation lighting
+  if MIDINote = 0x2F and MIDIVelocity = 0x7F
+    Call @ResetModeBLighting
+  endif
+
+  // channel specific
+
+  // tracking off
+  if MIDINote = 0x25 and MIDIVelocity = 0x7F
+    trackingMode = 0
+    if previousTrackingMode != 5
+      sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
+      SendSysex sendData, 5
+    endif
+    sendData = [0x11, 0x1F, trackingMode]
+    SendSysex sendData, 3
+
+  endif
+
+  // tracking mode double
+  if MIDINote = 0x24 and MIDIVelocity = 0x7F
+    trackingMode = 2
+    if previousTrackingMode != 4
+      sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
+      SendSysex sendData, 5
+    endif
+    sendData = [0x11, 0x1F, trackingMode]
+    SendSysex sendData, 3
+
+  endif
+
+  // tracking mode single
+  if MIDINote = 0x2C and MIDIVelocity = 0x7F
+    trackingMode = 1
+    if previousTrackingMode != 0x0C
+      sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
+      SendSysex sendData, 5
+    endif
+    sendData = [0x11, 0x1F, trackingMode]
+    SendSysex sendData, 3
+
+  endif
+
+  // if knob is pressed and a drumParam is changed, the value in the L array will not match up correctly
+  // NOTE monitor for actions that this may be blocking that are unrelated to drum
+  if groupKnobPush = 1 or knobPush[8] = 1 or knobPush[9] = 1 or knobPush[10] = 1
+    Exit
+  endif
+
+  // for all except the last, order is part 1, part 2, part 1 and 2
+  // if it is button 1 - knobs control 'select'
+  if MIDINote >= 32 and MIDINote <= 35 and MIDIVelocity = 0x7F
+    drumParamCurrent = MIDINote - 32
+    Call @HandleDrumParamChange
+  endif
+
+  // if it is button 9 - knobs control 'pitch'
+  if MIDINote >= 40 and MIDINote <= 43 and MIDIVelocity = 0x7F
+    drumParamCurrent = MIDINote - 36
+    Call @HandleDrumParamChange
+  endif
+
+  // end channel specific
+
+@End
+
+@HandlePushControl
+  // don't assign if setting lfo - this prevents push control issues when setting lfo
+  if setLfo = 1
+    Exit
+  end
+
+  if MIDINote <= 7
+    MIDINoteOffset = MIDINote
+  elseif MIDINote >= 24 and MIDINote <= 31
+    MIDINoteOffset = MIDINote - 16
+  else
+    Exit
+  endif
+
+  // chain modulating lfos should not be impacted by the conditionals below, since push control should work with them when they are being modulated
+  // the reason push control caused issues for the other knobs was because the lfo information was getting sent directly back here for processing and turning on knobTurn inadvertently - with these two the processing all occurs in the lfo file
+  // assign knob4Push to true when knob4 is pushed - for push control
+
+  // if there is an lfo currently modulating that is on
+  if lfoMuteAll = 0 and MIDINote != 3 and MIDINote != 4
+    for i = 0 to 3
+      if lfoKnob[i] = MIDINote and lfoOnOffToggle[i] = 1
+        Exit
+      endif
+    endfor
+  endif
+
+  knobPush[MIDINoteOffset] = 1
+
+@End
+
+@HandleDrumParamChange
+  if drumParamCurrent != drumButtons[previousDrumVal] // TODO ensure that previousDrumVal matches index correctly - functionality needs to be changed
+    sendData = [0x0F, 0xEE, 0x90, drumButtons[previousDrumVal], 0x00]
+    SendSysex sendData, 5
+  endif
+  sendData = [0x0F, 0xEE, 0xBA, 0x0B, drumParam1CurrentVal[drumParamCurrent]]
+  SendSysex sendData, 5
+  pushReset[8] = drumParam1CurrentVal[drumParamCurrent]
+  sendData = [0x0F, 0xEE, 0xBA, 0x0C, drumParam2CurrentVal[drumParamCurrent]]
+  SendSysex sendData, 5
+  pushReset[9] = drumParam2CurrentVal[drumParamCurrent]
+  sendData = [0x0F, 0xEE, 0xBA, 0x0D, drumParam3CurrentVal[drumParamCurrent]]
+  SendSysex sendData, 5
+  pushReset[10] = drumParam3CurrentVal[drumParamCurrent]
+@End
+
+@ResetModeALighting
+  // loop until this is done for all eight knobs
+  for i = 1 to 8
+    // set lighting to 'pan'
+    sendData = [0x0F, 0xEE, 0xB0, i, 0x02]
+    SendSysex sendData, 5
+  endif
+
+  if lfoMuteAll = 0 
+    for i = 0 to 3
+      if lfoOnOffToggle[i] = 1 and lfoKnob[i] < 8
+        if ((lfoKnob[i] = 3 or lfoKnob[i] = 4) and i - 1 = lfoNumMod) or (lfoKnob[i] != 3 and lfoKnob[i] != 4)
+          lfoTemp = lfoKnob[i] + 9
+        endif
+        sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+        SendSysex sendData, 5
+      endif
+    endfor
+  endif
+@End
+
+@ResetModeBLighting
+  if lfoMuteAll = 0 
+    for i = 0 to 3
+      if lfoOnOffToggle[i] = 1 and lfoKnob[i] >= 24 and lfoKnob[i] <= 31
+        lfoTemp = lfoKnob[i] - 15
+        sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+        SendSysex sendData, 5
+      endif
+    endfor
+  endif
+@End
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+// if it is a button note-off (important for lighting)
+if MT = 80
+
+  // if it's a knobPush (and / or knobTurn) and we're trying to set lfo we need to ignore other associated functionality
+  if setLfo = 1
+    // chained modulation will automatically default to lfo modulating lfo immediately below it
+    // need to prevent chained modulation from looping infinitely, so lfo 1 (0) will not be able to modulate another lfo
+    // NOTE could attempt to make the chain more flexible (i.e. 0, 3, 2, 1; 1, 0, 3, 2) but don't feel that's necessary at this point
+    if lfoNumMod = 0 and (MIDINote = 03 or MIDINote = 04)
+      Exit
+    endif
+
+    // lfo knobs (3 and 4) can modulate each other, but others can't
+    if MIDINote != 3 and MIDINote != 4
+      for i = 0 to 3
+        if lfoKnob[i] = MIDINote
+          Exit
+        endfor
+      endfor
+    endif
+
+    // check if values are in same mode - should not send if knobs are not in the same mode ('A' or 'B')
+    if lfoKnob[lfoNumMod] < 8 and MIDINote < 8)
+      sameMode = 1
+      knobLightingCCOffset = 1
+    elseif lfoKnob[lfoNumMod] > 23 and MIDINote > 23)
+      sameMode = 1
+      knobLightingCCOffset = -15
+    else
+      sameMode = 0
+    endif
+
+    // send pushReset value to old knob
+    if lfoMuteAll = 0 and lfoOnOffToggle[lfoNumMod] = 1 and lfoKnob[lfoNumMod] != 3 and lfoKnob[lfoNumMod] != 4 and sameMode = 1
+      knobTemp = lfoKnob[lfoNumMod] + knobLightingCCOffset
+      sendData = [0x0F, 0xEE, 0xBA, knobTemp, pushReset[lfoNumMod]]
+      SendSysex sendData, 5
+    endif
+
+    // NOTE at what point should the offset be added - because offset is inconsistent, might not be worth too much thought
+    lfoKnob[lfoNumMod] = MIDINote
+    sendData = [0x01, 0x0D, lfoNumMod, lfoKnob[lfoNumMod]]
+    SendSysex sendData, 4
+
+    setLfo = 0
+
+    // send flash to new knob
+    if lfoMuteAll = 0 and lfoOnOffToggle[lfoNumMod] = 1
+      if lfoKnob[lfoNumMod] < 8 and lfoKnob[lfoNumMod] != 3 and lfoKnob[lfoNumMod] != 4
+        lfoTemp = lfoKnob[lfoNumMod] + 9
+        sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+        SendSysex sendData, 3 //TODO
+
+      elseif lfoKnob[lfoNumMod] > 23
+
+        // reset flashing setLfo button
+        SendMIDIOut 0xC0, 0x00
+        sendData = [0x0F, 0xEE, 0x90, 0x0B, 0x00]
+        SendSysex sendData, 5
+        SendMIDIOut 0xC0, 0x01
+
+        // resend lighting for mode 'B'
+        Call @ResetModeBLighting
+
+      endif
+    endif
+
+    Exit
+  endif
+
+  // push control
+  // NOTE these conditionals are separate from other knob push conditionals below - likely better to consolidate at some point
+  // NOTE currently pushing a knob, then pressing groupKnobPush, then releasing the knob will not reset, which is expected at this point
+  // NOTE if groupKnobPush is active, any knob push will result in the standard functionality, even if the knob is turned
+
+  // ignore knobPush changes if groupKnobPush is on
+  if groupKnobPush = 0
+
+    knobPushResetConst = 1
+    for i = 0 to 15
+        if i > 7
+          j = i + 16
+          knobPushResetConst = -13
+        else
+          j = i
+        endif
+      if MIDINote = j and MIDIVelocity = 0x00
+        if knobTurn[i] = 1
+          knobTemp = MIDINote + knobPushResetConst
+          // HandleKnobTurn makes sure the parameters are changed correctly
+          Call @HandleKnobTurn // TODO
+          sendData = [0x0F, 0xEE, 0xBA, knobTemp, pushReset[i]]
+          SendSysex sendData, 5
+          knobPush[i] = 0
+          knobTurn[i] = 0
+          // if using push control, releasing the knob button should not have any effect
+          Exit
+        else
+          knobPush[i] = 0
+        endif
+      endif
+    endfor
+
+  endif
+
+  // end push control
+
+  // if it is a knob 1 button release, increase tempo mode
+  if MIDINote = 0x00 and MIDIVelocity = 0x00
+    tempoMode = tempoMode + 1
+    // set tempo mode to variable modulo 4
+    tempoModeMod = tempoMode % 4
+    sendData = [0x01, 0x18, tempoModeMod]
+    SendSysex sendData, 3
+
+    // set each tempoPulse to default value on switching
+    // also send data to xtouch to reflect this
+    if tempoModeMod = 0
+      tempoPulse = 24
+      pushReset[0] = 26
+    elseif tempoModeMod = 1
+      tempoPulse = 24
+      pushReset[0] = 00
+    elseif tempoModeMod = 2
+      tempoPulse = 24
+      pushReset[0] = 50
+    elseif tempoModeMod = 3
+      tempoPulse = 18
+      pushReset[0] = 50
+    endif
+    sendData = [0xCC, 0x03, tempoPulse]
+    SendSysex sendData, 3
+
+    // don't send lighting / pushReset val if knob is actively being modulated
+    // NOTE this isn't completely necessary but helps keep the lfo more closely synced as it moves
+    for i = 0 to 3
+      if lfoKnob[i] = 0 and lfoOnOffToggle[i] = 1 and lfoMuteAll = 0
+        Exit
+      endif
+    endfor
+
+    sendData = [0x0F, 0xEE, 0xBA, 0x01, pushReset[0]]
+    SendSysex sendData, 5
+
+  endif
+
+  // if it is a knob 2 button release, increase gate mode
+  if MIDINote = 0x01 and MIDIVelocity = 0x00
+    gateMode = gateMode + 1
+    // set gate mode to variable modulo 6
+    // NOTE preventing the light from sending will change the length more quickly, more easily
+    // NOTE will be testing with live to see best setup here
+    gateModeMod = gateMode % 6
+
+    gateFactor = gateFactorArr[gateModeMod]
+
+    // don't send lighting / pushReset val if knob is actively being modulated
+    // NOTE this isn't completely necessary but helps keep the lfo more closely synced as it moves
+    for i = 0 to 3
+      if lfoKnob[i] = 1 and lfoOnOffToggle[i] = 1 and lfoMuteAll = 0
+        Exit
+      endif
+    endfor
+
+    sendData = [0x0F, 0xEE, 0xBA, 0x02, 0x00]
+    SendSysex sendData, 5
+    pushReset[1] = 00 // NOTE with knob 1, this is only set prior to avoid adding the conditionals again after the lfoKnobs check
+
+  endif
+
+  // if it is a knob 4 button release, change lfo type
+  // NOTE could add testing which reported the actual lfo type rather than a number
+  if MIDINote = 0x03 and MIDIVelocity = 0x00
+
+    lfoType[lfoNumMod] = lfoType[lfoNumMod] + 1
+    // set tempo mode to variable modulo 7
+    lfoTypeMod = lfoType[lfoNumMod] % 7
+    sendData = [0x01, 0x13, lfoNumMod, lfoTypeMod]
+    SendSysex sendData, 4
+
+  endif
+
+  // if it is a knob 5 button release, change lfo num (the lfo that's being edited)
+  if MIDINote = 0x04 and MIDIVelocity = 0x00
+    // this will cause issues if groupKnobPush or knob4Push is on due to the values in pushReset array
+    if groupKnobPush = 1 or knob4Push = 1
+      Exit
+    endif
+    lfoNum = lfoNum + 1
+    // set tempo mode to variable modulo 4
+    lfoNumMod = lfoNum % 4
+
+    // send lighting for lfo1Rate and depth
+    sendData = [0x0F, 0xEE, 0xBA, 0x04, lfoRate[lfoNumMod]]
+    SendSysex sendData, 5
+    sendData = [0x0F, 0xEE, 0xBA, 0x05, lfoDepth[lfoNumMod]]
+    SendSysex sendData, 5
+    pushReset[3] = lfoRate[lfoNumMod]
+    pushReset[4] = lfoDepth[lfoNumMod]
+    // send lighting for lfoOnOff, lfoSync, lfoBase, and lfoInvert
+    if lfoOnOffToggle[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x04, 0x01]
+      SendSysex sendData, 5
+    else
+      sendData = [0x0F, 0xEE, 0x90, 0x04, 0x00]
+      SendSysex sendData, 5
+    endif
+    if lfoSync[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x06, 0x01]
+      SendSysex sendData, 5
+    else
+      sendData = [0x0F, 0xEE, 0x90, 0x06, 0x00]
+      SendSysex sendData, 5
+    endif
+    if lfoBase[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x0E, 0x01]
+      SendSysex sendData, 5
+    else
+      sendData = [0x0F, 0xEE, 0x90, 0x0E, 0x00]
+      SendSysex sendData, 5
+    endif
+    if lfoInvert[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x07, 0x01]
+      SendSysex sendData, 5
+    else
+      sendData = [0x0F, 0xEE, 0x90, 0x07, 0x00]
+      SendSysex sendData, 5
+    endif
+    // send flashing lights if chain modulating
+    if lfoNumMod < 3 and lfoOnOffToggle[lfoNumMod + 1] = 1 and lfoMuteAll = 0
+      if lfoKnob[lfoNumMod + 1] = 3
+        sendData = [0x0F, 0xEE, 0xB0, 0x0C, 0x1C]
+        SendSysex sendData, 5
+      endif
+      if lfoKnob[lfoNumMod + 1] = 4
+        sendData = [0x0F, 0xEE, 0xB0, 0x0D, 0x1C]
+        SendSysex sendData, 5
+      endif
+    endif
+
+  endif
+
+  if MIDINote = 0x08 and MIDIVelocity = 0x00
+    if arpPhraseToggle = 1
+      if setPhrase = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x00, 0x01]
+        SendSysex sendData, 5
+      endif
+    endif
+  endif
+
+  if MIDINote = 0x09 and MIDIVelocity = 0x00
+    if arpPhraseToggle = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x01, 0x01]
+      SendSysex sendData, 5
+    else
+      // NOTE this sends even when light is off
+      if setPhrase = 0
+        sendData = [0x0F, 0xEE, 0x90, 0x00, 0x00]
+        SendSysex sendData, 5
+      endif
+    endif
+  endif
+
+  if MIDINote = 0x0A and MIDIVelocity = 0x00
+    if latch = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x02, 0x01]
+      SendSysex sendData, 5
+    endif
+  endif
+
+  if MIDINote = 0x0B and MIDIVelocity = 0x00
+    if padMode = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x03, 0x01]
+      SendSysex sendData, 5
+    endif
+  endif
+
+  if MIDINote = 0x11 and MIDIVelocity = 0x00
+    if arpPhraseOnOffToggle = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x09, 0x01]
+      SendSysex sendData, 5
+    endif
+  endif
+
+  if MIDINote = 0x12 and MIDIVelocity = 0x00
+    if groupKnobPush = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x0A, 0x01]
+      SendSysex sendData, 5
+
+      // turn on knobPush for all knobs that aren't currently being modulated
+      for i = 0 to 15 // TODO cmd f 0 to 15 and ensure offset is set correctly
+        if i > 7
+          j = i + 16 // TODO this might mess with iteration - might need to use 'j' as placeholder (and else w this conditional)
+        else
+          j = i
+        endif
+        if lfoKnob[0] != j or lfoKnob[1] != j or lfoKnob[2] != j or lfoKnob[3] != j
+          knobPush[i] = 1
+        endif
+      endfor
+
+    // reset all knobs to pushReset values if turning off
+    else
+
+      knobPushResetConst = 1
+      for i = 0 to 15
+        if i > 7
+          j = i + 16
+          knobPushResetConst = -13
+        else
+          j = i
+        endif
+        if knobTurn[i] = 1
+          // send program change to ensure lighting correctly sends - necessary for 'B' knobs
+          if knobPushResetConst = -13 and programChange = 0
+            programChange = 1
+            SendMIDIOut 0xC0, 0x01
+          endif
+          knobTemp = j + knobPushResetConst
+          // HandleKnobTurn makes sure the parameters are changed correctly
+          Call @HandleKnobTurn // TODO
+          sendData = [0x0F, 0xEE, 0xBA, knobTemp, pushReset[i]]
+          SendSysex sendData, 5 // TODO might not have to do this with 0?
+          knobPush[i] = 0
+          knobTurn[i] = 0
+        else
+          knobPush[i] = 0
+        endif
+      endfor
+
+      // send program change to ensure lighting correctly appears after change - necessary for 'B' knobs
+      if programChange = 1
+        programChange = 0
+        SendMIDIOut 0xC0, 0x00
+
+        Call @ResetModeBLighting
+
+      endif
+      // if using group push control, releasing the knob button should not have any effect (not that it does here)
+      Exit
+    endif
+  endif
+
+  if MIDINote = 0x13 and MIDIVelocity = 0x00
+    if setLfo = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x0B, 0x02]
+      SendSysex sendData, 5
+    endif
+  endif
+
+  if MIDINote = 0x0C and MIDIVelocity = 0x00
+    if lfoOnOffToggle[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x04, 0x01]
+      SendSysex sendData, 5
+      if lfoMuteAll = 0 and lfoKnob[lfoNumMod] < 8 and lfoKnob[lfoNumMod] != 3 and lfoKnob[lfoNumMod] != 4
+        lfoTemp = lfoKnob[lfoNumMod] + 9
+        sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+        SendSysex sendData, 5
+      endif
+    else
+      // don't want to send pushReset values twice if we don't have to
+      if lfoMuteAll = 0 and lfoKnob[lfoNumMod] < 8 and lfoKnob[lfoNumMod] != 3 and lfoKnob[lfoNumMod] != 4
+        knobTemp = lfoKnob[lfoNumMod] + 1
+        sendData = [0x0F, 0xEE, 0xBA, knobTemp, pushReset[lfoKnob[lfoNumMod]]]
+        SendSysex sendData, 5
+      endif
+    endif
+  endif
+
+  if MIDINote = 0x14 and MIDIVelocity = 0x00
+    if lfoMuteAll = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x0C, 0x01]
+      SendSysex sendData, 5
+      for i = 0 to 3
+        if lfoOnOffToggle[i] = 1
+          if (lfoKnob[i] < 8 and lfoKnob[i] != 3 and lfoKnob[i] != 4) or ((lfoKnob[i] = 3 or lfoKnob[i] = 4) and lfoNumMod = i - 1)
+            knobTemp = lfoKnob[i] + 1
+            sendData = [0x0F, 0xEE, 0xBA, knobTemp, pushReset[lfoKnob[i]]]
+            SendSysex sendData, 5
+          endif
+        endif
+      endfor
+    else
+      for i = 0 to 3
+        if lfoOnOffToggle[i] = 1
+          if (lfoKnob[i] < 8 and lfoKnob[i] != 3 and lfoKnob[i] != 4) or ((lfoKnob[i] = 3 or lfoKnob[i] = 4) and lfoNumMod = i - 1)
+            knobTemp = lfoKnob[i] + 9
+            sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+            SendSysex sendData, 5
+          endif
+        endif
+      endfor
+    endif
+  endif
+
+  if MIDINote = 0x0E and MIDIVelocity = 0x00
+    if lfoSync[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x06, 0x01]
+      SendSysex sendData, 5
+    endif
+  endif
+
+  if MIDINote = 0x16 and MIDIVelocity = 0x00
+    if lfoBase[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x0E, 0x01]
+      SendSysex sendData, 5
+    endif
+  endif
+
+  // if it is a button 15 push toggle lfo inversion
+  if MIDINote = 0x0F and MIDIVelocity = 0x00
+    if lfoInvert[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x07, 0x01]
+      SendSysex sendData, 5
+    endif
+  endif
+
+  // channel specific
+
+  // if it is a knob 9 button release, toggle waveguide
+  if MIDINote = 0x18 and MIDIVelocity = 0x00
+    if waveguideToggle = 0
+      waveguideToggle = 1
+      // NOTE this is a little janky - waveguide doesn't seem to reset visually and requires a press on the machine itself
+      sendData = [0x11, 0xEE, channelCC, 116, 0x7F]
+    else
+      waveguideToggle = 0
+      // NOTE this is a little janky - waveguide doesn't seem to reset visually and requires a press on the machine itself
+      sendData = [0x11, 0xEE, channelCC, 116, 0x00]
+    endif
+    SendSysex sendData, 5
+  endif
+
+  // if it is a knob 10 button release, toggle pitch quantize
+  if MIDINote = 0x19 and MIDIVelocity = 0x00
+    if pitchQuantize = 0
+      pitchQuantize = 1
+      sendData = [0x11, 0xEE, channelCC, 53, 0x7F]
+    else
+      pitchQuantize = 0
+      sendData = [0x11, 0xEE, channelCC, 53, 0x00]
+    endif
+    SendSysex sendData, 5
+  endif
+
+  if MIDINote = 0x25 and MIDIVelocity = 0x00
+    sendData = [0x0F, 0xEE, 0x90, 0x05, 0x01]
+    SendSysex sendData, 5
+    previousTrackingMode = 0x05
+  endif
+  if MIDINote = 0x24 and MIDIVelocity = 0x00
+    sendData = [0x0F, 0xEE, 0x90, 0x04, 0x01]
+    SendSysex sendData, 5
+    previousTrackingMode = 0x04
+  endif
+  if MIDINote = 0x2C and MIDIVelocity = 0x00
+    sendData = [0x0F, 0xEE, 0x90, 0x0C, 0x01]
+    SendSysex sendData, 5
+    previousTrackingMode = 0x0C
+  endif
+
+  // if knob is pressed and a drumParam is changed, the value in the L array will not match up correctly
+  // NOTE monitor for actions that this may be blocking that are unrelated to drum
+  // send lighting if drumParam is the same so that the light doesn't just turn off
+  if (knobPush[8] = 1 or knobPush[9] = 1 or knobPush[10] = 1)
+    if (MIDINote >= 32 and MIDINote <= 35) or (MIDINote >= 40 and MIDINote <= 43)
+      knobTemp = MIDINote - previousDrumVal
+      // send lighting to keep knob lit if same knob pressed
+      if knobTemp = 32
+        sendData = [0x0F, 0xEE, 0x90, previousDrumVal, 0x01]
+        SendSysex sendData, 5
+      endif
+      Exit
+    endif
+  endif
+
+  // drumParams
+  for i = 32 to 39
+    if i > 35
+      i = i + 4 // TODO may mess with iteration - might need to use j here
+    endif
+    if MIDINote = i and MIDIVelocity = 0x00
+      previousDrumVal = i - 32 // NOTE slightly misleading since this technically becomes the currentDrumVal for the moment
+      sendData = [0x0F, 0xEE, 0x90, previousDrumVal, 0x01]
+      SendSysex sendData, 5
+      for k = 0 to 3 // TODO change to j if no need for j
+        if lfoKnob[k] >= 24 and lfoKnob[k] <= 26 // TODO is this correct? originally 24 and 32 
+          lfoTemp = lfoKnob[i] - 15
+          sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+          SendSysex sendData, 5
+        endif
+      endfor
+    endif
+  endfor
+
+  // end channel specific
+
+endif
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+// if it is a knob turn
+if MT = B0
+
+  if MIDIByte2 <= 8
+    MIDIByte2Offset = MIDIByte2 - 1
+  elseif MIDIByte2 >= 11 and MIDIByte2 <= 18
+    MIDIByte2Offset = MIDIByte2 - 3
+  endif
+
+  // set knob turn to true if using push control
+  // knob turn vals are + 1 from knob push vals
+  if knobPush[MIDIByte2Offset] = 1
+    knobTurn[MIDIByte2Offset] = 1
+  endif
+
+  // if knob is 1 (tempo)
+  // knob is sensitive down to one notch
+  if MIDIByte2 = 1
+    Call @HandleTempo
+
+  elseif MIDIByte2 > 1 and MIDIByte2 <= 18
+    // needs to be sent out
+    // assign for push control
+    if knobPush[MIDIByte2Offset] = 0
+      pushReset[MIDIByte2Offset] = MIDIByte3
+    endif
+
+    // gate
+    if MIDIByte2 = 2
+      // starting points: max will be ~5 seconds (5000), min will be .1 seconds (100)
+      // 2.5 seconds should be enough to handle 96 pulses at 120 bpm,  but slower bpm's can move up to 5 seconds
+      // overall: 0-127 (*2) (*5) (*16) (*32) (*64)
+      // NOTE none of the values here end up sending an F7, but if changed it's possible they could, which would cause issues
+      knobCurrentVal[MIDIByte2Offset] = MIDIByte3 * gateFactor
+      gateTemp = gate / 256 // TODO ensure this still functions correctly
+      sendData = [0xCC, 0x04, gateTemp, knobCurrentVal[MIDIByte2Offset]]
+      SendSysex sendData, 4
+
+    // velocity
+    elseif MIDIByte2 = 3
+      knobCurrentVal[MIDIByte2Offset] = MIDIByte3
+      sendData = [0xC1, 0x05, knobCurrentVal[MIDIByte2Offset]] // TODO
+      SendSysex sendData, 3
+
+    // lfo rate
+    elseif MIDIByte2 = 4
+      lfoRate[lfoNumMod] = MIDIByte3
+      sendData = [0x01, 0x16, lfoNumMod, lfoRate[lfoNumMod]]
+      SendSysex sendData, 4
+
+    // lfo depth
+    elseif MIDIByte2 = 5
+      lfoDepth[lfoNumMod] = MIDIByte3
+      sendData = [0x01, 0x17, lfoNumMod, lfoDepth[lfoNumMod]]
+      SendSysex sendData, 4
+
+    // channel specific
+    elseif MIDIByte2 > 5
+      knobCurrentVal[MIDIByte2Offset] = MIDIByte3
+
+      // drumParams // TODO should treat the same as lfo knobs - where knobCurrentVal is not set
+      if MIDIByte2 = 11
+        knobVal[MIDIByte2Offset] = drumParam1[drumParamCurrent]
+        drumParam1CurrentVal[drumParamCurrent] = MIDIByte3
+      elseif MIDIByte2 = 12
+        knobVal[MIDIByte2Offset] = drumParam2[drumParamCurrent]
+        drumParam1CurrentVal[drumParamCurrent] = MIDIByte3
+      elseif MIDIByte2 = 13
+        knobVal[MIDIByte2Offset] = drumParam3[drumParamCurrent]
+        drumParam1CurrentVal[drumParamCurrent] = MIDIByte3
+      endif
+
+      // send channel specific val
+      sendData = [0x11, 0xEE, channelCC, knobVal[MIDIByte2Offset], MIDIByte3]
+      SendSysex sendData, 5
+    endif
+
+  endif
+
+  // end channel specific
+
+@End
+
+@HandleTempo
+  // NOTE because lighting does actually change the CC value, we need to handle this based on lighting
+  // (MIDIByte3 >= -12 and MIDIByte3 <= -7) or (MIDIByte3 >= 7 and MIDIByte3 <= 12)
+  // (MIDIByte3 >= 1 and MIDIByte3 <= 6) or (MIDIByte3 >= 20 and MIDIByte3 <= 25)
+  // (MIDIByte3 >= 14 and MIDIByte3 <= 19) or (MIDIByte3 >= 33 and MIDIByte3 <= 38)
+  // (MIDIByte3 >= 27 and MIDIByte3 <= 32) or (MIDIByte3 >= 46 and MIDIByte3 <= 51)
+  // (MIDIByte3 >= 40 and MIDIByte3 <= 45) or (MIDIByte3 >= 59 and MIDIByte3 <= 64)
+  // (MIDIByte3 >= 53 and MIDIByte3 <= 58) or (MIDIByte3 >= 72 and MIDIByte3 <= 77)
+  // (MIDIByte3 >= 66 and MIDIByte3 <= 71) or (MIDIByte3 >= 85 and MIDIByte3 <= 90)
+  // (MIDIByte3 >= 79 and MIDIByte3 <= 84) or (MIDIByte3 >= 98 and MIDIByte3 <= 103)
+  // (MIDIByte3 >= 92 and MIDIByte3 <= 97) or (MIDIByte3 >= 111 and MIDIByte3 <= 116)
+  // (MIDIByte3 >= 105 and MIDIByte3 <= 110) or (MIDIByte3 >= 123 and MIDIByte3 <= 126) // edge
+  // (MIDIByte3 >= 118 and MIDIByte3 <= 122) or (MIDIByte3 >= 136 and MIDIByte3 <= 139) // edge
+
+  // (MIDIByte3 >= -24 and MIDIByte3 <= -13) or (MIDIByte3 >= 13 and MIDIByte3 <= 24)
+  // (MIDIByte3 >= 1 and MIDIByte3 <= 12) or (MIDIByte3 >= 38 and MIDIByte3 <= 49)
+  // (MIDIByte3 >= 26 and MIDIByte3 <= 37) or (MIDIByte3 >= 63 and MIDIByte3 <= 74)
+  // (MIDIByte3 >= 51 and MIDIByte3 <= 62) or (MIDIByte3 >= 88 and MIDIByte3 <= 99)
+  // (MIDIByte3 >= 76 and MIDIByte3 <= 87) or (MIDIByte3 >= 113 and MIDIByte3 <= 126) // edge
+  // (MIDIByte3 >= 101 and MIDIByte3 <= 112) or (MIDIByte3 >= 138 and MIDIByte3 <= 151)
+
+  if tempoModeMod = 0
+    tempoModeVals = tempoMode0Vals
+    length = 10
+    compUpConst = 5
+    compDownConst = 5
+    lightingConst = 13
+  else
+    if tempoModeMod = 1
+      tempoModeVals = tempoMode1Vals
+    elseif tempoModeMod = 2
+      tempoModeVals = tempoMode2Vals
+    elseif tempoModeMod = 3
+      tempoModeVals = tempoMode3Vals
+    endif
+    length = 5
+    compUpConst = 11
+    compDownConst = 11
+    lightingConst = 25
+  endif
+
+  for i = 0 to length
+
+    lightingVal = i * lightingConst
+    compUp = lightingVal + -1 * (lightingConst - 1)
+    compDown = lightingVal + ((lightingConst + 1) / 2)
+
+    // edge cases - hard coded since 127 is not a very convenient number to end on
+    if tempoModeMod = 0
+      if i = length - 1
+        compDown = compDown - 1 // 123
+        compDownConst = 3 // 126, later 139 since this won't be reset
+      elseif i = length
+        compUpConst = 4 // 122
+      endif
+    elseif i = length - 1
+      compDownConst = 13 // 126, later 151 since this won't be reset
+    endif
+
+    if i = length
+      lightingVal = 127
+    endif
+
+    if (MIDIbyte3 >= compUp and MIDIByte3 <= compUp + compUpConst) or (MIDIbyte3 >= compDown and MIDIByte3 <= compDown + compDownConst) or (MIDIByte3 = lightingVal) // TODO is this last conditional necessary?
+      tempoPulse = tempoModeVals[i]
+      sendData = [0xCC, 0x03, tempoPulse]
+      SendSysex sendData, 3
+      sendData = [0x0F, 0xEE, 0xBA, 0x01, lightingVal]
+      SendSysex sendData, 5
+      if knobPush[MIDIByte2Offset] = 0
+        pushResetVal[MIDIByte2Offset] = lightingVal
+      endif
+    endif
+  endfor
+@End
