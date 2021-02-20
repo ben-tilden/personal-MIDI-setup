@@ -1,0 +1,25 @@
+# xtouch to xtouch filter
+
+IF LOAD
+  ALIAS I0 sendThru
+END
+
+ASS sendThru = 0
+
+IF M0 == F0
+  IF M1 == 0F
+    IF M2 == EE
+      ASS M0 = M3 M4 M5
+      ASS sendThru = 1
+    END
+  END
+END
+
+IF M0 == C0
+  ASS sendThru = 1
+END
+
+IF sendThru == 0
+  BLOCK
+  EXIT
+END

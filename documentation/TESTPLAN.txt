@@ -264,7 +264,7 @@
 # ensure channel receives velocity
 # ensure channel receives arpValueModeMod
 # ensure channel receives phraseVal
-# ensure channel receives phraseLengthPlusOffset
+# ensure channel receives phraseLength
 # ensure channel receives gateOpened
 # ensure channel receives arpValues
 # ensure channel receives phraseValues

@@ -1,30 +1,8 @@
 // channel one
 
-// this instance will constantly be receiving clock, the question will be whether it responds to it or not
-// there will be another service receiving note in - if arpPhraseOnOffToggle is on, notes will be processed, otherwise, they will not
+// only happens when multiple note are pressed?
+// TODO velocity might need to be sent separately for FM
 
-// note that the assumption here is that the global array information will be used, not the local array
-// the local array will just be used for storage
-
-// possible future updates - addings 'reverse' and 'bounce' for phrase (stochastic etc. whatever)
-
-// need to reassign arpIndex whenever mode is changed
-
-// NOTE maxVal for clockNum is based off 227 * 288 = floor(65,535 / 288) * (ffff / lcm of all possible tempoPulse)
-
-// arpTypes
-// 1: ascending one octave
-// 2: ascending two octave
-// 3: ascending three octave
-// 4: descending one octave
-// 5: descending two octave
-// 6: descending three octave
-// 7: random one octave
-// 8: random two octave
-// 9: random three octave
-// 10: order pressed one octave
-// 11: order pressed two octave
-// 12: order pressed three octave
 
 @OnLoad
 
@@ -33,6 +11,7 @@
 
   // constant
 
+  // NOTE maxVal for clockNum is based off 227 * 288 = floor(65,535 / 288) * (ffff / lcm of all possible tempoPulse)
   channel = 0 // channel specific (obviously)
   maxValClockNumNorm = 61560
   maxValClockNumEdge = 65400
@@ -40,6 +19,10 @@
   clockNum = 0
   isOctave = 0
   maxValClockNum = maxValClockNumNorm
+
+  arpMode = 0
+  modFactor = 1
+  phraseSysexOffsetConstant = 42 // artifact of initial SB setup - could be changed
 
 @End
 
@@ -49,8 +32,14 @@
 
   ReceiveSysex sysexData
 
+
+  // ALLOW CC C1
+  // BLOCK 11 0F 01 FF 3F (+ xtouch program change, key presses, key releases, and CC's)
+  if sysexData[0] > 0xFC or sysexData[0] = 0x11 or sysexData[0] < 0xC1
+    Exit
+
   // clock message triggered by host clock starting
-  if sysexData[0] = 0x7D and sysexData[1] = 0x01
+  elseif sysexData[0] = 0x7D and sysexData[1] = 0x01
     Exit
 
   elseif sysexData[1] = 0x00
@@ -88,14 +77,47 @@
 
   elseif sysexData[1] = 0x06
     arpValueModeMod = sysexData[2]
+
+    if arpValueModeMod = 0 or arpValueModeMod = 1 or arpValueModeMod = 2
+      arpMode = 0 // asc
+    elseif arpValueModeMod = 3 or arpValueModeMod = 4 or arpValueModeMod = 5
+      arpMode = 1 // desc
+    elseif arpValueModeMod = 6 or arpValueModeMod = 7 or arpValueModeMod = 8
+      arpMode = 2 // rand
+    elseif arpValueModeMod = 9 or arpValueModeMod = 10 or arpValueModeMod = 11
+      arpMode = 3 // ord
+    endif
+
+    if arpMode = 0 or arpMode = 3 // asc, order
+      initIndex = numPressed - 1 
+      endIndex = 0
+      iterConstant = -1
+      arpIndex = initIndex
+      octaveOffset = -1
+    elseif arpMode = 1 // desc
+      initIndex = 0
+      endIndex = numPressed - 1
+      iterConstant = 1
+      arpIndex = initIndex
+      octaveOffset = -1
+    endif
+
+    if arpValueModeMod = 0 or arpValueModeMod = 3 or arpValueModeMod = 6 or arpValueModeMod = 9
+      modfactor = 1
+    elseif arpValueModeMod = 1 or arpValueModeMod = 4 or arpValueModeMod = 7 or arpValueModeMod = 10
+      modfactor = 2
+    elseif arpValueModeMod = 2 or arpValueModeMod = 5 or arpValueModeMod = 8 or arpValueModeMod = 11
+      modfactor = 3
+    endif
+
     Exit
 
   elseif sysexData[1] = 0x08
     phraseVal = sysexData[2]
     Exit
 
-  elseif sysexData[1] = 0x0A // TODO review
-    phraseLengthPlusOffset = sysexData[2]
+  elseif sysexData[1] = 0x0A
+    phraseLength = sysexData[2]
     Exit
 
   elseif sysexData[1] = 0x19
@@ -108,20 +130,23 @@
     endfor
     Exit
 
-  // TODO issue here, because phraseIndex is no longer unique - can transform this or add another val to sendData for signifying
-  // see launchkey for more
-  elseif sysexData[1] > 41 and sysexData[1] < 72 // main TODO here
+  elseif sysexData[1] > 41 and sysexData[1] < 72
     // reset phraseValues if we're restarting
-    if sysexData[1] = 0x42
-      for i = 3 to 32
-        phraseOffsetValues[i - 3] = 0
+    if sysexData[1] = 42
+      for i = 0 to 31
+        phraseOffsetValues[i] = 0
       endfor
     endif
-    phraseOffsetValues[sysexData[1]] = sysexData[2] * 256 + sysexData[3] // TODO // 0x100
+    setPhraseIndex = sysexData[1] - phraseSysexOffsetConstant // artifact of initial SB setup - could be changed
+    if sysexData[2] <= 128
+      phraseOffsetValues[setPhraseIndex] = sysexData[2]
+    elseif sysexData[2] > 128
+      phraseOffsetValues[setPhraseIndex] = sysexData[2] + -256 // negative value
+    endif
+
     Exit
 
-  // TODO will likely be able to change with other shifting sysex
-  elseif sysexData[1] = 0x48
+  elseif sysexData[1] = 0x4A
     arpMute = sysexData[2]
     Exit
 
@@ -138,7 +163,7 @@
     velocity = 100 // 0x64
     arpValueModeMod = 0
     phraseVal = 0
-    phraseLengthPlusOffset = 0 // 0x2A // TODO necessary?
+    phraseLength = 0
     gateOpened = 0
     arpMute = 0
     for i = 0 to 9
@@ -159,6 +184,28 @@
 
 // end sysex reception
 
+@HandleClockPattern
+  octaveOffset = (octaveOffset + 1) % modFactor
+  arpValSend = arpValues[arpIndex] + octaveOffset * 12
+  SendMIDINoteOn channel, arpValSend, velocity
+  SendMIDINoteOff channel, arpValSend, velocity, gate
+  if octaveOffset = modFactor - 1 // NOTE a couple of ways to do this // TODO test
+    if arpIndex = endIndex
+      arpIndex = initIndex
+    else
+      arpIndex = arpIndex + iterConstant
+    endif
+  endif
+@End
+
+@HandleClockRandom
+  octaveOffset = random 0, modFactor - 1
+  arpIndex = random 0, numPressed - 1
+  arpValSend = arpValues[arpIndex] + octaveOffset * 12
+  SendMIDINoteOn channel, arpValSend, velocity
+  SendMIDINoteOff channel, arpValSend, velocity, gate
+@End
+
 @OnMIDIInput
   if arpPhraseOnOffToggle = 1 and numPressed > 0 and MIDIByte1 = 0xF8
     // process midi clock
@@ -175,362 +222,52 @@
       // if isArp
       if arpPhraseToggle = 0 and arpMute = 0
 
-        // NOTE the following set of conditionals is interesting, because they're all variations of a similar idea, but they feel different enough that making a subroutine for each might be more unnecessarily complicated
-        // TODO need to review conditionals below once launchkey transfer is complete - seems like there would be necessary changes to be made
-
-        // if value mode is 0 (asc 1)
-        if arpValueModeMod = 0
-          // if gateOpened, or if first instance of clock since first key was pressed
-          if gateOpened = 1
-            arpIndex = numPressed + arpOffset
-            gateOpened = 0
+        // if gateOpened, or if first instance of clock since first key was pressed
+        if gateOpened = 1 // NOTE could make handler out of the following, since used twice
+          if arpMode = 0 or arpMode = 3 // asc, order
+            initIndex = numPressed - 1 
+            endIndex = 0
+            iterConstant = -1
+            arpIndex = initIndex
+            octaveOffset = -1
+          elseif arpMode = 1 // desc
+            initIndex = 0
+            endIndex = numPressed - 1
+            iterConstant = 1
+            arpIndex = initIndex
+            octaveOffset = -1
           endif
-          // arpIndex will initially be set to numPressed + 32, but after it's set to numPressed + 32 - 1, it will be automatically decreased each run through
-          // this decrease stops once we go under 32 - at that point it's reset
-          arpIndex = arpIndex - 1
-          if arpIndex = 1F
-            arpIndex = numPressed + arpOffset
-            // NOTE need to subtract one here because subtraction always needs to occur after reset
-            arpIndex = arpIndex - 1
-          endif
-          Sendif channelNoteOn JI6 velocity
-          Sendif channelNoteOff JI6 velocity +DJ4
+          gateOpened = 0
         endif
 
-        // if value mode is 1 (asc 2)
-        if arpValueModeMod = 1
-          // if gateOpened, or if first instance of clock since first key was pressed
-          if gateOpened = 1
-            arpIndex = numPressed + arpOffset
-            isOctave = 0
-            gateOpened = 0
-          endif
-          // if not isOctave, business as usual
-          if isOctave = 0
-            arpIndex = arpIndex - 1
-            if arpIndex = 1F
-              arpIndex = numPressed + arpOffset
-              // NOTE need to subtract one here because subtraction always needs to occur after reset
-              arpIndex = arpIndex - 1
-            endif
-            Sendif channelNoteOn JI6 velocity
-            Sendif channelNoteOff JI6 velocity +DJ4
-            isOctave = 1
-          // if isOctave, add 12 semitones and send that instead
-          ELSE
-            arpOctaveValue = JI6 + $12 // NOTE see if this should be -12 or +12
-            Sendif channelNoteOn arpOctaveValue velocity
-            Sendif channelNoteOff arpOctaveValue velocity +DJ4
-            isOctave = 0
-          endif
+        if arpMode = 2 // rand
+          Call @HandleClockRandom
+        else
+          Call @HandleClockPattern
         endif
 
-        // if value mode is 2 (asc 3)
-        if arpValueModeMod = 2
-          // if gateOpened, or if first instance of clock since first key was pressed
-          if gateOpened = 1
-            arpIndex = numPressed + arpOffset
-            isOctave = 0
-            gateOpened = 0
-          endif
-          isOctaveMod = isOctave % 3
-          // if isOctaveMod is 0, business as usual
-          if isOctaveMod = 0
-            arpIndex = arpIndex - 1
-            if arpIndex = 1F
-              arpIndex = numPressed + arpOffset
-              // NOTE need to subtract one here because subtraction always needs to occur after reset
-              arpIndex = arpIndex - 1
-            endif
-            Sendif channelNoteOn JI6 velocity
-            Sendif channelNoteOff JI6 velocity +DJ4
-            isOctave = isOctave + 1
-          endif
-          // if isOctaveMod is 1, add 12 semitones and send that instead
-          if isOctaveMod = 1
-            arpOctaveValue = JI6 + $12 // NOTE see if this should be -12 or +12
-            Sendif channelNoteOn arpOctaveValue velocity
-            Sendif channelNoteOff arpOctaveValue velocity +DJ4
-            isOctave = isOctave + 1
-          endif
-          // if isOctaveMod is 2, add 24 semitones and send that instead
-          if isOctaveMod = 2
-            arpOctaveValue = JI6 + $24 // NOTE see if this should be -12 or +12
-            Sendif channelNoteOn arpOctaveValue velocity
-            Sendif channelNoteOff arpOctaveValue velocity +DJ4
-            isOctave = isOctave + 1
-          endif
+      // else isPhrase
+      // because we need the phrase to be relative, we'll need the global array to contain offset, not note value
+      elseif arpPhraseToggle = 1 and arpMute = 0
+        // if gateOpened, or if first instance of clock since first key was pressed
+        if gateOpened = 1
+          phraseIndex = 0
+          gateOpened = 0
         endif
-
-        // if value mode is 3 (desc 1)
-        if arpValueModeMod = 3
-          // if gateOpened, or if first instance of clock since first key was pressed
-          if gateOpened = 1
-            arpIndex = 1F
-            gateOpened = 0
-          endif
-          // arpIndex will initially be set to 31, but after it's set to 32, it will be automatically increased each run through
-          // this increase stops once we go over numPressed - at that point it's reset
-          arpIndex = arpIndex + 1
-          numPressedOffset = numPressed + arpOffset
-          if arpIndex >= numPressedOffset
-            arpIndex = 1F
-            // NOTE need to add one here because subtraction always needs to occur after reset
-            arpIndex = arpIndex + 1
-          endif
-          Sendif channelNoteOn JI6 velocity
-          Sendif channelNoteOff JI6 velocity +DJ4
+        // if phrase offset is not a rest
+        if phraseOffsetValues[phraseIndex] <> 128
+          phraseValSend = phraseVal + phraseOffsetValues[phraseIndex]
+          SendMIDINoteOn channel, phraseValSend, velocity
+          SendMIDINoteOff channel, phraseValSend, velocity, gate
         endif
-
-        // if value mode is 4 (desc 2)
-        if arpValueModeMod = 4
-          // if gateOpened, or if first instance of clock since first key was pressed
-          if gateOpened = 1
-            arpIndex = 1F
-            isOctave = 0
-            gateOpened = 0
-          endif
-          // if not isOctave, business as usual
-          if isOctave = 0
-            arpIndex = arpIndex + 1
-            numPressedOffset = numPressed + arpOffset
-            if arpIndex >= numPressedOffset
-              arpIndex = 1F
-              // NOTE need to add one here because subtraction always needs to occur after reset
-              arpIndex = arpIndex + 1
-            endif
-            Sendif channelNoteOn JI6 velocity
-            Sendif channelNoteOff JI6 velocity +DJ4
-            isOctave = 1
-          // if isOctave, add 12 semitones and send that instead
-          ELSE
-            arpOctaveValue = JI6 + $12 // NOTE see if this should be -12 or +12
-            Sendif channelNoteOn arpOctaveValue velocity
-            Sendif channelNoteOff arpOctaveValue velocity +DJ4
-            isOctave = 0
-          endif
+        if phraseIndex <> phraseLength // NOTE this is really phraseLength - 1
+          phraseIndex = phraseIndex + 1
+        else
+          phraseIndex = 0
         endif
-
-        // if value mode is 5 (desc 3)
-        if arpValueModeMod = 5
-          // if gateOpened, or if first instance of clock since first key was pressed
-          if gateOpened = 1
-            arpIndex = 1F
-            isOctave = 0
-            gateOpened = 0
-          endif
-          isOctaveMod = isOctave % 3
-          // if isOctaveMod is 0, business as usual
-          if isOctaveMod = 0
-            arpIndex = arpIndex + 1
-            numPressedOffset = numPressed + arpOffset
-            if arpIndex >= numPressedOffset
-              arpIndex = 1F
-              // NOTE need to add one here because subtraction always needs to occur after reset
-              arpIndex = arpIndex + 1
-            endif
-            Sendif channelNoteOn JI6 velocity
-            Sendif channelNoteOff JI6 velocity +DJ4
-            isOctave = 1
-          endif
-          // if isOctaveMod is 1, add 12 semitones and send that instead
-          if isOctaveMod = 1
-            arpOctaveValue = JI6 + $12 // NOTE see if this should be -12 or +12
-            Sendif channelNoteOn arpOctaveValue velocity
-            Sendif channelNoteOff arpOctaveValue velocity +DJ4
-            isOctave = isOctave + 1
-          endif
-          // if isOctaveMod is 2, add 24 semitones and send that instead
-          if isOctaveMod = 2
-            arpOctaveValue = JI6 + $24 // NOTE see if this should be -12 or +12
-            Sendif channelNoteOn arpOctaveValue velocity
-            Sendif channelNoteOff arpOctaveValue velocity +DJ4
-            isOctave = isOctave + 1
-          endif
-          // NOTE could use if else here, have chosen not to because I think this is more readable
-          // NOTE also might be able to multiply isOctaveMod by 12, add, and always send arpOctaveValue
-          // NOTE could make this a subroutine
-        endif
-
-        // if value mode is 6 (rand 1)
-        if arpValueModeMod = 6
-          // if gateOpened, or if first instance of clock since first key was pressed
-          if gateOpened = 1
-            gateOpened = 0
-          endif
-          arpIndex = RFF % numPressed
-          arpIndex = arpIndex + arpOffset
-          Sendif channelNoteOn JI6 velocity
-          Sendif channelNoteOff JI6 velocity +DJ4
-        endif
-
-        // if value mode is 7 (rand 2)
-        if arpValueModeMod = 7
-          // if gateOpened, or if first instance of clock since first key was pressed
-          if gateOpened = 1
-            gateOpened = 0
-          endif
-          // NOTE this is completely random - thus ignoring the note played before it - the octave will not necessarily match up with previous note
-          arpIndex = RFF % numPressed
-          isOctaveMod = RFF % 2
-          arpIndex = arpIndex + arpOffset
-          // if not isOctaveMod, business as usual
-          if isOctaveMod = 0
-            Sendif channelNoteOn JI6 velocity
-            Sendif channelNoteOff JI6 velocity +DJ4
-          // if isOctaveMod, add 12 semitones and send that instead
-          ELSE
-            arpOctaveValue = JI6 + $12 // NOTE see if this should be -12 or +12
-            Sendif channelNoteOn arpOctaveValue velocity
-            Sendif channelNoteOff arpOctaveValue velocity +DJ4
-          endif
-        endif
-
-        // if value mode is 8 (rand 3)
-        if arpValueModeMod = 8
-          // if gateOpened, or if first instance of clock since first key was pressed
-          if gateOpened = 1
-            gateOpened = 0
-          endif
-          arpIndex = RFF % numPressed
-          isOctaveMod = RFF % 3
-          arpIndex = arpIndex + arpOffset
-          // if isOctaveMod is 0, business as usual
-          if isOctaveMod = 0
-            Sendif channelNoteOn JI6 velocity
-            Sendif channelNoteOff JI6 velocity +DJ4
-          endif
-          // if isOctaveMod is 1, add 12 semitones and send that instead
-          if isOctaveMod = 1
-            arpOctaveValue = JI6 + $12 // NOTE see if this should be -12 or +12
-            Sendif channelNoteOn arpOctaveValue velocity
-            Sendif channelNoteOff arpOctaveValue velocity +DJ4
-          endif
-          // if isOctaveMod is 2, add 24 semitones and send that instead
-          if isOctaveMod = 2
-            arpOctaveValue = JI6 + $24 // NOTE see if this should be -12 or +12
-            Sendif channelNoteOn arpOctaveValue velocity
-            Sendif channelNoteOff arpOctaveValue velocity +DJ4
-          endif
-        endif
-
-        // NOTE this currently appears the same as the general asc - this is because the way they are sorted will be the same
-        // if value mode is 9 (order 1)
-        if arpValueModeMod = 9
-          if gateOpened = 1
-            arpIndex = numPressed + arpOffset
-            gateOpened = 0
-          endif
-          // arpIndex will initially be set to numPressed + 32, but after it's set to numPressed + 32 - 1, it will be automatically decreased each run through
-          // this decrease stops once we go under 32 - at that point it's reset
-          arpIndex = arpIndex - 1
-          if arpIndex = 1F
-            arpIndex = numPressed + arpOffset
-            // NOTE need to subtract one here because subtraction always needs to occur after reset
-            arpIndex = arpIndex - 1
-          endif
-          Sendif channelNoteOn JI6 velocity
-          Sendif channelNoteOff JI6 velocity +DJ4
-        endif
-
-        // if value mode is 10 (order 2)
-        if arpValueModeMod = A
-          // if gateOpened, or if first instance of clock since first key was pressed
-          if gateOpened = 1
-            arpIndex = numPressed + arpOffset
-            isOctave = 0
-            gateOpened = 0
-          endif
-          // if not isOctave, business as usual
-          if isOctave = 0
-            arpIndex = arpIndex - 1
-            if arpIndex = 1F
-              arpIndex = numPressed + arpOffset
-              // NOTE need to subtract one here because subtraction always needs to occur after reset
-              arpIndex = arpIndex - 1
-            endif
-            Sendif channelNoteOn JI6 velocity
-            Sendif channelNoteOff JI6 velocity +DJ4
-            isOctave = 1
-          // if isOctave, add 12 semitones and send that instead
-          ELSE
-            arpOctaveValue = JI6 + $12 // NOTE see if this should be -12 or +12
-            Sendif channelNoteOn arpOctaveValue velocity
-            Sendif channelNoteOff arpOctaveValue velocity +DJ4
-            isOctave = 0
-          endif
-        endif
-
-        // if value mode is 11 (order 3)
-        if arpValueModeMod = B
-          // if gateOpened, or if first instance of clock since first key was pressed
-          if gateOpened = 1
-            arpIndex = numPressed + arpOffset
-            isOctave = 0
-            gateOpened = 0
-          endif
-          isOctaveMod = isOctave % 3
-          // if isOctaveMod is 0, business as usual
-          if isOctaveMod = 0
-            arpIndex = arpIndex - 1
-            if arpIndex = 1F
-              arpIndex = numPressed + arpOffset
-              // NOTE need to subtract one here because subtraction always needs to occur after reset
-              arpIndex = arpIndex - 1
-            endif
-            Sendif channelNoteOn JI6 velocity
-            Sendif channelNoteOff JI6 velocity +DJ4
-            isOctave = isOctave + 1
-          endif
-          // if isOctaveMod is 1, add 12 semitones and send that instead
-          if isOctaveMod = 1
-            arpOctaveValue = JI6 + $12 // NOTE see if this should be -12 or +12
-            Sendif channelNoteOn arpOctaveValue velocity
-            Sendif channelNoteOff arpOctaveValue velocity +DJ4
-            isOctave = isOctave + 1
-          endif
-          // if isOctaveMod is 2, add 24 semitones and send that instead
-          if isOctaveMod = 2
-            arpOctaveValue = JI6 + $24 // NOTE see if this should be -12 or +12
-            Sendif channelNoteOn arpOctaveValue velocity
-            Sendif channelNoteOff arpOctaveValue velocity +DJ4
-            isOctave = isOctave + 1
-          endif
-        endif
-
-      elseif arpPhraseToggle = 1
-
       endif
     endif
-  endif
-
-          // else isPhrase
-          // because we need the phrase to be relative, we'll need the global array to contain offset, not note value
-          // offset will be used in conjunction with note in, also stored in the global array
-          // additionally, -1 implies a rest, so nothing will be played
-          ELSE
-            // if gateOpened, or if first instance of clock since first key was pressed
-            if gateOpened = 1
-              phraseIndex = 2A
-              gateOpened = 0
-            endif
-            // if phrase offset is not a rest
-            if JIB != 2E57
-              phraseValSend = phraseVal + JIB
-              Sendif channelNoteOn phraseValSend velocity
-              Sendif channelNoteOff phraseValSend velocity +DJ4
-            endif
-            if phraseIndex != phraseLengthPlusOffset
-              phraseIndex = phraseIndex + 1
-            ELSE
-              phraseIndex = 2A
-            endif
-          endif
-        endif
-        clockNum = clockNum + 1
-      endif
-    endif
+    clockNum = clockNum + 1
   endif
 
 @End
-

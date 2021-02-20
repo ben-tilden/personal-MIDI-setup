@@ -1,0 +1,99 @@
+// launchkey mapping filter
+
+@OnLoad
+  // constant
+  MIDIDrumVals = [0x31, 0x32, 0x33, 0x2D, 0x2E, 0x2F]
+
+  MIDILaunchkeyPadVals = [0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x30]
+  MIDIBeatsVals = [0x2A, 0x2E, 0x4B, 0x43, 0x24, 0x26, 0x2B, 0x32, 0x31, 0x27]
+  MIDISampleVals = [0x41, 0x42, 0x43, 0x44, 0x3C, 0x3D, 0x3E, 0x3F, 0x45, 0x40]
+
+  MIDILaunchkeyKnobVals = [0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B]
+  MIDIDrumKnobVals = [0x31, 0x32, 0x33, 0x34, 0x0A, 0x67, 0x7E, 0x7F] // NOTE these last two vals are dummy vals to prevent inadvertent overloading
+  MIDIBassKnobVals = [0x0B, 0x31, 0x05, 0x28]
+
+  // variable
+  padMode = 0
+  // previous vals for drum
+  FillArray drumVals, 60, 6
+@End
+
+// sysex reception
+
+@OnSysex
+  ReceiveSysex sysexData
+
+  // block all sysex except padMode and init
+
+  if sysexData[0] = 0x11 and sysexData[1] = 0x1C
+    padMode = 0
+    // previous vals for drum
+    FillArray drumVals, 60, 6
+  elseif sysexData[0] <> 0x3F
+    Exit
+  elseif sysexData[1] = 0x0C
+    padMode = sysexData[2]
+  endif
+
+@End
+
+@OnMIDINote
+
+  // set drumVals from channels 1-6 so pad (channel 10) matches up with last played note on drum
+  if MIDICommand = 0x90 and MIDIChannel < 0x06 // TODO check on this - is it 0 to 15?
+    drumVals[MIDIchannel] = MIDINote
+  endif
+
+  // map channel 10 pads
+  if MIDIChannel = 10 and (MIDICommand = 0x90 or MIDICommand = 0x80)
+
+    for i = 0 to 5
+      if MIDINote = MIDIDrumVals[i]
+        SendMIDIOut MIDIByte1, drumVals[i], MIDIByte3
+        Exit
+      endif
+    endfor
+
+    if padMode = 0
+
+      for i = 0 to 9
+        if MIDINote = MIDILaunchkeyVals[i]
+          SendMIDIOut MIDIByte1, MIDIBeatsVals[i], MIDIByte3
+          Exit
+        endif
+      endfor
+
+    else
+
+      for i = 0 to 9
+        if MIDINote = MIDILaunchkeyVals[i]
+          SendMIDIOut MIDIByte1, MIDISampleVals[i], MIDIByte3
+          Exit
+        endif
+      endfor
+
+    endif
+  endif
+
+@End
+
+@OnMIDICC
+  // map launchkey knobs for drum and bass
+  if MIDICommand = 0xB0 and MIDIByte2 = 0x1C
+    SendMIDIOut MIDIByte1, MIDIDrumKnobVals[7], MIDIByte3
+  elseif MIDICommand = 0xB0 and MIDIChannel < 0x06 // TODO will need to check if this works (and elsewhere)
+    for i = 0 to 6
+      if MIDIByte2 = MIDILaunchkeyKnobVals[i]
+        SendMIDIOut MIDIByte1, MIDIDrumKnobVals[i], MIDIByte3
+        Exit
+      endif
+    endfor
+  elseif MIDICommand = 0xB0 and MIDIChannel = 0x08
+    for i = 0 to 3
+      if MIDIByte2 = MIDILaunchkeyKnobVals[i]
+        SendMIDIOut MIDIByte1, MIDIBassKnobVals[i], MIDIByte3
+        Exit
+      endif
+    endfor
+  endif
+@End

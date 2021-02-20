@@ -614,6 +614,12 @@ IF M0 == channelNoteOff
     # END SYSEX
   END
 
+  IF numPressed >= 1
+    # gateOpened
+    # SEND SYSEX
+    SEND F0 CC 19 60 F7 +F
+    # END SYSEX
+  END
 
   IF arpPhraseOnOffToggle == 1
     NX = XX +B

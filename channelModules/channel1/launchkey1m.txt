@@ -1,97 +1,17 @@
 // launchkey mini (mk2)
 
-@InsertionSort // isOrder length
-
-  // sort by value
-  if arpValueModeMod < 6
-    for i = 1 to numPressed
-
-      keyVal = keyValuesPressed[i]
-      keyOrder = keyOrderPressed[i]
-
-      j = i - 1
-
-      repeat
-        keyValuesPressed[j + 1] = keyValuesPressed[j]
-        j = j - 1
-      until j < 0 or keyVal >= keyValuesPressed[j]
-
-      keyValuesPressed[j + 1] = keyVal
-      keyOrderPressed[j + 1] = keyOrder
-    endfor
-
-  // sort by keys pressed
-  elseif arpValueModeMod > 8
-    for i = 1 to numPressed
-
-      keyVal = keyValuesPressed[i]
-      keyOrder = keyOrderPressed[i]
-
-      j = i - 1
-
-      repeat
-        keyOrderPressed[j + 1] = keyOrderPressed[j]
-        j = j - 1
-      until j < 0 or keyOrder >= keyOrderPressed[j]
-
-      keyValuesPressed[j + 1] = keyVal
-      keyOrderPressed[j + 1] = keyOrder
-    endfor
-
-@End
-
-// TODO could likely make a custom handler for this, since both resets reuse this code heavily
 @OnLoad
 
   // minimal layout
-
   ShowLayout 4
 
   // timer
-
   SetTimerInterval 200
 
-  // assign sysex variables
+  // constant
+  phraseSysexOffsetConstant = 42 // artifact of initial SB setup - could be changed
 
-  arpPhraseToggle = 0
-  arpPhraseOnOffToggle = 0
-  arpValueModeMod = 0
-  arpMute = 0
-  velocity = 100
-  latch = 0
-
-  for i = 0 to 9
-    keyValuesPressed[i] = 0
-  endfor
-  keysPressed = 0
-
-  for i = 0 to 31
-    phraseValues[i] = 0
-  endfor
-  setPhrase = 0
-  phraseVal = 60
-  phraseIndex = 0
-
-  // assign local
-
-  for i = 0 to 9
-    keyOrderPressed[i] = 0
-  endfor
-  keysPressedTotal = 0
-  keyIndex = 0
-
-  tempPhraseVal = 43690 // fka AAAA; needs to be set to a value too far for both negatives and positives to reach
-  overload = 0
-
-  channel = 0 // channel specific // TODO will need to review in conjunction with combining filters
-
-  // reset xtouch lighting and params
-  sendData = [0xFF, 0x1B, 0x00]
-  SendSysex sendData, 3
-
-  // reset channel information
-  sendData = [0xCC, 0x1C, 0x00]
-  SendSysex sendData, 3
+  Call @InitVariables
 
 @End
 
@@ -105,13 +25,21 @@
 
 // sysex reception
 
-// TODO could add filter conditional here and remove actual filter
 @OnSysex
 
   ReceiveSysex sysexData
 
+  // ALLOW 11 C1
+  // BLOCK CC 0F 01 FF 3F (+ xtouch program change, key presses, key releases, and CC's)
+  if sysexData[0] > 0xC1 or sysexData[0] = 0x0F or sysexData[0] = 0x01
+    Exit
+
+  elseif sysexData[1] = 0xEE
+    SendMIDIOut sysexData[2], sysexData[3], sysexData[4]
+    Exit
+
   // clock message triggered by host clock starting
-  if sysexData[0] = 0x7D and sysexData[1] = 0x01
+  elseif sysexData[0] = 0x7D and sysexData[1] = 0x01
     Exit
 
   elseif sysexData[1] = 0x01
@@ -127,19 +55,19 @@
   elseif sysexData[1] = 0x02
     arpPhraseOnOffToggle = sysexData[2]
     // will need to send note release if latch is on
-    if latch = 1
-      if arpPhraseOnOffToggle = 1
-        for i = 0 to keyIndex - 1
-          SendMIDINoteOff channel, keyValuesPressed[i], 00
-        endfor
-        // need to open gate so that there's a smooth transition here
-        sendData = [0xCC, 0x19, 0x60]
-        SendSysex sendData, 3
-      else
-        for i = 0 to keyIndex - 1
-          SendMIDINoteOn channel, keyValuesPressed[i], velocity
-        endfor
-      endif
+    if arpPhraseOnOffToggle = 1 and keysPressed > 0
+      for i = 0 to keysPressed - 1
+        SendMIDINoteOff channel, keyValuesPressed[i], 00
+      endfor
+      // need to open gate so that there's a smooth transition here
+      sendData = [0xCC, 0x19, 0x60]
+      SendSysex sendData, 3
+    elseif keysPressed > 0 and latch = 1
+      for i = 0 to keysPressed - 1
+        SendMIDINoteOn channel, keyValuesPressed[i], velocity
+        // NOTE bad timing here can prevent latch from picking up the value
+        // the delayed noteOff can come at just the wrong time - not in the plans to fix at this point
+      endfor
     endif
     Exit
 
@@ -162,15 +90,14 @@
 
   elseif sysexData[1] = 0x0B
     latch = sysexData[2]
-    if latch = 0
-      for i = 0 to keyIndex - 1
+    if latch = 0 and keysPressed > 0
+      for i = 0 to keysPressed - 1
         SendMIDINoteOff channel, keyValuesPressed[i], 00
         keyValuesPressed[i] = 0
         keyOrderPressed[i] = 0
       endfor
       keysPressed = 0
       keysPressedTotal = 0
-      keyIndex = 0
       sendData = [0xCC, 0x20]
       for i = 2 to 11
         sendData[i] = keyValuesPressed[i - 2]
@@ -178,27 +105,28 @@
       SendSysex sendData, 12
       sendData = [0xCC, 0x00, keysPressed]
       SendSysex sendData, 3
-    else
+    elseif keysPressed > 0
       // handle if latch turned on after notes have been pressed
       // NOTE at this point, this is more of an edge case
-      if keysPressed > 0
-        StartTimer
-        latchTiming = 0
-      endif
+      StartTimer
+      latchTiming = 0
+      for i = 0 to keysPressed - 1
+        latchkeysPressed = latchKeysPressed + 1
+      endfor
     endif
     Exit
 
   // if phraseRest is sent
   elseif sysexData[1] = 0x1A and setPhrase = 1
-    // assign value to 128, indicating a rest // TODO make this constant
+    // NOTE could add this code to a handler and use here and below - doesn't change that much
+    // assign value to 128, indicating a rest
     phraseValues[phraseIndex] = 128 // 2E57
 
-    // TODO issue here, because phraseIndex is no longer unique - can transform this or add another val to sendData for signifying
-    sendData = [0xCC, phraseIndex, phraseValues[phraseIndex]]
+    phraseTemp = phraseIndex + phraseSysexOffsetConstant // artifact of initial SB setup - could be changed
+    sendData = [0xCC, phraseTemp, phraseValues[phraseIndex]]
     SendSysex sendData, 3
 
-    // TODO sending phrase length here - need to review if this is necessary since phraseIndex( - 1 ) seems to be the same thing?
-    sendData = [0xCC, 0x0A, phraseIndex]
+    sendData = [0xCC, 0x0A, phraseIndex] // phraseLength - 1, or last index of phrase
     SendSysex sendData, 3
 
     phraseIndex = phraseIndex + 1
@@ -221,15 +149,25 @@
   // channel change should use two hands, so hoping this will not come up
   // NOTE because this is what changes the hardware filter, the hardware filter will not properly filter out the channel change from any channel - needs to be set to receive channel specific channel change messages
 
-  if MIDIByte2 = 0x6B and MIDIByte3 = 0x7F
+  // TODO add conditional for channel
 
-    // send init channel change sysex (block file from processing further data)
-    // TODO sendData = [0xFF, 0x1E, 0xCC]
-    // TODO SendSysex sendData, 3
+  if MIDIByte2 = 0x7F
+    // this causes issues with launchkey if velocity is zero, since it registers as a note off // TODO check if this is consistent
+    if MIDIByte3 = 0
+      keyPressVelocity = 1
+    else
+      keyPressVelocity = MIDIByte3
+    endif
+
+  elseif MIDIByte2 = 0x6B and MIDIByte3 = 0x7F
+
+    // send init channel change sysex (block file from processing further data) TODO test
+    // sendData = [0xFF, 0x1E, 0xCC]
+    // SendSysex sendData, 3
 
     Exit
 
-  elseif MIDIByte2 = 6B and MIDIByte3 = 00
+  elseif MIDIByte2 = 0x6B and MIDIByte3 = 0x00
 
     // send channel change sysex
     sendData = [0xFF, 0x1E, 0xCC]
@@ -238,152 +176,110 @@
     Exit
 
   // full reset
-  elseif MIDIByte1 = 0x68 and MIDIByte2 = 0x7F
-
-    // reset sysex variables
-
-    arpPhraseToggle = 0
-    arpPhraseOnOffToggle = 0
-    arpValueModeMod = 0
-    arpMute = 0
-    velocity = 100
-    latch = 0
-
-    for i = 0 to 9
-      keyValuesPressed[i] = 0
-    endfor
-    keysPressed = 0
-
-    for i = 0 to 31
-      phraseValues[i] = 0
-    endfor
-    setPhrase = 0
-    phraseVal = 60
-    phraseIndex = 0
-
-    // reset local
-
-    for i = 0 to 9
-      keyOrderPressed[i] = 0
-    endfor
-    keysPressedTotal = 0
-    keyIndex = 0
-
-    tempPhraseVal = 43690 // fka AAAA; needs to be set to a value too far for both negatives and positives to reach
-    overload = 0
-
-    channel = 0 // channel specific // TODO will need to review in conjunction with combining filters
-
-    // reset xtouch lighting and params
-    sendData = [0xFF, 0x1B, 0x00]
-    SendSysex sendData, 3
-
-    // reset channel information
-    sendData = [0xCC, 0x1C, 0x00]
-    SendSysex sendData, 3
+  elseif MIDIByte2 = 0x68 and MIDIByte3 = 0x7F // TODO
+    Call @InitVariables
 
     Exit
 
   // arp mute
-  elseif MIDIByte1 = 0x69 and MIDIByte2 = 0x7F
+  elseif MIDIByte2 = 0x69 and MIDIByte3 = 0x7F
     arpMute = 1
-    sendData = [0xCC, 0x48, arpMute]
+    sendData = [0xCC, 0x4A, arpMute]
     SendSysex sendData, 3
     Exit
 
-  elseif MIDIByte1 = 0x69 and MIDIByte2 = 0x00
+  elseif MIDIByte2 = 0x69 and MIDIByte3 = 0x00
     arpMute = 0
-    sendData = [0xCC, 0x48, arpMute]
+    sendData = [0xCC, 0x4A, arpMute]
     SendSysex sendData, 3
     Exit
 
   // channel reset
-  elseif MIDIByte1 = 0x6A and MIDIByte2 = 0x7F
-
-    // reset sysex variables
-
-    arpPhraseToggle = 0
-    arpPhraseOnOffToggle = 0
-    arpValueModeMod = 0
-    arpMute = 0
-    velocity = 100
-    latch = 0
-
-    for i = 0 to 9
-      keyValuesPressed[i] = 0
-    endfor
-    keysPressed = 0
-
-    for i = 0 to 31
-      phraseValues[i] = 0
-    endfor
-    setPhrase = 0
-    phraseVal = 60
-    phraseIndex = 0
-
-    // reset local
-
-    for i = 0 to 9
-      keyOrderPressed[i] = 0
-    endfor
-    keysPressedTotal = 0
-    keyIndex = 0
-
-    tempPhraseVal = 43690 // fka AAAA; needs to be set to a value too far for both negatives and positives to reach
-    overload = 0
-
-    channel = 0 // channel specific // TODO will need to review in conjunction with combining filters
-
-    // reset xtouch lighting and params
-    sendData = [0xFF, 0x1B, 0x00]
-    SendSysex sendData, 3
-
-    // reset channel information
-    sendData = [0xCC, 0x1C, 0x00]
-    SendSysex sendData, 3
+  elseif MIDIByte2 = 0x6A and MIDIByte3 = 0x7F
+    Call @InitVariables
 
     Exit
   endif
 @End
 
+@InitVariables
+  // reset sysex variables
+
+  arpPhraseToggle = 0
+  arpPhraseOnOffToggle = 0
+  arpValueModeMod = 0
+  arpMute = 0
+  velocity = 100
+  keyPressVelocity = 100
+  latch = 0
+
+  for i = 0 to 9
+    keyValuesPressed[i] = 0
+  endfor
+  keysPressed = 0
+
+  for i = 0 to 31
+    phraseValues[i] = 0
+  endfor
+  setPhrase = 0
+  phraseVal = 60
+  phraseIndex = 0
+
+  // reset local
+
+  for i = 0 to 9
+    keyOrderPressed[i] = 0
+  endfor
+  keysPressedTotal = 0
+
+  tempPhraseVal = 43690 // fka AAAA; needs to be set to a value too far for both negatives and positives to reach
+  overload = 0
+
+  latchTiming = 1
+  latchKeysPressed = 0
+
+  channel = 0 // channel specific // TODO will need to review in conjunction with combining filters
+
+  // reset xtouch lighting and params
+  sendData = [0xFF, 0x1B, 0x00]
+  SendSysex sendData, 3
+
+  // reset channel information
+  sendData = [0xCC, 0x1C, 0x00]
+  SendSysex sendData, 3
+
+@End
+
 //TODO could add channel checking here instead of having outside filter
-@MIDINoteOn
+@OnMIDINoteOn
 
   // RESET
 
   // if reset (keys pressed limit exceeded), handle differently
   if overload = 1
     keysPressed = keysPressed + 1
+    if latch = 1
+      latchKeysPressed = latchKeysPressed + 1
+    endif
     sendData = [0xCC, 0x00, keysPressed]
     SendSysex sendData, 3
     Exit
   endif
 
-  // TODO could make keyValuesPressed reset a custom handler
   // setting arbitrary limit on number of keys pressed at a time to 10 (using 10 as comparator here because keysPressed has not yet been increased)
   if keysPressed = 10
-    for i = 0 to 9
-      keyValuesPressed[i] = 0
-    endfor
-    sendData = [0xCC, 0x20]
-    for i = 2 to 11
-      sendData[i] = keyValuesPressed[i - 2]
-    endfor
-    SendSysex sendData, 12
-    for i = 0 to 9
-      keyOrderPressed[i] = 0
-    endfor
+    Call @gateReset
     overload = 1
-    keysPressedTotal = 0
-    keyIndex = 0
+    arpMute = 1
+    sendData = [0xCC, 0x4A, arpMute]
+    SendSysex sendData, 3
     // necessary so that keysPressed does not go past zero by mistake, as we have not yet incremented for this key press
     keysPressed = keysPressed + 1
+    if latch = 1
+      latchKeysPressed = latchKeysPressed + 1
+    endif
     sendData = [0xCC, 0x00, keysPressed]
     SendSysex sendData, 3
-    phraseVal = 60
-    sendData = [0xCC, 0x08, phraseVal]
-    SendSysex sendData, 3
-
 
     Exit
   endif
@@ -391,15 +287,15 @@
   // LATCH
 
   if latch = 1
-    if latchTiming = 1
+    if latchTiming = 1 and keysPressed > 0 // no need to send notes / reset arrays if no keys are currently recognized as pressed
       StartTimer
       latchTiming = 0
       // reset arrays and send note releases
-      for i = 0 to keyIndex - 1
+      for i = 0 to keysPressed - 1
         // NOTE if the note value is the same as a value that has just been pressed, we need to resend the value, since that is what will be happening with any other overlapping values pressed
         SendMIDINoteOff channel, keyValuesPressed[i], 00
         if MIDINote = keyValuesPressed[i]
-          if arpPhraseOnOffToggle != 1
+          if arpPhraseOnOffToggle <> 1
             SendMIDINoteOn channel, keyValuesPressed[i], velocity
           endif
         endif
@@ -408,8 +304,8 @@
       endfor
       keysPressed = 0
       keysPressedTotal = 0
-      keyIndex = 0
     endif
+    latchKeysPressed = latchKeysPressed + 1
   endif
 
   // PHRASE
@@ -425,18 +321,16 @@
   keysPressedTotal = keysPressedTotal + 1
 
   // store note value in first open spot in array
-  // NOTE this uses keyIndex, which should be set to 0 before first key is pressed
-  keyValuesPressed[keyIndex] = MIDINote
-  keyOrderPressed[keyIndex] = keysPressedTotal
+  // NOTE this uses keysPressed, which should be set to 0 before first key is pressed
+  keyValuesPressed[keysPressed] = MIDINote
+  keyOrderPressed[keysPressed] = keysPressedTotal
 
   // add one to current notes pressed
   // NOTE this is done before sorting to make sure proper length is parsed
-  // this is done after array assignment so that the alignment with keyIndex is accurate in setting
+  // this is done after array assignment so that the alignment with keysPressed is accurate in setting
   keysPressed = keysPressed + 1
   sendData = [0xCC, 0x00, keysPressed]
   SendSysex sendData, 3
-
-  keyIndex = keyIndex + 1
 
   // ARP
 
@@ -456,7 +350,7 @@
     SendSysex sendData, 3
   endif
 
-  if setPhrase == 1
+  if setPhrase = 1
     // because we're taking offset here, we need to record each step as the difference between it and the last step
     // if tempPhraseVal has a previous value (i.e. is not the first key pressed in the phrase)
     // NOTE max phrase length at this point is 32
@@ -466,48 +360,57 @@
 
     phraseValues[phraseIndex] = MIDINote - tempPhraseVal
 
-    sendData = [0xCC, phraseIndex, phraseValues[phraseIndex]]
+    phraseTemp = phraseIndex + phraseSysexOffsetConstant // artifact of initial SB setup - could be changed
+    sendData = [0xCC, phraseTemp, phraseValues[phraseIndex]]
     SendSysex sendData, 3
 
-    sendData = [0xCC, 0x0A, phraseIndex] // TODO does this need to be +1? was not previously
+    sendData = [0xCC, 0x0A, phraseIndex] // phraseLength - 1, or last index of phrase
     SendSysex sendData, 3
 
     phraseIndex = phraseIndex + 1
-    // if phrase is at max limit, end setPhrase //TODO applicable for both noteon and phraserest - need to add to both when separated
-    if phraseIndex > 47
+    // if phrase is at max limit, end setPhrase 
+    if phraseIndex > 31
       setPhrase = 0
       sendData = [0xFF, 0x07, setPhrase]
       SendSysex sendData, 3
-      phraseIndex = 2A
+      phraseIndex = 0
       tempPhraseVal = 43690
     endif
     // NOTE could block whatever is inputted here, to prevent notes from passing through while the phrase is running
     // this would make sense if phrase was toggled and on, but not if this was not the case
   endif
 
-  if arpPhraseOnOffToggle != 1
-    SendMIDIThru
+  if arpPhraseOnOffToggle <> 1
+    SendMIDIOut MIDIByte1, MIDIByte2, keyPressVelocity
   endif
 
 @End
 
 
-@MIDINoteOff
+@OnMIDINoteOff
 
   // if reset (key pressed limit exceeded), handle differently
   if overload = 1
     keysPressed = keysPressed - 1
+    if latch = 1
+      latchKeysPressed = latchKeysPressed - 1
+    endif
     sendData = [0xCC, 0x00, keysPressed]
     SendSysex sendData, 3
     if keysPressed = 0
       overload = 0
+      arpMute = 0
+      sendData = [0xCC, 0x4A, arpMute]
+      SendSysex sendData, 3
     endif
+    SendMIDIThru
     Exit
   endif
 
   // LATCH
 
-  if latch = 1
+  if latch = 1 or latchKeysPressed <> 0
+    latchKeysPressed = latchKeysPressed - 1
     Exit
   endif
 
@@ -520,7 +423,7 @@
   valOfMax = 0
   secondMax = 0
   valOfSecondMax = 0
-  for i = 0 to keyIndex - 1
+  for i = 0 to keysPressed - 1
     if keyOrderPressed[i] > max
       secondMax = max
       valOfSecondMax = valOfMax
@@ -539,7 +442,6 @@
   endfor
 
   // PHRASE
-
 
   if valOfMax = MIDINote
     // set value equal to second most recent key pressed
@@ -561,35 +463,108 @@
 
   // ALL
 
-  // subract one from current notes pressed
+  // subtract one from current notes pressed
   // NOTE this is done after sorting to make sure any removed values are pushed out
   keysPressed = keysPressed - 1
   sendData = [0xCC, 0x00, keysPressed]
   SendSysex sendData, 3
 
-  keyIndex = keyIndex - 1
-
   if keysPressed = 0
-    for i = 0 to 9
-      keyValuesPressed[i] = 0
-    endfor
-    sendData = [0xCC, 0x20]
-    for i = 2 to 11
-      sendData[i] = keyValuesPressed[i - 2]
-    endfor
-    SendSysex sendData, 12
-    for i = 0 to 9
-      keyOrderPressed[i] = 0
-    endfor
-    keysPressedTotal = 0
-    keyIndex = 0
-    phraseVal = 60
-    sendData = [0xCC, 0x08, phraseVal]
+    Call @gateReset
+  elseif keysPressed > 0
+    // gateOpened
+    sendData = [0xCC, 0x19, 0x60]
     SendSysex sendData, 3
   endif
 
-  if arpPhraseOnOffToggle != 1
+  if arpPhraseOnOffToggle <> 1
     SendMIDIThru
+  endif
+
+@End
+
+@gateReset
+  for i = 0 to 9
+    keyValuesPressed[i] = 0
+  endfor
+  sendData = [0xCC, 0x20]
+  for i = 2 to 11
+    sendData[i] = keyValuesPressed[i - 2]
+  endfor
+  SendSysex sendData, 12
+  for i = 0 to 9
+    keyOrderPressed[i] = 0
+  endfor
+  keysPressedTotal = 0
+  phraseVal = 60
+  sendData = [0xCC, 0x08, phraseVal]
+  SendSysex sendData, 3
+@End
+
+@InsertionSort // isOrder length
+
+  // sort by value
+  if arpValueModeMod < 6 and keysPressed > 1
+    for i = 1 to keysPressed - 1
+
+      keyVal = keyValuesPressed[i]
+      keyOrder = keyOrderPressed[i]
+
+      j = i - 1
+      // NOTE stopLoop necessary because conditionals for loops check simultaneously and not sequentially
+      // can do this here because j will never be less than zero at this point
+      if j > -1 and keyValuesPressed[j] < keyVal
+        stopLoop = 0
+      else
+        stopLoop = 1
+      endif
+
+      while stopLoop = 0
+        keyValuesPressed[j + 1] = keyValuesPressed[j]
+        keyOrderPressed[j + 1] = keyOrderPressed[j]
+        j = j - 1
+        if j < 0
+          stopLoop = 1
+        elseif keyValuesPressed[j] >= keyVal
+          stopLoop = 1
+        endif
+      endwhile
+
+      keyValuesPressed[j + 1] = keyVal
+      keyOrderPressed[j + 1] = keyOrder
+    endfor
+
+  // sort by keys pressed
+  elseif arpValueModeMod > 8 and keysPressed > 1
+    for i = 1 to keysPressed - 1
+
+      keyVal = keyValuesPressed[i]
+      keyOrder = keyOrderPressed[i]
+
+      j = i - 1
+      // NOTE stopLoop necessary because conditionals for loops check simultaneously and not sequentially
+      // can do this here because j will never be less than zero at this point
+      if j > -1 and keyOrderPressed[j] < keyOrder
+        stopLoop = 0
+      else
+        stopLoop = 1
+      endif
+
+      while stopLoop = 0
+        keyOrderPressed[j + 1] = keyOrderPressed[j]
+        keyValuesPressed[j + 1] = keyValuesPressed[j]
+        j = j - 1
+        if j < 0
+          stopLoop = 1
+        elseif keyOrderPressed[j] >= keyOrder
+          stopLoop = 1
+        endif
+      endwhile
+
+      keyValuesPressed[j + 1] = keyVal
+      keyOrderPressed[j + 1] = keyOrder
+    endfor
+
   endif
 
 @End

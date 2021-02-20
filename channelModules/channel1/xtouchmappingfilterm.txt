@@ -1,0 +1,26 @@
+// xtouch mapping filter
+
+@Onload
+  channel = 0
+@End
+
+// sysex reception
+
+@OnSysex // TODO remove this to test sysex hypothesis below
+  ReceiveSysex sysexData
+
+  // block all sysex except channel and init
+
+  if sysexData[0] = 0x11 and sysexData[1] = 0x1C
+    channel = 0
+  elseif sysexData[0] <> 0x3F // will receive padMode as well
+    Exit
+  elseif sysexData[1] = 0xXX // TODO what val is channel
+    channel = sysexData[2]
+  endif
+
+@End
+
+@OnMIDIInput // NOTE don't believe xtouch can send sysex, but if it can this may cause issues // TODO test on clock start
+  SendMIDIThruOnCh channel
+@End
