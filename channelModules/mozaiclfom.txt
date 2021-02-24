@@ -217,7 +217,7 @@
         endif
 
         if lfoTargetKnob[lfo] <> 4 and lfoTargetKnob[lfo] <> 5
-          SendMIDICC 10, lfoTargetKnob[lfo], lfoVal[lfo]
+          SendMIDICC 10, lfoTargetKnob[lfo], lfoVal[lfo] // TODO will change since knobs will be channel specific
         endif
 
       endif

@@ -7,381 +7,96 @@
 // option to add pitch to individual parts for beats 
 // option to add slapback
 
-IF LOAD
-  ALIAS G1 padMode
-  // see 3.
-  ALIAS J0 midiChannel
-  ALIAS J1 midiCCStandard
-  ALIAS J2 midiCCInterval
-  ALIAS I0 intervalDepth
-  ASS midiChannel = 0
-  ASS midiCCStandard = 0
-  ASS midiCCInterval = 0
-  ASS intervalDepth = 40
-  // see 7.
-  ALIAS 7E deassign7E
-  ASS Q0 = 0
-END
+@Onload
+  channelCC = 0
+  midiCCStandard = 0
+  midiCCInterval = 0
+  intervalDepth = 64
+  padMode = 0
+
+  intervalValues = [0, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 67, 72, 77, 82, 87, 92, 97, 102, 107, 112, 117, 122, 127]
+
+@End
 
 // sysex reception
 
-// init
-IF M0 == F0
-  IF M2 == 1C
-    // see 3.
-    ASS midiChannel = 0
-    ASS midiCCStandard = 0
-    ASS midiCCInterval = 0
-    ASS intervalDepth = 40
-    // see 7.
-    ASS Q0 = 0
-    // TEST
-    LOG LOCAL_SETUP_RESET
-    // END TEST
-    BLOCK
-    EXIT
-  END
-END
+// padMode needs to be handled here as well
+@OnSysex
 
-// 3. chromaticize keys volca drum
+  ReceiveSysex sysexData
 
-// sysex reception
+  // init
+  if sysexData[1] = 0x1C
+    channelCC = 0
+    midiCCStandard = 0
+    midiCCInterval = 0
+    intervalDepth = 40
+    padMode = 0
+    Exit
 
-IF M0 == F0
-  IF M2 == 1F
-    ASS Q0 = M3
-    // TEST
-    // ensure localsetup receives trackingMode
-    LOG trackingMode_SYSEX_RECEIVED Q0
-    // END TEST
-    BLOCK
-    EXIT
-  END
-END
+  // padMode
+  elseif sysexData[1] = 0x1F
+    padMode = sysexData[2]
+    Exit
 
-// if tracking is on
-IF Q0 != 0
-  // if M0 is a note on in the current channel, send the channel, pitch control, and note number
-  IF MT == 90
-    IF M0 < 96
-      MAT midiChannel = MC + B0
-      MAT midiCCStandard = M1 + 1 // 1 is the offset here to align properly - this means the highest possible note is F#
-      // need to block any note higher than F#
-      IF M1 == 7F
-        BLOCK
-        EXIT
-      END
-      // if tracking is set to 1 part
-      IF Q0 == 1
-        SND midiChannel 1C midiCCStandard
-      ELSE
-        // intervalDepth is divided into 25 separate groups, ranging 5 values from -12 to +12 semitones (with quantized pitch)
-        // midiCCInterval has the potential to send messages which will cause issues if it goes below zero / above 126
-        // including conditionals to prevent this
-        IF intervalDepth < $6
-          MAT midiCCInterval = midiCCStandard - 18
-          IF midiCCInterval < FFE6
-            SND midiChannel 1A midiCCStandard
-            SND midiChannel 1B midiCCInterval
-          ELSE
-            SND midiChannel 1A midiCCStandard
-            SND midiChannel 1B 01
-          END
-        END
-        IF intervalDepth < $11
-          IF intervalDepth >= $6
-            MAT midiCCInterval = midiCCStandard - 16
-            IF midiCCInterval < FFE6
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 01
-            END
-          END
-        END
-        IF intervalDepth < $16
-          IF intervalDepth >= $11
-            MAT midiCCInterval = midiCCStandard - 14
-            IF midiCCInterval < FFE6
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 01
-            END
-          END
-        END
-        IF intervalDepth < $21
-          IF intervalDepth >= $16
-            MAT midiCCInterval = midiCCStandard - 12
-            IF midiCCInterval < FFE6
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 01
-            END
-          END
-        END
-        IF intervalDepth < $26
-          IF intervalDepth >= $21
-            MAT midiCCInterval = midiCCStandard - 10
-            IF midiCCInterval < FFE6
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 01
-            END
-          END
-        END
-        IF intervalDepth < $31
-          IF intervalDepth >= $26
-            MAT midiCCInterval = midiCCStandard - E
-            IF midiCCInterval < FFE6
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 01
-            END
-          END
-        END
-        IF intervalDepth < $36
-          IF intervalDepth >= $31
-            MAT midiCCInterval = midiCCStandard - C
-            IF midiCCInterval < FFE6
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 01
-            END
-          END
-        END
-        IF intervalDepth < $41
-          IF intervalDepth >= $36
-            MAT midiCCInterval = midiCCStandard - A
-            IF midiCCInterval < FFE6
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 01
-            END
-          END
-        END
-        IF intervalDepth < $46
-          IF intervalDepth >= $41
-            MAT midiCCInterval = midiCCStandard - 8
-            IF midiCCInterval < FFE6
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 01
-            END
-          END
-        END
-        IF intervalDepth < $51
-          IF intervalDepth >= $46
-            MAT midiCCInterval = midiCCStandard - 6
-            IF midiCCInterval < FFE6
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 01
-            END
-          END
-        END
-        IF intervalDepth < $56
-          IF intervalDepth >= $51
-            MAT midiCCInterval = midiCCStandard - 4
-            IF midiCCInterval < FFE6
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 01
-            END
-          END
-        END
-        IF intervalDepth < $61
-          IF intervalDepth >= $56
-            MAT midiCCInterval = midiCCStandard - 2
-            IF midiCCInterval < FFE6
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 01
-            END
-          END
-        END
-        IF intervalDepth < $67
-          IF intervalDepth >= $61
-            SND midiChannel 1A midiCCStandard
-            SND midiChannel 1B midiCCStandard
-          END
-        END
-        IF intervalDepth < $72
-          IF intervalDepth >= $67
-            MAT midiCCInterval = midiCCStandard + 2
-            IF midiCCInterval < 127
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 7E
-            END
-          END
-        END
-        IF intervalDepth < $77
-          IF intervalDepth >= $72
-            MAT midiCCInterval = midiCCStandard + 4
-            IF midiCCInterval < 127
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 7E
-            END
-          END
-        END
-        IF intervalDepth < $82
-          IF intervalDepth >= $77
-            MAT midiCCInterval = midiCCStandard + 6
-            IF midiCCInterval < 127
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 7E
-            END
-          END
-        END
-        IF intervalDepth < $87
-          IF intervalDepth >= $82
-            MAT midiCCInterval = midiCCStandard + 8
-            IF midiCCInterval < 127
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 7E
-            END
-          END
-        END
-        IF intervalDepth < $92
-          IF intervalDepth >= $87
-            MAT midiCCInterval = midiCCStandard + A
-            IF midiCCInterval < 127
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 7E
-            END
-          END
-        END
-        IF intervalDepth < $97
-          IF intervalDepth >= $92
-            MAT midiCCInterval = midiCCStandard + C
-            IF midiCCInterval < 127
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 7E
-            END
-          END
-        END
-        IF intervalDepth < $102
-          IF intervalDepth >= $97
-            MAT midiCCInterval = midiCCStandard + E
-            IF midiCCInterval < 127
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 7E
-            END
-          END
-        END
-        IF intervalDepth < $107
-          IF intervalDepth >= $102
-            MAT midiCCInterval = midiCCStandard + 10
-            IF midiCCInterval < 127
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 7E
-            END
-          END
-        END
-        IF intervalDepth < $112
-          IF intervalDepth >= $107
-            MAT midiCCInterval = midiCCStandard + 12
-            IF midiCCInterval < 127
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 7E
-            END
-          END
-        END
-        IF intervalDepth < $117
-          IF intervalDepth >= $112
-            MAT midiCCInterval = midiCCStandard + 14
-            IF midiCCInterval < 127
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 7E
-            END
-          END
-        END
-        IF intervalDepth < $122
-          IF intervalDepth >= $117
-            MAT midiCCInterval = midiCCStandard + 16
-            IF midiCCInterval < 127
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B midiCCInterval
-            ELSE
-              SND midiChannel 1A midiCCStandard
-              SND midiChannel 1B 7E
-            END
-          END
-        END
-        IF intervalDepth >= $122
-          MAT midiCCInterval = midiCCStandard + 18
-          IF midiCCInterval < 127
-            SND midiChannel 1A midiCCStandard
-            SND midiChannel 1B midiCCInterval
-          ELSE
-            SND midiChannel 1A midiCCStandard
-            SND midiChannel 1B 7E
-          END
-        END
-      END
-    END
-  END
-END
+  endif
 
-// 7. interval setter
+@End
 
-// knob 7 has already been deassigned to deassign7E to allow for interval level
+// chromaticize keys volca drum
+
+@OnMIDINoteOn
+  // if tracking is on
+  if MIDIChannel < 6 and padMode <> 0 and MIDINote <> 127
+    // send the channel, pitch control, and note number
+    channelCC = MIDIChannel + 176
+    midiCCStandard = MIDINote + 1 // 1 is the offset here to align properly - this means the highest possible note is F# (126)
+    if padMode = 1
+      SendMIDICC channelCC, 0x1C, midiCCStandard
+    elseif padMode = 2
+      // intervalDepth is divided into 25 separate groups, ranging 5 values from -12 to +12 semitones (with quantized pitch)
+      // midiCCInterval has the potential to send messages which will cause issues if it goes below zero / above 126
+      // including conditionals to prevent this
+      for i = 0 to 24
+        intervalValue = (i - 12) * 2 // -24 to 24
+
+        if intervalDepth < intervalCCValues[i + 1] and intervalDepth >= intervalCCValues[i]
+          midiCCInterval = midiCCStandard + intervalValue
+
+          if midiCCInterval >= -26 and midiCCInterval < 127
+            SendMIDICC MIDIChannel, 0x1A, midiCCStandard
+            SendMIDICC MIDIChannel, 0x1B, midiCCInterval
+
+          elseif midiCCInterval >= 127
+            SendMIDICC MIDIChannel, 0x1A, midiCCStandard
+            SendMIDICC MIDIChannel, 0x1B, 126
+
+          elseif midiCCInterval < -26 // TODO check on this number - why use '-26' here but '1' on limit send?
+            SendMIDICC MIDIChannel, 0x1A, midiCCStandard
+            SendMIDICC MIDIChannel, 0x1B, 1
+
+          endif         
+        endif
+      endfor
+
+    endif
+  endif
+  SendMIDIThru
+@End
+
+@OnMIDINoteOff
+  SendMIDIThru
+@End
+
+// interval setter
+
+// knob 7 has already been deassigned to 0x7E to allow for interval level
 
 // handle remote control of interval level
-IF M0 < B6
-  IF MT == B0
-    IF M1 == deassign7E
-      ASS intervalDepth = M2 // assign interval
-    END
-  END
-END
+@OnMIDICC
+  if MIDIChannel < 6 and MIDIByte2 = 0x7E
+    intervalDepth = MIDIByte3
+  else
+    SendMIDIThru
+  endif
+@End

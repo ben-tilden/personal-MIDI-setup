@@ -2,6 +2,8 @@
 
 // only happens when multiple note are pressed?
 // TODO velocity might need to be sent separately for FM
+// TODO if same note, sometimes noteoff comes at the same time or similar time as note on - causing tempo to be slightly different
+// in the future could add an infinite gate mode to work with situations like this
 
 
 @OnLoad

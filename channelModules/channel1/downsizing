@@ -241,3 +241,22 @@ fix padMode
 // BLOCK | F0 01    17    val1 val2 F7 lfoDepth
 // BLOCK | F0 01    18    val1 F7      lfoTempo
 // BLOCK | F0 01    19    00   F7      lfoInit
+
+// xtoxfilter
+
+@OnSysex
+  ReceiveSysex sysexData
+
+  if sysexData[0] = 0x0F and sysexData[1] = 0xEE
+    SendMIDIOut sysexData[2], sysexData[3], sysexData[4]
+  endif
+
+@End
+
+@OnMIDIInput
+  
+  if MIDIByte1 = C0
+    SendMIDIThru
+  endif
+
+@End

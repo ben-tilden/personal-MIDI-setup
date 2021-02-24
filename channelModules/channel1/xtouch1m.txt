@@ -24,6 +24,7 @@
   // channel specific constant
 
   channel = 0
+  channelCC = channel + 176 
 
   drumButtons = [0, 1, 2, 3, 8, 9, 10, 11]
 
@@ -54,6 +55,9 @@
   knobPush = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
   knobTurn = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
   groupKnobPush = 0
+
+  FillArray sendKnobTemp, -1, 16
+  FillArray sendPushReset, -1, 16
 
   // assign channel specific variables
 
@@ -92,10 +96,9 @@
 // change program to b, set knob values, change program to a, init lighting
 // NOTE could technically remove the need for a filter if we timed ResetCurrentModeLighting with its own conditional
 @OnTimer
-  if timerVal = 1 or timerVal = 5 or timerVal = 9 or timerVal = 13 // 1-4 for init
+  if timerVal = 1 or timerVal = 5 or timerVal = 13 or timerVal = 11 // 1-4 for init
     // reset lights for mode 'B'
     SendMIDIOut 0xC0, 0x01
-
     timerVal = timerVal + 1
 
   elseif timerVal = 2
@@ -114,7 +117,7 @@
 
     timerVal = timerVal + 1
 
-  elseif timerVal = 3 or timerVal = 7 or timerVal = 11 or timerVal = 15
+  elseif timerVal = 3 or timerVal = 7 or timerVal = 15 or timerVal = 9
     // change program back to 'A'
     SendMIDIOut 0xC0, 0x00
 
@@ -132,8 +135,6 @@
     arpPhraseToggle = 0
     arpPhraseOnOffToggle = 0
     tempoPulse = 0x24
-    gate = 0
-    velocity = 0x64
     arpValueMode = 0
     setPhrase = 0
     latch = 0
@@ -160,6 +161,15 @@
     // send init velocity lighting
     sendData = [0x0F, 0xEE, 0xBA, 0x03, 100]
     SendSysex sendData, 5
+
+    // channel specific
+
+    // NOTE could likely just use a for loop with knobCurrent
+    // send init pan lighting
+    sendData = [0x0F, 0xEE, 0xBA, 0x06, 0x40]
+    SendSysex sendData, 5
+
+    // end channel specific
 
     StopTimer
     ResetTimer
@@ -296,16 +306,42 @@
     ResetTimer
     timerVal = 0
 
-  elseif timerVal = 10 // 9 handled above (setLfo reset)
+  elseif timerVal = 10 // 9 and 11 handled above (setLfo reset)
     sendData = [0x0F, 0xEE, 0x90, 0x0B, 0x00]
     SendSysex sendData, 5
 
     timerVal = timerVal + 1
 
-  elseif timerval = 12 or timerVal = 16 // 13 handled above (set reset)
+  elseif timerVal = 14 // 13 handled above (set reset)
+    // send groupKnobPush to 'B' mode
+    for l = 8 to 15
+      if sendKnobTemp[l] <> -1 and sendPushReset[l] <> -1
+        sendData = [0x0F, 0xEE, 0xBA, sendKnobTemp[l], sendPushReset[l]]
+        SendSysex sendData, 5
+      endif
+    endfor
+
+    timerVal = timerVal + 1
+
+  elseif timerVal = 12
 
     // resend lighting for mode 'B'
     Call @ResetModeBTempLighting
+
+    StopTimer
+    ResetTimer
+    timerVal = 0
+
+  elseif timerVal = 16
+    // send groupKnobPush to 'A' mode
+    for l = 1 to 7
+      if sendKnobTemp[l] <> -1 and sendPushReset[l] <> -1
+        sendData = [0x0F, 0xEE, 0xBA, sendKnobTemp[l], sendPushReset[l]]
+        SendSysex sendData, 5
+      endif
+    endfor
+
+    Call @ResetModeATempLighting
 
     StopTimer
     ResetTimer
@@ -659,7 +695,6 @@
 
   // chain modulating lfos should not be impacted by the conditionals below, since push control should work with them when they are being modulated
   // the reason push control caused issues for the other knobs was because the lfo information was getting sent directly back here for processing and turning on knobTurn inadvertently - with these two the processing all occurs in the lfo file
-  // assign knob4Push to true when knob4 is pushed - for push control
 
   // if there is an lfo currently modulating that is on
   if lfoMuteAll = 0 and MIDINote <> 3 and MIDINote <> 4
@@ -727,7 +762,7 @@
 @OnMIDINoteOff
 
   // if it's a knobPush (and / or knobTurn) and we're trying to set lfo we need to ignore other associated functionality
-  if setLfo = 1
+  if setLfo = 1 and (MIDINote < 8 or (MIDINote > 23 and MIDINote < 32))
     // chained modulation will automatically default to lfo modulating lfo immediately below it
     // need to prevent chained modulation from looping infinitely, so lfo 1 (0) will not be able to modulate another lfo
     // NOTE could attempt to make the chain more flexible (i.e. 0, 3, 2, 1; 1, 0, 3, 2) but don't feel that's necessary at this point
@@ -748,7 +783,7 @@
     if lfoKnob[lfoNumMod] < 8 and MIDINote < 8
       sameMode = 1
       knobLightingCCOffset = 1
-    elseif lfoKnob[lfoNumMod] > 23 and MIDINote > 23)
+    elseif lfoKnob[lfoNumMod] > 23 and MIDINote > 23
       sameMode = 1
       knobLightingCCOffset = -15
     else
@@ -771,19 +806,23 @@
 
     // send flash to new knob
     if lfoMuteAll = 0 and lfoOnOffToggle[lfoNumMod] = 1
+
       if lfoKnob[lfoNumMod] < 8 and lfoKnob[lfoNumMod] <> 3 and lfoKnob[lfoNumMod] <> 4
         lfoTemp = lfoKnob[lfoNumMod] + 9
         sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
         SendSysex sendData, 5
-
-      elseif lfoKnob[lfoNumMod] > 23
-
-        // reset flashing setLfo button
-        timerVal = 9
-        StartTimer // see @OnTimer for more details here
-        // necessary because sysex typically sends about .005 faster than program change regardless of the order in the code
-
       endif
+
+    endif
+
+    // reset flashing setLfo button
+    if lfoKnob[lfoNumMod] < 8
+      sendData = [0x0F, 0xEE, 0x90, 0x0B, 0x00]
+      SendSysex sendData, 5
+    elseif lfoKnob[lfoNumMod] > 23
+      timerVal = 9
+      StartTimer // see @OnTimer for more details here
+      // necessary because sysex typically sends about .005 faster than program change regardless of the order in the code
     endif
 
     Exit
@@ -809,11 +848,18 @@
         if knobTurn[i] = 1
           knobTemp = MIDINote + knobPushResetConst
           // HandleKnobTurn makes sure the parameters are changed correctly
+          MIDIByte1Temp = channelCC
+          MIDIByte2Temp = knobTemp
+          MIDIByte3Temp = pushReset[i]
           Call @HandleKnobTurn
-          sendData = [0x0F, 0xEE, 0xBA, knobTemp, pushReset[i]]
-          SendSysex sendData, 5
+          // tempo sends its own lighting, so this is not necessary
+          if j <> 0
+            sendData = [0x0F, 0xEE, 0xBA, knobTemp, pushReset[i]]
+            SendSysex sendData, 5
+          endif
           knobPush[i] = 0
           knobTurn[i] = 0
+
           // if using push control, releasing the knob button should not have any effect
           Exit
         else
@@ -899,7 +945,7 @@
   // if it is a knob 5 button release, change lfo num (the lfo that's being edited)
   elseif MIDINote = 0x04 and MIDIVelocity = 0x00
     // this will cause issues if groupKnobPush or knob4Push is on due to the values in pushReset array
-    if groupKnobPush = 1 or knob4Push = 1
+    if groupKnobPush = 1 or knobPush[3] = 1
       Exit
     endif
     lfoNum = lfoNum + 1
@@ -1037,30 +1083,37 @@
             // necessary because sysex typically sends about .005 faster than program change regardless of the order in the code
 
           endif
-          repeatVal = 1
-          repeat // TODO check to see if this actually works - stalling made to be simple, but hopefully not too simple
-            repeatVal = repeatVal * -1
-            repeatVal = repeatVal + (repeatVal * -1)
-          until timerVal = 14
           knobTemp = j + knobPushResetConst
           // HandleKnobTurn makes sure the parameters are changed correctly
+          MIDIByte1Temp = channelCC
+          MIDIByte2Temp = knobTemp
+          MIDIByte3Temp = pushReset[i]
           Call @HandleKnobTurn
-          sendData = [0x0F, 0xEE, 0xBA, knobTemp, pushReset[i]]
-          SendSysex sendData, 5
+          // tempo sends its own lighting, so this is not necessary
+          if j <> 0
+            // need these to be arrays for timing - would send immediately but program change must occur first
+            sendKnobTemp[i] = knobTemp
+            sendPushReset[i]= pushReset[i]
+          endif
           knobPush[i] = 0
           knobTurn[i] = 0
         else
           knobPush[i] = 0
+          if j <> 0
+            sendKnobTemp[i] = -1
+            sendPushReset[i]= -1
+          endif
         endif
       endfor
 
       // send program change to ensure lighting correctly appears after change - necessary for 'B' knobs
       if programChange = 1
-        timerVal = 15
-
         programChange = 0
-
+      else
+        timerVal = 16
+        StartTimer
       endif
+
       Exit
     endif
     Exit
@@ -1210,6 +1263,7 @@
         endif
       endfor
       previousDrumVal = i
+      Exit
     endif
   endfor
 
@@ -1220,16 +1274,21 @@
 // if it is a knob turn
 @OnMIDICC
 
+  // hard coding this in for now since routing / channel will be changing soon
+  MIDIByte1Temp = ChannelCC // check this with other MIDIByte1Temp - is this check even necessary in general?
+  MIDIByte2Temp = MIDIByte2
+  MIDIByte3Temp = MIDIByte3
   Call @HandleKnobTurn
 
 @End
 
 @HandleKnobTurn
 
-  if MIDIByte2 <= 8
-    MIDIByte2Offset = MIDIByte2 - 1
-  elseif MIDIByte2 >= 11 and MIDIByte2 <= 18
-    MIDIByte2Offset = MIDIByte2 - 3
+  // Need to handle as if being called both in knobTurn and on button release for knobPush
+  if MIDIByte2Temp <> 0 and MIDIByte2Temp <= 8 and MIDIByte1Temp = channelCC
+    MIDIByte2Offset = MIDIByte2Temp - 1
+  elseif MIDIByte2Temp >= 11 and MIDIByte2Temp <= 18 and MIDIByte1Temp = channelCC
+    MIDIByte2Offset = MIDIByte2Temp - 3
   endif
 
   // set knob turn to true if using push control
@@ -1240,64 +1299,64 @@
 
   // if knob is 1 (tempo)
   // knob is sensitive down to one notch
-  if MIDIByte2 = 1
+  if MIDIByte2Temp = 1
     Call @HandleTempo
 
-  elseif MIDIByte2 > 1 and MIDIByte2 <= 18
+  elseif MIDIByte2Temp > 1 and MIDIByte2Temp <= 18
     // needs to be sent out
     // assign for push control
     if knobPush[MIDIByte2Offset] = 0
-      pushReset[MIDIByte2Offset] = MIDIByte3
+      pushReset[MIDIByte2Offset] = MIDIByte3Temp
     endif
 
     // gate
-    if MIDIByte2 = 2
+    if MIDIByte2Temp = 2
       // starting points: max will be ~5 seconds (5000), min will be .1 seconds (100)
       // 2.5 seconds should be enough to handle 96 pulses at 120 bpm,  but slower bpm's can move up to 5 seconds
       // overall: 0-127 (*2) (*5) (*16) (*32) (*64)
       // NOTE none of the values here end up sending an F7, but if changed it's possible they could, which would cause issues
-      knobCurrentVal[MIDIByte2Offset] = MIDIByte3 * gateFactor
-      gateTemp = RoundDown (gate / 256)
+      knobCurrentVal[MIDIByte2Offset] = MIDIByte3Temp * gateFactor
+      gateTemp = RoundDown (knobCurrentVal[MIDIByte2Offset] / 256)
       sendData = [0xCC, 0x04, gateTemp, knobCurrentVal[MIDIByte2Offset]] // NOTE final index value uses only last two digits
       SendSysex sendData, 4
 
     // velocity
-    elseif MIDIByte2 = 3
-      knobCurrentVal[MIDIByte2Offset] = MIDIByte3
+    elseif MIDIByte2Temp = 3
+      knobCurrentVal[MIDIByte2Offset] = MIDIByte3Temp
       sendData = [0xC1, 0x05, knobCurrentVal[MIDIByte2Offset]]
       SendSysex sendData, 3
 
     // lfo rate
-    elseif MIDIByte2 = 4
-      lfoRate[lfoNumMod] = MIDIByte3
+    elseif MIDIByte2Temp = 4
+      lfoRate[lfoNumMod] = MIDIByte3Temp
       sendData = [0x01, 0x16, lfoNumMod, lfoRate[lfoNumMod]]
       SendSysex sendData, 4
 
     // lfo depth
-    elseif MIDIByte2 = 5
-      lfoDepth[lfoNumMod] = MIDIByte3
+    elseif MIDIByte2Temp = 5
+      lfoDepth[lfoNumMod] = MIDIByte3Temp
       sendData = [0x01, 0x17, lfoNumMod, lfoDepth[lfoNumMod]]
       SendSysex sendData, 4
 
     // channel specific
-    elseif MIDIByte2 > 5
+    elseif MIDIByte2Temp > 5
 
       // drumParams
-      if MIDIByte2 = 11
+      if MIDIByte2Temp = 11
         knobSendVals[MIDIByte2Offset] = drumParam1[drumParamCurrent]
-        drumParam1CurrentVal[drumParamCurrent] = MIDIByte3
-      elseif MIDIByte2 = 12
+        drumParam1CurrentVal[drumParamCurrent] = MIDIByte3Temp
+      elseif MIDIByte2Temp = 12
         knobSendVals[MIDIByte2Offset] = drumParam2[drumParamCurrent]
-        drumParam2CurrentVal[drumParamCurrent] = MIDIByte3
-      elseif MIDIByte2 = 13
+        drumParam2CurrentVal[drumParamCurrent] = MIDIByte3Temp
+      elseif MIDIByte2Temp = 13
         knobSendVals[MIDIByte2Offset] = drumParam3[drumParamCurrent]
-        drumParam3CurrentVal[drumParamCurrent] = MIDIByte3
+        drumParam3CurrentVal[drumParamCurrent] = MIDIByte3Temp
       else
-        knobCurrentVal[MIDIByte2Offset] = MIDIByte3
+        knobCurrentVal[MIDIByte2Offset] = MIDIByte3Temp
       endif
 
       // send channel specific val
-      sendData = [0x11, 0xEE, channelCC, knobSendVals[MIDIByte2Offset], MIDIByte3]
+      sendData = [0x11, 0xEE, channelCC, knobSendVals[MIDIByte2Offset], MIDIByte3Temp]
       SendSysex sendData, 5
     endif
 
@@ -1348,29 +1407,29 @@
     lightingConst = 25
   endif
 
-  for i = 0 to length
+  for k = 0 to length // k used because this handler is used in a for loop with i and j as iterators
 
-    lightingVal = i * lightingConst
+    lightingVal = k * lightingConst
     compUp = lightingVal + -1 * (lightingConst - 1)
     compDown = lightingVal + ((lightingConst + 1) / 2)
 
     // edge cases - hard coded since 127 is not a very convenient number to end on
     if tempoMode = 0
-      if i = length - 1
+      if k = length - 1
         compDown = compDown - 1 // 123
         compDownConst = 3 // 126, later 139 since this won't be reset
-      elseif i = length
+      elseif k = length
         compUpConst = 4 // 122
       endif
-    elseif i = length - 1
+    elseif k = length - 1
       compDownConst = 13 // 126, later 151 since this won't be reset
     endif
 
-    if i = length
+    if k = length
       lightingVal = 127
     endif
 
-    if (MIDIByte3 >= compUp and MIDIByte3 <= compUp + compUpConst) or (MIDIByte3 >= compDown and MIDIByte3 <= compDown + compDownConst) or (MIDIByte3 = lightingVal)
+    if (MIDIByte3Temp >= compUp and MIDIByte3Temp <= compUp + compUpConst) or (MIDIByte3Temp >= compDown and MIDIByte3Temp <= compDown + compDownConst) or (MIDIByte3Temp = lightingVal)
       // NOTE last conditional above probably unnecessary, since we shouldn't be getting lighting input for processing
       tempoPulse = tempoModeVals[i]
       sendData = [0xCC, 0x03, tempoPulse]
@@ -1378,7 +1437,7 @@
       sendData = [0x0F, 0xEE, 0xBA, 0x01, lightingVal]
       SendSysex sendData, 5
       if knobPush[MIDIByte2Offset] = 0
-        pushResetVal[MIDIByte2Offset] = lightingVal
+        pushReset[MIDIByte2Offset] = lightingVal
       endif
       knobCurrentVal[0] = lightingVal
     endif
