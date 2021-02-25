@@ -15,8 +15,10 @@
     channel = 0
   elseif sysexData[0] <> 0x3F // will receive padMode as well
     Exit
-  elseif sysexData[1] = 0xXX // TODO what val is channel
+  elseif sysexData[1] = 0x4B
     channel = sysexData[2]
+    channelCC = channel + 176
+    Exit
   endif
 
 @End
@@ -26,11 +28,11 @@
 @End
 
 @OnMIDINoteOn
-  MIDICC = MIDIByte2 + 19
-  SendMIDIOut channelCC, 0x7C, MIDICC
+  NoteValOffset = MIDINote + 19
+  SendMIDIOut channelCC, 0x7C, NoteValOffset
 @End
 
 @OnMIDINoteOff
-  MIDICC = MIDIByte2 + 19
-  SendMIDIOut channelCC, 0x7D, MIDICC
+  NoteValOffset = MIDINote + 19
+  SendMIDIOut channelCC, 0x7D, NoteValOffset
 @End

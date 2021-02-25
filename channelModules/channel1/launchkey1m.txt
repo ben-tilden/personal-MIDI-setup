@@ -143,16 +143,20 @@
 
 // end sysex reception
 
-@OnMIDICC // TODO will need to review further when hardware filters are edited
+@OnMIDICC
   // channel changed on release - should be released when hold released on launchkey
   // NOTE pressing a button / key and changing the channel before note off is not supported
   // channel change should use two hands, so hoping this will not come up
-  // NOTE because this is what changes the hardware filter, the hardware filter will not properly filter out the channel change from any channel - needs to be set to receive channel specific channel change messages
 
-  // TODO add conditional for channel
+  // NOTE currently there is no overlap between launchkey's CC buttons and other CC out we're going for
+  // if a situation arises where this is the case, we'll need to remap launchkey initially
 
-  if MIDIByte2 = 0x7F
-    // this causes issues with launchkey if velocity is zero, since it registers as a note off // TODO check if this is consistent
+  if MIDIChannel <> channel // TODO check this
+    Exit
+
+  elseif MIDIByte2 = 0x7F
+    // this causes issues with launchkey if velocity is zero, since it registers as a note off
+    // TODO might not necessarily be the case now that we've switched to mozaic
     if MIDIByte3 = 0
       keyPressVelocity = 1
     else
@@ -173,10 +177,14 @@
     sendData = [0xFF, 0x1E, 0xCC]
     SendSysex sendData, 3
 
+    // send channel sysex
+    sendData = [0x3F, 0x4B, channel] // block in all other files
+    SendSysex sendData, 3
+
     Exit
 
   // full reset
-  elseif MIDIByte2 = 0x68 and MIDIByte3 = 0x7F // TODO check MIDIByte2 - can CC's work here?
+  elseif MIDIByte2 = 0x68 and MIDIByte3 = 0x7F
     Call @InitVariables
 
     Exit
@@ -238,7 +246,7 @@
   latchTiming = 1
   latchKeysPressed = 0
 
-  channel = 0 // channel specific // TODO will need to review in conjunction with combining filters
+  channel = 0 // channel specific
 
   // reset xtouch lighting and params
   sendData = [0xFF, 0x1B, 0x00]
@@ -251,6 +259,11 @@
 @End
 
 @OnMIDINoteOn
+
+  // don't process any non-channel data
+  if MIDIChannel <> channel
+    Exit
+  endif
 
   // RESET
 
@@ -387,6 +400,11 @@
 
 
 @OnMIDINoteOff
+
+  // don't process any non-channel data
+  if MIDIChannel <> channel
+    Exit
+  endif
 
   // if reset (key pressed limit exceeded), handle differently
   if overload = 1

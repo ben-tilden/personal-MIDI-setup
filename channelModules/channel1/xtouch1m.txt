@@ -1,7 +1,5 @@
 // xtouch mini
 
-// TODO make this channel specific
-
 @OnLoad
 
   // timer interval is .05 second
@@ -419,13 +417,15 @@
   endfor
 @End
 
-// if it is a button push // TODO this might actually get converted to CC, for mapping purposes
-@OnMIDINoteOn
+// if it is a button push
+@HandleNoteOn
+
+  MIDINoteVal = MIDIByte3 - 19 // adjust from offset
 
   Call @HandlePushControl
 
   // if it is a button 1 push
-  if MIDINote = 0x08 and MIDIVelocity = 0x7F
+  if MIDINoteVal = 0x08 and MIDIByte2 = 7C
     // if arp then increase variable
     if arpPhraseToggle = 0
       // set value mode to variable modulo 12
@@ -447,7 +447,7 @@
     Exit
 
   // if it is a button 9 push
-  elseif MIDINote = 0x10 and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x10 and MIDIByte2 = 7C
     // if arp then decrease variable
     if arpPhraseToggle = 0
       // set value mode to variable modulo 12
@@ -465,7 +465,7 @@
     Exit
 
   // if it is a button 2 push toggle arp / phrase
-  elseif MIDINote = 0x09 and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x09 and MIDIByte2 = 7C
     if arpPhraseToggle = 0
       arpPhraseToggle = 1
       sendData = [0xC1, 0x01, arpPhraseToggle]
@@ -483,7 +483,7 @@
     Exit
 
   // if it is a button 10 push toggle button 2 selection on / off
-  elseif MIDINote = 0x11 and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x11 and MIDIByte2 = 7C
     if arpPhraseOnOffToggle = 0
       arpPhraseOnOffToggle = 1
       sendData = [0xC1, 0x02, arpPhraseOnOffToggle]
@@ -496,7 +496,7 @@
     Exit
 
   // if it is a button 3 push toggle latch
-  elseif MIDINote = 0x0A and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x0A and MIDIByte2 = 7C
     if latch = 0
       latch = 1
       sendData = [0x11, 0x0B, latch]
@@ -509,7 +509,7 @@
     Exit
 
   // if it is a button 11 push toggle groupKnobPush
-  elseif MIDINote = 0x12 and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x12 and MIDIByte2 = 7C
     if groupKnobPush = 0
       groupKnobPush = 1
     else
@@ -518,7 +518,7 @@
     Exit
 
   // if it is a button 4 push toggle padMode
-  elseif MIDINote = 0x0B and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x0B and MIDIByte2 = 7C
     // isBeats
     if padMode = 0
       padMode = 1
@@ -533,7 +533,7 @@
     Exit
 
   // if it is a button 12 set lfo
-  elseif MIDINote = 0x13 and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x13 and MIDIByte2 = 7C
     // setLfo prevents knobPush when on - this is in place to ensure knobPush and Turn can't set lfoKnob and not reset push control
     // see blocks for handling of setLfo in release below - no handling for push control
     for i = 0 to 15
@@ -549,7 +549,7 @@
     Exit
 
   // if it is a button 5 push toggle current lfo
-  elseif MIDINote = 0x0C and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x0C and MIDIByte2 = 7C
     if lfoOnOffToggle[lfoNumMod] = 0
       lfoOnOffToggle[lfoNumMod] = 1
     else
@@ -560,7 +560,7 @@
     Exit
 
   // if it is a button 13 push toggle mute of all lfos
-  elseif MIDINote = 0x14 and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x14 and MIDIByte2 = 7C
     if lfoMuteAll = 0
       lfoMuteAll = 1
     else
@@ -571,19 +571,19 @@
     Exit
 
   // if it is a button 6 push restart lfo
-  elseif MIDINote = 0x0D and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x0D and MIDIByte2 = 7C
     sendData = [0x01, 0x14, lfoNumMod]
     SendSysex sendData, 3
     Exit
 
   // if it is a button 14 push restart all lfos
-  elseif MIDINote = 0x15 and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x15 and MIDIByte2 = 7C
     sendData = [0x01, 0x15, 0x00]
     SendSysex sendData, 3
     Exit
 
   // if it is a button 7 push sync lfo to tempo
-  elseif MIDINote = 0x0E and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x0E and MIDIByte2 = 7C
     if lfoSync[lfoNumMod] = 0
       lfoSync[lfoNumMod] = 1
     else
@@ -594,7 +594,7 @@
     Exit
 
   // if it is a button 15 push toggle lfo base (1: middle or 0: bottom)
-  elseif MIDINote = 0x16 and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x16 and MIDIByte2 = 7C
     if lfoBase[lfoNumMod] = 0
       lfoBase[lfoNumMod] = 1
     else
@@ -605,7 +605,7 @@
     Exit
 
   // if it is a button 8 push toggle lfo inversion
-  elseif MIDINote = 0x0F and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x0F and MIDIByte2 = 7C
     if lfoInvert[lfoNumMod] = 0
       lfoInvert[lfoNumMod] = 1
     else
@@ -616,19 +616,19 @@
     Exit
 
   // if it is a button 16 send 'pan' lighting (reset after mode change)
-  elseif MIDINote = 0x17 and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x17 and MIDIByte2 = 7C
     Call @ResetModeATempLighting
     Exit
 
   // if it is a button 32 reset lfo modulation lighting
-  elseif MIDINote = 0x2F and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x2F and MIDIByte2 = 7C
     Call @ResetModeBTempLighting
     Exit
 
   // channel specific
 
   // tracking off
-  elseif MIDINote = 0x25 and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x25 and MIDIByte2 = 7C
     trackingMode = 0
     if previousTrackingMode <> 5
       sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
@@ -639,7 +639,7 @@
     Exit
 
   // tracking mode double
-  elseif MIDINote = 0x24 and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x24 and MIDIByte2 = 7C
     trackingMode = 2
     if previousTrackingMode <> 4
       sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
@@ -650,7 +650,7 @@
     Exit
 
   // tracking mode single
-  elseif MIDINote = 0x2C and MIDIVelocity = 0x7F
+  elseif MIDINoteVal = 0x2C and MIDIByte2 = 7C
     trackingMode = 1
     if previousTrackingMode <> 0x0C
       sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
@@ -664,13 +664,13 @@
   elseif groupKnobPush = 1 or knobPush[8] = 1 or knobPush[9] = 1 or knobPush[10] = 1
     Exit
 
-  elseif MIDINote >= 32 and MIDINote <= 35 and MIDIVelocity = 0x7F
-    drumParamCurrent = MIDINote - 32
+  elseif MIDINoteVal >= 32 and MIDINoteVal <= 35 and MIDIByte2 = 7C
+    drumParamCurrent = MIDINoteVal - 32
     Call @HandleDrumParamChange
     Exit
 
-  elseif MIDINote >= 40 and MIDINote <= 43 and MIDIVelocity = 0x7F
-    drumParamCurrent = MIDINote - 36
+  elseif MIDINoteVal >= 40 and MIDINoteVal <= 43 and MIDIByte2 = 7C
+    drumParamCurrent = MIDINoteVal - 36
     Call @HandleDrumParamChange
     Exit
   endif
@@ -685,10 +685,10 @@
     Exit
   endif
 
-  if MIDINote <= 7
-    MIDINoteOffset = MIDINote
-  elseif MIDINote >= 24 and MIDINote <= 31
-    MIDINoteOffset = MIDINote - 16
+  if MIDINoteVal <= 7
+    MIDINoteOffset = MIDINoteVal
+  elseif MIDINoteVal >= 24 and MIDINoteVal <= 31
+    MIDINoteOffset = MIDINoteVal - 16
   else
     Exit
   endif
@@ -697,9 +697,9 @@
   // the reason push control caused issues for the other knobs was because the lfo information was getting sent directly back here for processing and turning on knobTurn inadvertently - with these two the processing all occurs in the lfo file
 
   // if there is an lfo currently modulating that is on
-  if lfoMuteAll = 0 and MIDINote <> 3 and MIDINote <> 4
+  if lfoMuteAll = 0 and MIDINoteVal <> 3 and MIDINoteVal <> 4
     for i = 0 to 3
-      if lfoKnob[i] = MIDINote and lfoOnOffToggle[i] = 1
+      if lfoKnob[i] = MIDINoteVal and lfoOnOffToggle[i] = 1
         Exit
       endif
     endfor
@@ -759,31 +759,33 @@
 @End
 
 // if it is a button note-off (important for lighting)
-@OnMIDINoteOff
+@HandleNoteOff
+
+  MIDINoteVal = MIDIByte3 - 19 // adjust from offset
 
   // if it's a knobPush (and / or knobTurn) and we're trying to set lfo we need to ignore other associated functionality
-  if setLfo = 1 and (MIDINote < 8 or (MIDINote > 23 and MIDINote < 32))
+  if setLfo = 1 and (MIDINoteVal < 8 or (MIDINoteVal > 23 and MIDINoteVal < 32))
     // chained modulation will automatically default to lfo modulating lfo immediately below it
     // need to prevent chained modulation from looping infinitely, so lfo 1 (0) will not be able to modulate another lfo
     // NOTE could attempt to make the chain more flexible (i.e. 0, 3, 2, 1; 1, 0, 3, 2) but don't feel that's necessary at this point
-    if lfoNumMod = 0 and (MIDINote = 03 or MIDINote = 04)
+    if lfoNumMod = 0 and (MIDINoteVal = 03 or MIDINoteVal = 04)
       Exit
     endif
 
     // lfo knobs (3 and 4) can modulate each other, but others can't
-    if MIDINote <> 3 and MIDINote <> 4
+    if MIDINoteVal <> 3 and MIDINoteVal <> 4
       for i = 0 to 3
-        if lfoKnob[i] = MIDINote
+        if lfoKnob[i] = MIDINoteVal
           Exit
         endfor
       endfor
     endif
 
     // check if values are in same mode - should not send if knobs are not in the same mode ('A' or 'B')
-    if lfoKnob[lfoNumMod] < 8 and MIDINote < 8
+    if lfoKnob[lfoNumMod] < 8 and MIDINoteVal < 8
       sameMode = 1
       knobLightingCCOffset = 1
-    elseif lfoKnob[lfoNumMod] > 23 and MIDINote > 23
+    elseif lfoKnob[lfoNumMod] > 23 and MIDINoteVal > 23
       sameMode = 1
       knobLightingCCOffset = -15
     else
@@ -798,7 +800,7 @@
     endif
 
     // NOTE at what point should the offset be added - because offset is inconsistent, might not be worth too much thought
-    lfoKnob[lfoNumMod] = MIDINote
+    lfoKnob[lfoNumMod] = MIDINoteVal
     sendData = [0x01, 0x0D, lfoNumMod, lfoKnob[lfoNumMod]]
     SendSysex sendData, 4
 
@@ -844,11 +846,10 @@
         else
           j = i
         endif
-      if MIDINote = j and MIDIVelocity = 0x00
+      if MIDINoteVal = j and MIDIByte2 = 7D
         if knobTurn[i] = 1
-          knobTemp = MIDINote + knobPushResetConst
+          knobTemp = MIDINoteVal + knobPushResetConst
           // HandleKnobTurn makes sure the parameters are changed correctly
-          MIDIByte1Temp = channelCC
           MIDIByte2Temp = knobTemp
           MIDIByte3Temp = pushReset[i]
           Call @HandleKnobTurn
@@ -873,7 +874,7 @@
   // end push control
 
   // if it is a knob 1 button release, increase tempo mode
-  if MIDINote = 0x00 and MIDIVelocity = 0x00
+  if MIDINoteVal = 0x00 and MIDIByte2 = 7D
     // set tempo mode to variable modulo 4
     tempoMode = (tempoMode + 1) % 4
     sendData = [0x01, 0x18, tempoMode]
@@ -910,7 +911,7 @@
     Exit
 
   // if it is a knob 2 button release, increase gate mode
-  elseif MIDINote = 0x01 and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x01 and MIDIByte2 = 7D
     // set gate mode to variable modulo 6
     // NOTE preventing the light from sending will change the length more quickly, more easily
     // NOTE will be testing with live to see best setup here
@@ -933,7 +934,7 @@
 
   // if it is a knob 4 button release, change lfo type
   // NOTE could add testing which reported the actual lfo type rather than a number
-  elseif MIDINote = 0x03 and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x03 and MIDIByte2 = 7D
 
     lfoType[lfoNumMod] = lfoType[lfoNumMod] + 1
     // set tempo mode to variable modulo 7
@@ -943,7 +944,7 @@
     Exit
 
   // if it is a knob 5 button release, change lfo num (the lfo that's being edited)
-  elseif MIDINote = 0x04 and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x04 and MIDIByte2 = 7D
     // this will cause issues if groupKnobPush or knob4Push is on due to the values in pushReset array
     if groupKnobPush = 1 or knobPush[3] = 1
       Exit
@@ -1001,7 +1002,7 @@
     endif
     Exit
 
-  elseif MIDINote = 0x08 and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x08 and MIDIByte2 = 7D
     if arpPhraseToggle = 1
       if setPhrase = 1
         sendData = [0x0F, 0xEE, 0x90, 0x00, 0x01]
@@ -1010,7 +1011,7 @@
     endif
     Exit
 
-  elseif MIDINote = 0x09 and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x09 and MIDIByte2 = 7D
     if arpPhraseToggle = 1
       sendData = [0x0F, 0xEE, 0x90, 0x01, 0x01]
       SendSysex sendData, 5
@@ -1023,28 +1024,28 @@
     endif
     Exit
 
-  elseif MIDINote = 0x0A and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x0A and MIDIByte2 = 7D
     if latch = 1
       sendData = [0x0F, 0xEE, 0x90, 0x02, 0x01]
       SendSysex sendData, 5
     endif
     Exit
 
-  elseif MIDINote = 0x0B and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x0B and MIDIByte2 = 7D
     if padMode = 1
       sendData = [0x0F, 0xEE, 0x90, 0x03, 0x01]
       SendSysex sendData, 5
     endif
     Exit
 
-  elseif MIDINote = 0x11 and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x11 and MIDIByte2 = 7D
     if arpPhraseOnOffToggle = 1
       sendData = [0x0F, 0xEE, 0x90, 0x09, 0x01]
       SendSysex sendData, 5
     endif
     Exit
 
-  elseif MIDINote = 0x12 and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x12 and MIDIByte2 = 7D
     if groupKnobPush = 1
       sendData = [0x0F, 0xEE, 0x90, 0x0A, 0x01]
       SendSysex sendData, 5
@@ -1085,7 +1086,6 @@
           endif
           knobTemp = j + knobPushResetConst
           // HandleKnobTurn makes sure the parameters are changed correctly
-          MIDIByte1Temp = channelCC
           MIDIByte2Temp = knobTemp
           MIDIByte3Temp = pushReset[i]
           Call @HandleKnobTurn
@@ -1118,14 +1118,14 @@
     endif
     Exit
 
-  elseif MIDINote = 0x13 and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x13 and MIDIByte2 = 7D
     if setLfo = 1
       sendData = [0x0F, 0xEE, 0x90, 0x0B, 0x02]
       SendSysex sendData, 5
     endif
     Exit
 
-  elseif MIDINote = 0x0C and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x0C and MIDIByte2 = 7D
     if lfoOnOffToggle[lfoNumMod] = 1
       sendData = [0x0F, 0xEE, 0x90, 0x04, 0x01]
       SendSysex sendData, 5
@@ -1144,7 +1144,7 @@
     endif
     Exit
 
-  elseif MIDINote = 0x14 and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x14 and MIDIByte2 = 7D
     if lfoMuteAll = 1
       sendData = [0x0F, 0xEE, 0x90, 0x0C, 0x01]
       SendSysex sendData, 5
@@ -1170,14 +1170,14 @@
     endif
     Exit
 
-  elseif MIDINote = 0x0E and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x0E and MIDIByte2 = 7D
     if lfoSync[lfoNumMod] = 1
       sendData = [0x0F, 0xEE, 0x90, 0x06, 0x01]
       SendSysex sendData, 5
     endif
     Exit
 
-  elseif MIDINote = 0x16 and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x16 and MIDIByte2 = 7D
     if lfoBase[lfoNumMod] = 1
       sendData = [0x0F, 0xEE, 0x90, 0x0E, 0x01]
       SendSysex sendData, 5
@@ -1185,7 +1185,7 @@
     Exit
 
   // if it is a button 15 push toggle lfo inversion
-  elseif MIDINote = 0x0F and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x0F and MIDIByte2 = 7D
     if lfoInvert[lfoNumMod] = 1
       sendData = [0x0F, 0xEE, 0x90, 0x07, 0x01]
       SendSysex sendData, 5
@@ -1195,7 +1195,7 @@
   // channel specific
 
   // if it is a knob 9 button release, toggle waveguide
-  elseif MIDINote = 0x18 and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x18 and MIDIByte2 = 7D
     if waveguideToggle = 0
       waveguideToggle = 1
       // NOTE this is a little janky - waveguide doesn't seem to reset visually and requires a press on the machine itself
@@ -1209,7 +1209,7 @@
     Exit
 
   // if it is a knob 10 button release, toggle pitch quantize
-  elseif MIDINote = 0x19 and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x19 and MIDIByte2 = 7D
     if pitchQuantize = 0
       pitchQuantize = 1
       sendData = [0x11, 0xEE, channelCC, 53, 0x7F]
@@ -1220,17 +1220,17 @@
     SendSysex sendData, 5
     Exit
 
-  elseif MIDINote = 0x25 and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x25 and MIDIByte2 = 7D
     sendData = [0x0F, 0xEE, 0x90, 0x05, 0x01]
     SendSysex sendData, 5
     previousTrackingMode = 0x05
     Exit
-  elseif MIDINote = 0x24 and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x24 and MIDIByte2 = 7D
     sendData = [0x0F, 0xEE, 0x90, 0x04, 0x01]
     SendSysex sendData, 5
     previousTrackingMode = 0x04
     Exit
-  elseif MIDINote = 0x2C and MIDIVelocity = 0x00
+  elseif MIDINoteVal = 0x2C and MIDIByte2 = 7D
     sendData = [0x0F, 0xEE, 0x90, 0x0C, 0x01]
     SendSysex sendData, 5
     previousTrackingMode = 0x0C
@@ -1239,8 +1239,8 @@
   // if knob is pressed and a drumParam is changed, the value in the pushReset array will not match up correctly
   // send lighting if drumParam is the same so that the light doesn't just turn off
   elseif (knobPush[8] = 1 or knobPush[9] = 1 or knobPush[10] = 1)
-    if (MIDINote >= 32 and MIDINote <= 35) or (MIDINote >= 40 and MIDINote <= 43)
-      knobTemp = MIDINote - drumButtons[previousDrumVal]
+    if (MIDINoteVal >= 32 and MIDINoteVal <= 35) or (MIDINoteVal >= 40 and MIDINoteVal <= 43)
+      knobTemp = MIDINoteVal - drumButtons[previousDrumVal]
       // send lighting to keep knob lit if same knob pressed
       if knobTemp = 32
         sendData = [0x0F, 0xEE, 0x90, drumButtons[previousDrumVal], 0x01]
@@ -1252,7 +1252,7 @@
 
   // drumParams
   for i = 0 to 7
-    if MIDINote - 32 = drumButtons[i] and MIDIVelocity = 0x00
+    if MIDINoteVal - 32 = drumButtons[i] and MIDIByte2 = 7D
       sendData = [0x0F, 0xEE, 0x90, drumButtons[i], 0x01]
       SendSysex sendData, 5
       for j = 0 to 3
@@ -1271,23 +1271,37 @@
 
 @End
 
-// if it is a knob turn
+// TODO housekeeping rearrange handlers
+// this handles all CC and note MIDI, since notes are converted to CC to enable recording in modstep
 @OnMIDICC
 
-  // hard coding this in for now since routing / channel will be changing soon
-  MIDIByte1Temp = ChannelCC // check this with other MIDIByte1Temp - is this check even necessary in general?
-  MIDIByte2Temp = MIDIByte2
-  MIDIByte3Temp = MIDIByte3
-  Call @HandleKnobTurn
+  if MIDIByte1 <> channelCC // TODO could we just use channel here with MIDIChannel?
+    Exit
+
+  elseif MIDIByte2 = 7C // converted from note on
+
+    Call @HandleNoteOn
+
+  elseif MIDIByte2 = 7D // converted from note off
+
+    Call @HandleNoteOff
+
+  else
+
+    MIDIByte2Temp = MIDIByte2
+    MIDIByte3Temp = MIDIByte3
+    Call @HandleKnobTurn
+
+  endif
 
 @End
 
 @HandleKnobTurn
 
   // Need to handle as if being called both in knobTurn and on button release for knobPush
-  if MIDIByte2Temp <> 0 and MIDIByte2Temp <= 8 and MIDIByte1Temp = channelCC
+  if MIDIByte2Temp <> 0 and MIDIByte2Temp <= 8
     MIDIByte2Offset = MIDIByte2Temp - 1
-  elseif MIDIByte2Temp >= 11 and MIDIByte2Temp <= 18 and MIDIByte1Temp = channelCC
+  elseif MIDIByte2Temp >= 11 and MIDIByte2Temp <= 18
     MIDIByte2Offset = MIDIByte2Temp - 3
   endif
 

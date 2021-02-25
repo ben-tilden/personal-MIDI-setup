@@ -29,10 +29,11 @@
     padMode = 0
     // previous vals for drum
     FillArray drumVals, 60, 6
-  elseif sysexData[0] <> 0x3F
+  elseif sysexData[0] <> 0x3F // will receive channel as well
     Exit
   elseif sysexData[1] = 0x0C
     padMode = sysexData[2]
+    Exit
   endif
 
 @End
@@ -40,7 +41,7 @@
 @OnMIDINote
 
   // set drumVals from channels 1-6 so pad (channel 10) matches up with last played note on drum
-  if MIDICommand = 0x90 and MIDIChannel < 0x06 // TODO check on this - is it 0 to 15?
+  if MIDICommand = 0x90 and MIDIChannel < 0x06
     drumVals[MIDIchannel] = MIDINote
   endif
 
