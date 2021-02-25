@@ -5,7 +5,7 @@
 # messages expected:
 
 # BLOCK | F0 FF 1B 00 F7 - message sent from launchkey to xtouch to reset lighting
-# ALLOW | F0 CC 1C 00 F7 - message sent from launchkey to channel (and processing filter) to reset channel
+# ALLOW | F0 CC 1C 00 F7 - message sent from launchkey to channel (and processing filter) to =reset channel
 # BLOCK | F0 FF 1D CC F7 - message sent from launchkey to xtouch at change channel - send xtouch lights to xtouch for new channel
 
 # BLOCK | F0 CC    00    val  F7      numPressed                  

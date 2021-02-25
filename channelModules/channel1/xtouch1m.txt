@@ -1,6 +1,6 @@
 // xtouch mini
 
-// TODO make this channel specific and remap to channel from mapping filter to make up for loss of channel1filterx
+// TODO make this channel specific
 
 @OnLoad
 
@@ -522,7 +522,7 @@
     // isBeats
     if padMode = 0
       padMode = 1
-      sendData = [0x3F, 0x0C, padMode] // TODO send padMode data in channel change 
+      sendData = [0x3F, 0x0C, padMode] // TODO test
       SendSysex sendData, 3
     // isSample
     else

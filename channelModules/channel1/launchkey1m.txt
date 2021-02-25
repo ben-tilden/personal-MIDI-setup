@@ -176,7 +176,7 @@
     Exit
 
   // full reset
-  elseif MIDIByte2 = 0x68 and MIDIByte3 = 0x7F // TODO
+  elseif MIDIByte2 = 0x68 and MIDIByte3 = 0x7F // TODO check MIDIByte2 - can CC's work here?
     Call @InitVariables
 
     Exit
@@ -250,7 +250,6 @@
 
 @End
 
-//TODO could add channel checking here instead of having outside filter
 @OnMIDINoteOn
 
   // RESET

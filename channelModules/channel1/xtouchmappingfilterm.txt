@@ -6,7 +6,7 @@
 
 // sysex reception
 
-@OnSysex // TODO remove this to test sysex hypothesis below
+@OnSysex
   ReceiveSysex sysexData
 
   // block all sysex except channel and init
@@ -21,6 +21,16 @@
 
 @End
 
-@OnMIDIInput // NOTE don't believe xtouch can send sysex, but if it can this may cause issues // TODO test on clock start
+@OnMIDICC
   SendMIDIThruOnCh channel
+@End
+
+@OnMIDINoteOn
+  MIDICC = MIDIByte2 + 19
+  SendMIDIOut channelCC, 0x7C, MIDICC
+@End
+
+@OnMIDINoteOff
+  MIDICC = MIDIByte2 + 19
+  SendMIDIOut channelCC, 0x7D, MIDICC
 @End
