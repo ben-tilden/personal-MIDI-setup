@@ -45,14 +45,13 @@
   # ensure setLfo unable to be toggled if push control active
 
   # ensure padMode is toggling
-  # ensure localsetup receives padMode
-  # ensure sampleext receives padMode
+  # ensure mappingFilters receive padMode
 
   # ensure trackingMode is changed correctly (with lighting)
-  # ensure localsetup receives trackingMode
+  # ensure processingFilter receives trackingMode
 
   # ensure lfos are toggling and lfo modulation lighting corresponds
-  # ensure gate lighting functions as expected when gate is modulated
+  # ensure gate lighting functions as expected when gate is modulated and gate factor is changed
 
   # ensure lfoMuteAll is toggling and lfo modulation lighting corresponds
 
@@ -204,7 +203,7 @@
 # ensure global array reset (with locals)
 # ensure xtouch reset (with locals)
 # ensure channel information reset
-# ensure localsetup and sampleext reset
+# ensure processingFilter and mappingFilters reset
 
 # ensure channel reset button properly resets the channel
 # ensure channel change properly affects filters

@@ -1,5 +1,3 @@
-// TODO fix tempo sync (?)
-
 //order of modulation doesn't matter for bottom
 //BOTTOM: 31.75 * (1 + sin(rx)) * (1 + sin(rx))
 //ORIGINAL: (63.5 * sin(rx) + 63.5) * (.5 * sin(rx) + .5)
@@ -17,7 +15,7 @@
     Exit
 
   // set target knob for lfo
-  if data[1] = 13
+  elseif data[1] = 13
 
     // NOTE could add multiple sources of modulation for lfos in the future if desired
     // NOTE chain modulating data will not be sent for lfo 1 - (see '# ensure attempting to chain modulate from lfo 1 exits gracefully')
@@ -158,25 +156,16 @@
   tempoMode = 0
   tempoIndex = 0
   tempoZeroIndex = 0
+  visualizeLfos = 0
   lfoView = 0
   // init constants
+  channel = 0 // channel specific
   syncVal = [0, 14, 28, 42, 56, 70, 84, 98, 112, 128]
   modeTempo = [24, 1, 26, 51, 76, 101] // 5
   modeZeroTempo = [12, 1, 14, 27, 40, 53, 66, 79, 92, 105, 118] // 10
 @End
 
-// uncomment this and elsewhere to set timer to send at different rates depending on tempo
-//@OnHostStart
-//  SetTimerInterval ((60000 / HostTempo) / 20)
-//  Log {Host On: }, HostTempo
-//@End
-
 @OnTimer
-  // uncomment this and elsewhere to set timer to send at different rates depending on tempo
-  //if HostRunning = 1
-  //  SetTimerInterval ((60000 / HostTempo) / 20) // would it hurt to make this constant?
-  //endif
-  //SetMetroPPQN if necessary
   if lfoMuteAll = 0
     for lfo = 3 to 0
       if lfoOnOff[lfo] = 1
@@ -217,21 +206,18 @@
         endif
 
         if lfoTargetKnob[lfo] <> 4 and lfoTargetKnob[lfo] <> 5
-          SendMIDICC 10, lfoTargetKnob[lfo], lfoVal[lfo] // TODO will change since knobs will be channel specific
+          SendMIDICC channel, lfoTargetKnob[lfo], lfoVal[lfo]
         endif
 
+        if visualizeLfos = 1
+          SetXYValues 64, lfoVal[lfoView]
+        endif
       endif
     endfor
   endif
 @End
 
 @OnPadDown
+  visualizeLfos = (visualizeLfos + 1) % 2
   lfoView = LastPad
-  // TEST
-  if logLFOs = 1
-    logLFOs = 0
-  else
-    logLFOs = 1
-  endif
-  //END TEST
 @End

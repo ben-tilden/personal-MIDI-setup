@@ -1,42 +1,33 @@
 // processing filter
 
-// will need to add a processing filter for 7-12 that doesn't do anything other than pass through notes and CC
-// this will take the place of l to o filters - filters will be included here
-
-// option to add chromatic playing for only one part of the drum
-// option to add pitch to individual parts for beats 
-// option to add slapback
-
 @Onload
-  channelCC = 0
   midiCCStandard = 0
   midiCCInterval = 0
   intervalDepth = 64
-  padMode = 0
+  trackingMode = 0
 
-  intervalValues = [0, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 67, 72, 77, 82, 87, 92, 97, 102, 107, 112, 117, 122, 127]
+  intervalCCValues = [0, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 67, 72, 77, 82, 87, 92, 97, 102, 107, 112, 117, 122, 127]
 
 @End
 
 // sysex reception
 
-// padMode needs to be handled here as well
+// trackingMode needs to be handled here as well
 @OnSysex
 
   ReceiveSysex sysexData
 
   // init
   if sysexData[1] = 0x1C
-    channelCC = 0
     midiCCStandard = 0
     midiCCInterval = 0
     intervalDepth = 40
-    padMode = 0
+    trackingMode = 0
     Exit
 
-  // padMode
+  // trackingMode
   elseif sysexData[1] = 0x1F
-    padMode = sysexData[2]
+    trackingMode = sysexData[2]
     Exit
 
   endif
@@ -47,13 +38,12 @@
 
 @OnMIDINoteOn
   // if tracking is on
-  if MIDIChannel < 6 and padMode <> 0 and MIDINote <> 127
+  if MIDIChannel < 6 and trackingMode <> 0 and MIDINote <> 127
     // send the channel, pitch control, and note number
-    channelCC = MIDIChannel + 176
     midiCCStandard = MIDINote + 1 // 1 is the offset here to align properly - this means the highest possible note is F# (126)
-    if padMode = 1
-      SendMIDICC channelCC, 0x1C, midiCCStandard
-    elseif padMode = 2
+    if trackingMode = 1
+      SendMIDICC MIDIChannel, 0x1C, midiCCStandard
+    elseif trackingMode = 2
       // intervalDepth is divided into 25 separate groups, ranging 5 values from -12 to +12 semitones (with quantized pitch)
       // midiCCInterval has the potential to send messages which will cause issues if it goes below zero / above 126
       // including conditionals to prevent this
@@ -71,7 +61,7 @@
             SendMIDICC MIDIChannel, 0x1A, midiCCStandard
             SendMIDICC MIDIChannel, 0x1B, 126
 
-          elseif midiCCInterval < -26 // TODO check on this number - why use '-26' here but '1' on limit send?
+          elseif midiCCInterval < -26
             SendMIDICC MIDIChannel, 0x1A, midiCCStandard
             SendMIDICC MIDIChannel, 0x1B, 1
 

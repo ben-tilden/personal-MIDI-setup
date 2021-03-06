@@ -13,14 +13,11 @@
 
   // constant
 
-  // NOTE maxVal for clockNum is based off 227 * 288 = floor(65,535 / 288) * (ffff / lcm of all possible tempoPulse)
+  // NOTE maxVal for clockNum is based off lcm of all possible tempoPulse
   channel = 0 // channel specific (obviously)
-  maxValClockNumNorm = 61560
-  maxValClockNumEdge = 65400
+  maxValClockNum = 0
 
   clockNum = 0
-  isOctave = 0
-  maxValClockNum = maxValClockNumNorm
 
   arpMode = 0
   modFactor = 1
@@ -62,11 +59,6 @@
 
   elseif sysexData[1] = 0x03
     tempoPulse = sysexData[2]
-    if tempoPulse = 150 // 0x96
-      maxValClockNum = maxValClockNumEdge
-    else
-      maxValClockNum = maxValClockNumNorm
-    endif
     Exit
 
   elseif sysexData[1] = 0x04
@@ -95,21 +87,21 @@
       endIndex = 0
       iterConstant = -1
       arpIndex = initIndex
-      octaveOffset = -1
+      octaveOffset = 0
     elseif arpMode = 1 // desc
       initIndex = 0
       endIndex = numPressed - 1
       iterConstant = 1
       arpIndex = initIndex
-      octaveOffset = -1
+      octaveOffset = 0
     endif
 
     if arpValueModeMod = 0 or arpValueModeMod = 3 or arpValueModeMod = 6 or arpValueModeMod = 9
-      modfactor = 1
+      modFactor = 1
     elseif arpValueModeMod = 1 or arpValueModeMod = 4 or arpValueModeMod = 7 or arpValueModeMod = 10
-      modfactor = 2
+      modFactor = 2
     elseif arpValueModeMod = 2 or arpValueModeMod = 5 or arpValueModeMod = 8 or arpValueModeMod = 11
-      modfactor = 3
+      modFactor = 3
     endif
 
     Exit
@@ -176,29 +168,13 @@
     endfor
 
     // reset necessary local variables
-    clockNum = 0
-    isOctave = 0
-    maxValClockNum = maxValClockNumNorm
+    clockNum = 102500
 
   endif
 
 @End
 
 // end sysex reception
-
-@HandleClockPattern
-  octaveOffset = (octaveOffset + 1) % modFactor
-  arpValSend = arpValues[arpIndex] + octaveOffset * 12
-  SendMIDINoteOn channel, arpValSend, velocity
-  SendMIDINoteOff channel, arpValSend, velocity, gate
-  if octaveOffset = modFactor - 1 // NOTE a couple of ways to do this // TODO test
-    if arpIndex = endIndex
-      arpIndex = initIndex
-    else
-      arpIndex = arpIndex + iterConstant
-    endif
-  endif
-@End
 
 @HandleClockRandom
   octaveOffset = random 0, modFactor - 1
@@ -208,10 +184,36 @@
   SendMIDINoteOff channel, arpValSend, velocity, gate
 @End
 
+@HandleClockPattern
+  arpValSend = arpValues[arpIndex] + octaveOffset * 12 * -1 * iterConstant
+  SendMIDINoteOn channel, arpValSend, velocity
+  SendMIDINoteOff channel, arpValSend, velocity, gate
+  if arpIndex = endIndex
+    arpIndex = initIndex
+    octaveOffset = (octaveOffset + 1) % modFactor
+  else
+    arpIndex = arpIndex + iterConstant
+  endif
+@End
+
+// uncomment to change to old sequence for clock patterns
+//@HandleClockPattern
+//  octaveOffset = (octaveOffset + 1) % modFactor
+//  arpValSend = arpValues[arpIndex] + octaveOffset * 12
+//  SendMIDINoteOn channel, arpValSend, velocity
+//  SendMIDINoteOff channel, arpValSend, velocity, gate
+//  if octaveOffset = modFactor - 1 // NOTE a couple of ways to do this
+//    if arpIndex = endIndex
+//      arpIndex = initIndex
+//    else
+//      arpIndex = arpIndex + iterConstant
+//    endif
+//  endif
+//@End
+
 @OnMIDIInput
   if arpPhraseOnOffToggle = 1 and numPressed > 0 and MIDIByte1 = 0xF8
     // process midi clock
-    // maxVal = (floor of (ffff / lcm of all possible tempoPulse)) * lcm of all possible tempoPulse
     if clockNum = maxValClockNum
       clockNum = 0
     endif
@@ -231,13 +233,13 @@
             endIndex = 0
             iterConstant = -1
             arpIndex = initIndex
-            octaveOffset = -1
+            octaveOffset = 0
           elseif arpMode = 1 // desc
             initIndex = 0
             endIndex = numPressed - 1
             iterConstant = 1
             arpIndex = initIndex
-            octaveOffset = -1
+            octaveOffset = 0
           endif
           gateOpened = 0
         endif

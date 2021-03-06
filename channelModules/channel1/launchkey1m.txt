@@ -65,8 +65,9 @@
     elseif keysPressed > 0 and latch = 1
       for i = 0 to keysPressed - 1
         SendMIDINoteOn channel, keyValuesPressed[i], velocity
-        // NOTE bad timing here can prevent latch from picking up the value
+        // NOTE bad timing here can prevent latch from picking up the value - can be avoided fairly consistently with arpMute
         // the delayed noteOff can come at just the wrong time - not in the plans to fix at this point
+        // this mostly occurs when gate is longer and is mostly noticeable when there are fewer notes
       endfor
     endif
     Exit
@@ -151,25 +152,22 @@
   // NOTE currently there is no overlap between launchkey's CC buttons and other CC out we're going for
   // if a situation arises where this is the case, we'll need to remap launchkey initially
 
-  if MIDIChannel <> channel // TODO check this
+  // full reset - channel irrelevant
+  if MIDIByte2 = 0x68 and MIDIByte3 = 0x7F
+    Call @InitVariables
+
+    Exit
+
+  elseif MIDIChannel <> channel
     Exit
 
   elseif MIDIByte2 = 0x7F
     // this causes issues with launchkey if velocity is zero, since it registers as a note off
-    // TODO might not necessarily be the case now that we've switched to mozaic
     if MIDIByte3 = 0
       keyPressVelocity = 1
     else
       keyPressVelocity = MIDIByte3
     endif
-
-  elseif MIDIByte2 = 0x6B and MIDIByte3 = 0x7F
-
-    // send init channel change sysex (block file from processing further data) TODO test
-    // sendData = [0xFF, 0x1E, 0xCC]
-    // SendSysex sendData, 3
-
-    Exit
 
   elseif MIDIByte2 = 0x6B and MIDIByte3 = 0x00
 
@@ -180,12 +178,6 @@
     // send channel sysex
     sendData = [0x3F, 0x4B, channel] // block in all other files
     SendSysex sendData, 3
-
-    Exit
-
-  // full reset
-  elseif MIDIByte2 = 0x68 and MIDIByte3 = 0x7F
-    Call @InitVariables
 
     Exit
 
@@ -248,11 +240,11 @@
 
   channel = 0 // channel specific
 
-  // reset xtouch lighting and params
+  // reset xtouch lighting and params and, indirectly, lfo and launchkey mapping filter
   sendData = [0xFF, 0x1B, 0x00]
   SendSysex sendData, 3
 
-  // reset channel information
+  // reset channel information, processing filter, and xtouch mapping filter
   sendData = [0xCC, 0x1C, 0x00]
   SendSysex sendData, 3
 
@@ -299,23 +291,25 @@
   // LATCH
 
   if latch = 1
-    if latchTiming = 1 and keysPressed > 0 // no need to send notes / reset arrays if no keys are currently recognized as pressed
+    if latchTiming = 1 // no need to send notes / reset arrays if no keys are currently recognized as pressed
       StartTimer
       latchTiming = 0
       // reset arrays and send note releases
-      for i = 0 to keysPressed - 1
-        // NOTE if the note value is the same as a value that has just been pressed, we need to resend the value, since that is what will be happening with any other overlapping values pressed
-        SendMIDINoteOff channel, keyValuesPressed[i], 00
-        if MIDINote = keyValuesPressed[i]
-          if arpPhraseOnOffToggle <> 1
-            SendMIDINoteOn channel, keyValuesPressed[i], velocity
+      if keysPressed > 0 // necessary because for loops include 0 on 'for i = 0 to 0'
+        for i = 0 to keysPressed - 1
+          // NOTE if the note value is the same as a value that has just been pressed, we need to resend the value, since that is what will be happening with any other overlapping values pressed
+          SendMIDINoteOff channel, keyValuesPressed[i], 00
+          if MIDINote = keyValuesPressed[i]
+            if arpPhraseOnOffToggle <> 1
+              SendMIDINoteOn channel, keyValuesPressed[i], velocity
+            endif
           endif
+          keyValuesPressed[i] = 0
+          keyOrderPressed[i] = 0
+        endfor
+        keysPressed = 0
+        keysPressedTotal = 0
         endif
-        keyValuesPressed[i] = 0
-        keyOrderPressed[i] = 0
-      endfor
-      keysPressed = 0
-      keysPressedTotal = 0
     endif
     latchKeysPressed = latchKeysPressed + 1
   endif

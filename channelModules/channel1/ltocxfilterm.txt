@@ -1,13 +1,8 @@
 // launchkey to xtouch / channel filter
 
-// block any channel specific note and CC messages
-
-// NX = XX +B
-// BX = XX +B
-
-// FA = XX +B
-// FC = XX +B
+// block any channel specific note, CC, FA, or FC messages
 
 @OnSysex
-  SendMIDIThru
+  ReceiveSysex sysexData
+  SendSysex sysexData, SysexSize
 @End

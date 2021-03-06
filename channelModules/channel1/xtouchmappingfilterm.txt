@@ -11,13 +11,10 @@
 
   // block all sysex except channel and init
 
-  if sysexData[0] = 0x11 and sysexData[1] = 0x1C
+  if sysexData[0] = 0xCC and sysexData[1] = 0x1C
     channel = 0
-  elseif sysexData[0] <> 0x3F // will receive padMode as well
-    Exit
   elseif sysexData[1] = 0x4B
     channel = sysexData[2]
-    channelCC = channel + 176
     Exit
   endif
 
@@ -29,10 +26,10 @@
 
 @OnMIDINoteOn
   NoteValOffset = MIDINote + 19
-  SendMIDIOut channelCC, 0x7C, NoteValOffset
+  SendMIDICC channel, 0x7C, NoteValOffset
 @End
 
 @OnMIDINoteOff
   NoteValOffset = MIDINote + 19
-  SendMIDIOut channelCC, 0x7D, NoteValOffset
+  SendMIDICC channel, 0x7D, NoteValOffset
 @End
