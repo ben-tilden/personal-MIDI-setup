@@ -1,12 +1,33 @@
 // processing filter
 
 @Onload
+
+  // constant
+  // NOTE could make number of voices on a synth a constant here for possible future usage
+  // currently just using 3 for three voices across the board
+
+  channel = 0
+
+  // variable
+
+  latch = 0
+  arpPhraseOnOffToggle = 0
+  transposeOffset = 0
+  transposeStore = 0
+  keysSent = 0
+  keysSentIndex = 0
+  keysSentArr = [-1, -1, -1]
+  infiniteGate = 0
   midiCCStandard = 0
   midiCCInterval = 0
   intervalDepth = 64
   trackingMode = 0
 
   intervalCCValues = [0, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 67, 72, 77, 82, 87, 92, 97, 102, 107, 112, 117, 122, 127]
+
+  transposeCCValues = [0, 9, 19, 29, 39, 49, 59, 69, 79, 89, 99, 109, 119, 128]
+  transposeAValues = [-7, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 7]
+  transposeBValues = [-24, -12, -11, -10, -9, -7, 0, 7, 9, 10, 11, 12, 24]
 
 @End
 
@@ -19,10 +40,41 @@
 
   // init
   if sysexData[1] = 0x1C
+    latch = 0
+    arpPhraseOnOffToggle = 0
+    transposeOffset = 0
+    transposeStore = 0
+    keysSent = 0
+    keysSentIndex = 0
+    keysSentArr = [-1, -1, -1]
+    infiniteGate = 0
     midiCCStandard = 0
     midiCCInterval = 0
-    intervalDepth = 40
+    intervalDepth = 64
     trackingMode = 0
+    Exit
+
+  elseif sysexData[1] = 0x0B
+    latch = sysexData[2]
+    if latch = 0 and keysSent > 0
+      Call @KeyReset
+    endif
+    Exit
+
+  elseif sysexData[1] = 0x02
+    arpPhraseOnOffToggle = sysexData[2]
+    // will need to send note release if latch is on
+    if arpPhraseOnOffToggle = 1 and keysSent > 0
+      Call @KeyReset
+    endif
+    Exit
+
+  // transpose does not function with infinite gate
+  elseif sysexData[1] = 0x4C
+    infiniteGate = sysexData[2]
+    if infiniteGate = 0
+      Call @KeyReset
+    endif
     Exit
 
   // trackingMode
@@ -34,13 +86,50 @@
 
 @End
 
-// chromaticize keys volca drum
+@KeyReset
+  for i = 0 to 2
+    if keysSentArr[i] <> -1
+      SendMIDINoteOff channel, keysSentArr[i], 0x00
+      keysSentArr[i] = -1
+    endif
+  endfor
+  keysSent = 0
+  keysSentIndex = 0
+@End
 
 @OnMIDINoteOn
+
+  MIDINoteVal = MIDINote + transposeOffset
+  if MIDINoteVal < 0
+    MIDINoteVal = 0
+  elseif MIDINoteVal > 127
+    MIDINoteVal = 127
+  endif
+
+  sameKeySent = 0
+  for i = 0 to 2
+    if MIDINoteVal = keysSentArr[i]
+      sameKeySent = 1
+    endif
+  endfor
+
+  if sameKeySent = 0
+    if infiniteGate = 1 and keysSent = 3
+      SendMIDINoteOff MIDIchannel, keysSentArr[keysSentIndex], 0x00
+      keysSent = keysSent - 1
+    endif
+
+    keysSent = keysSent + 1
+    keysSentArr[keysSentIndex] = MIDINoteVal
+
+    keysSentIndex = (keysSentIndex + 1) % 3
+  endif
+
+  // chromaticize keys volca drum
   // if tracking is on
-  if MIDIChannel < 6 and trackingMode <> 0 and MIDINote <> 127
+  if MIDIChannel < 6 and trackingMode <> 0 and MIDINoteVal >= 0 and MIDINoteVal < 126
     // send the channel, pitch control, and note number
-    midiCCStandard = MIDINote + 1 // 1 is the offset here to align properly - this means the highest possible note is F# (126)
+    midiCCStandard = MIDINoteVal + 1 // 1 is the offset here to align properly - this means the highest possible note is F# (126)
     if trackingMode = 1
       SendMIDICC MIDIChannel, 0x1C, midiCCStandard
     elseif trackingMode = 2
@@ -71,21 +160,70 @@
 
     endif
   endif
-  SendMIDIThru
+
+  SendMIDINoteOn MIDIchannel, MIDINoteVal, MIDIByte3
+
 @End
 
 @OnMIDINoteOff
-  SendMIDIThru
+
+  MIDINoteVal = MIDINote + transposeOffset
+  if MIDINoteVal < 0
+    MIDINoteVal = 0
+  elseif MIDINoteVal > 127
+    MIDINoteVal = 127
+  endif
+
+  for i = 0 to 2 // removing val that shouldn't be removed?
+    if MIDINoteVal = keysSentArr[i]
+      keysSentArr[i] = -1
+    endif
+  endfor
+
+  keysSent = keysSent - 1
+
+  // this prevents transpose from causing note-off issues with latch
+  if keysSent = 0 and transposeOffset <> transposeStore
+    transposeOffset = transposeStore
+  endif
+
+  SendMIDINoteOff MIDIchannel, MIDINoteVal, MIDIByte3
 @End
 
 // interval setter
 
 // knob 7 has already been deassigned to 0x7E to allow for interval level
+// xtouch sliders have been assigned to 0x7A and 0x7B
 
 // handle remote control of interval level
 @OnMIDICC
   if MIDIChannel < 6 and MIDIByte2 = 0x7E
     intervalDepth = MIDIByte3
+
+  elseif MIDIByte2 = 0x7A
+    for i = 0 to 13
+      if MIDIByte3 >= transposeCCValues[i] and MIDIByte3 < transposeCCValues[i + 1]
+        if keysSent = 0 or infiniteGate = 1 // this handles latch instance without arp/Phrase on
+          transposeOffset = transposeAValues[i]
+          transposeStore = transposeOffset
+        else
+          transposeStore = transposeAValues[i]
+        endif
+      endif
+    endfor
+
+  elseif MIDIByte2 = 0x7B
+    for i = 0 to 13
+      if MIDIByte3 >= transposeCCValues[i] and MIDIByte3 < transposeCCValues[i + 1]
+        if keysSent = 0 or infiniteGate = 1 // this handles latch instance without arp/Phrase on
+          transposeOffset = transposeBValues[i]
+          transposeStore = transposeOffset
+        else
+          transposeStore = transposeBValues[i]
+        endif
+      endif
+    endfor
+
   else
     SendMIDIThru
   endif

@@ -88,7 +88,8 @@
   if MIDIByte2 = 0x1C
     SendMIDIOut MIDIByte1, MIDIDrumKnobVals[7], MIDIByte3
     Exit
-  elseif MIDIByte2 = 0x68 or MIDIByte2 = 0x69 or MIDIByte2 = 0x6A or MIDIByte2 = 0x6B
+  elseif MIDIByte2 = 0x68 or MIDIByte2 = 0x6A or MIDIByte2 = 0x6B or MIDIByte2 = 0x6C or MIDIByte2 = 0x6D
+    // 69 could be added here if functionality added
     SendMIDIThru
     Exit
   elseif MIDIChannel < 0x06

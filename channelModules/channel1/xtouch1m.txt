@@ -50,6 +50,8 @@
   gateFactor = 1
   programChange = 0
 
+  transposeMute = 0
+
   knobPush = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
   knobTurn = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
   groupKnobPush = 0
@@ -431,6 +433,18 @@
 
     Call @HandleNoteOff
 
+  elseif MIDIByte2 = 0x09
+    if transposeMute = 0
+      sendData = [0x11, 0xEE, channelCC, 0x7A, MIDIByte3]
+      SendSysex sendData, 5
+    endif
+
+  elseif MIDIByte2 = 0x0A
+    if transposeMute = 0
+      sendData = [0x11, 0xEE, channelCC, 0x7B, MIDIByte3]
+      SendSysex sendData, 5
+    endif
+
   else
 
     MIDIByte2Temp = MIDIByte2
@@ -527,11 +541,11 @@
   elseif MIDINoteVal = 0x0A and MIDIByte2 = 0x7C
     if latch = 0
       latch = 1
-      sendData = [0x11, 0x0B, latch]
+      sendData = [0xC1, 0x0B, latch]
       SendSysex sendData, 3
     else
       latch = 0
-      sendData = [0x11, 0x0B, latch]
+      sendData = [0xC1, 0x0B, latch]
       SendSysex sendData, 3
     endif
     Exit
@@ -1027,6 +1041,16 @@
         SendSysex sendData, 5
       endif
     endif
+    Exit
+
+  // if it is a knob 8 button release, mute transpose
+  elseif MIDINoteVal = 0x07 and MIDIByte2 = 0x7D
+    transposeMute = (transposeMute + 1) % 2
+    Exit
+
+  // if it is a knob 16 button release, mute transpose
+  elseif MIDINoteVal = 0x1F and MIDIByte2 = 0x7D
+    transposeMute = (transposeMute + 1) % 2
     Exit
 
   elseif MIDINoteVal = 0x08 and MIDIByte2 = 0x7D

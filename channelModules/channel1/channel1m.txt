@@ -13,15 +13,16 @@
 
   // constant
 
-  // NOTE maxVal for clockNum is based off lcm of all possible tempoPulse
   channel = 0 // channel specific (obviously)
-  maxValClockNum = 0
+
+  phraseSysexOffsetConstant = 42 // artifact of initial SB setup - could be changed
+
+  // variable
 
   clockNum = 0
 
   arpMode = 0
   modFactor = 1
-  phraseSysexOffsetConstant = 42 // artifact of initial SB setup - could be changed
 
 @End
 
@@ -86,13 +87,15 @@
       initIndex = numPressed - 1 
       endIndex = 0
       iterConstant = -1
-      arpIndex = initIndex
+      // NOTE commenting this out likely can cause issues if arpValues are changed at a similar time to arpMode
+      //arpIndex = initIndex
       octaveOffset = 0
     elseif arpMode = 1 // desc
       initIndex = 0
       endIndex = numPressed - 1
       iterConstant = 1
-      arpIndex = initIndex
+      // NOTE commenting this out likely can cause issues if arpValues are changed at a similar time to arpMode
+      //arpIndex = initIndex
       octaveOffset = 0
     endif
 
@@ -144,8 +147,21 @@
     arpMute = sysexData[2]
     Exit
 
+  elseif sysexData[1] = 0x4C
+    // infiniteGate used for two main uses cases:
+    // 1. prevent MIDI note-offs from restricting the highest possible tempo for synths that can be interrupted by note-offs
+    // 2. ensure that whenever arp or phrase with latch is converted to just latch, note-offs do not interrupt full note transition
+    infiniteGate = sysexData[2]
+    Exit
+
   // reset channel when init sysex received
   elseif sysexData[1] = 0x1C and sysexData[2] = 0x00
+
+    clockNum = 0
+
+    arpMode = 0
+    modFactor = 1
+
     // (re)set sysex variables
     // NOTE could move this also into the init load for completeness (or remove local from init load?)
 
@@ -153,6 +169,7 @@
     arpPhraseToggle = 0
     arpPhraseOnOffToggle = 0
     tempoPulse = 36 // 0x24
+    infiniteGate = 0
     gate = 0
     velocity = 100 // 0x64
     arpValueModeMod = 0
@@ -181,13 +198,17 @@
   arpIndex = random 0, numPressed - 1
   arpValSend = arpValues[arpIndex] + octaveOffset * 12
   SendMIDINoteOn channel, arpValSend, velocity
-  SendMIDINoteOff channel, arpValSend, velocity, gate
+  if infiniteGate = 0
+    SendMIDINoteOff channel, arpValSend, velocity, gate
+  endif
 @End
 
 @HandleClockPattern
   arpValSend = arpValues[arpIndex] + octaveOffset * 12 * -1 * iterConstant
   SendMIDINoteOn channel, arpValSend, velocity
-  SendMIDINoteOff channel, arpValSend, velocity, gate
+  if infiniteGate = 0
+    SendMIDINoteOff channel, arpValSend, velocity, gate
+  endif
   if arpIndex = endIndex
     arpIndex = initIndex
     octaveOffset = (octaveOffset + 1) % modFactor
@@ -201,7 +222,9 @@
 //  octaveOffset = (octaveOffset + 1) % modFactor
 //  arpValSend = arpValues[arpIndex] + octaveOffset * 12
 //  SendMIDINoteOn channel, arpValSend, velocity
-//  SendMIDINoteOff channel, arpValSend, velocity, gate
+//  if infiniteGate = 0
+//    SendMIDINoteOff channel, arpValSend, velocity, gate
+//  endif
 //  if octaveOffset = modFactor - 1 // NOTE a couple of ways to do this
 //    if arpIndex = endIndex
 //      arpIndex = initIndex
@@ -213,11 +236,6 @@
 
 @OnMIDIInput
   if arpPhraseOnOffToggle = 1 and numPressed > 0 and MIDIByte1 = 0xF8
-    // process midi clock
-    if clockNum = maxValClockNum
-      clockNum = 0
-    endif
-
     if gateOpened = 1
       arpMute = 0
     endif
@@ -262,7 +280,9 @@
         if phraseOffsetValues[phraseIndex] <> 128
           phraseValSend = phraseVal + phraseOffsetValues[phraseIndex]
           SendMIDINoteOn channel, phraseValSend, velocity
-          SendMIDINoteOff channel, phraseValSend, velocity, gate
+          if infiniteGate = 0
+            SendMIDINoteOff channel, phraseValSend, velocity, gate
+          endif
         endif
         if phraseIndex <> phraseLength // NOTE this is really phraseLength - 1
           phraseIndex = phraseIndex + 1
