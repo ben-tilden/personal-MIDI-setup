@@ -1,6 +1,12 @@
 // launchkey to xtouch / channel filter
 
 // block any channel specific note, CC, FA, or FC messages
+// this is mainly for the CC messages which are passed through launchkey - would mess with xtouch
+
+@OnLoad
+  // minimal layout
+  ShowLayout 4
+@End
 
 @OnSysex
   ReceiveSysex sysexData

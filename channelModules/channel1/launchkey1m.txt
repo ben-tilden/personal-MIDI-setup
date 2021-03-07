@@ -9,7 +9,9 @@
   SetTimerInterval 200
 
   // constant
-  phraseSysexOffsetConstant = 42 // artifact of initial SB setup - could be changed
+  phraseSysexOffsetConstant = 42 // NOTE artifact of initial SB setup - could be cleaned up
+
+  channel = 0 // channel specific
 
   Call @InitVariables
 
@@ -30,8 +32,8 @@
   ReceiveSysex sysexData
 
   // ALLOW 11 C1
-  // BLOCK CC 0F 01 FF 3F (+ xtouch program change, key presses, key releases, and CC's)
-  if sysexData[0] > 0xC1 or sysexData[0] = 0x0F or sysexData[0] = 0x01
+  // BLOCK CC 0F 01 FF 3F 9F (+ xtouch program change, key presses, key releases, and CC's)
+  if sysexData[0] <> 0x11 and sysexData[0] <> 0xC1
     Exit
 
   elseif sysexData[1] = 0xEE
@@ -62,8 +64,9 @@
       for i = 0 to keysPressed - 1
         SendMIDINoteOn channel, keyValuesPressed[i], velocity
         // NOTE bad timing here can prevent latch from picking up the value - can be avoided fairly consistently with arpMute
-        // the delayed noteOff can come at just the wrong time - not in the plans to fix at this point
+        // the delayed noteOff can come at just the wrong time
         // this mostly occurs when gate is longer and is mostly noticeable when there are fewer notes
+        // this can be avoided by using infiniteGate when transitioning to latch
       endfor
     endif
     Exit
@@ -138,7 +141,9 @@
       phraseIndex = 0
       tempPhraseVal = 43690
     endif
+
   endif
+
 @End
 
 // end sysex reception
@@ -154,7 +159,6 @@
   // full reset - channel irrelevant
   if MIDIByte2 = 0x68 and MIDIByte3 = 0x7F
     Call @InitVariables
-
     Exit
 
   elseif MIDIChannel <> channel
@@ -175,7 +179,7 @@
     SendSysex sendData, 3
 
     // send channel sysex
-    sendData = [0x3F, 0x4B, channel] // block in all other files
+    sendData = [0x3F, 0x4B, channel]
     SendSysex sendData, 3
 
     Exit
@@ -196,7 +200,7 @@
   // infinite gate
   elseif MIDIByte2 = 0x6D and MIDIByte3 = 0x7F
     infiniteGate = (infiniteGate + 1) % 2
-    sendData = [0xCC, 0x4C, infiniteGate]
+    sendData = [0xCC, 0x4C, infiniteGate] // currently inconsistent notation, since this also is used by processing filter
     SendSysex sendData, 3
     Exit
 
@@ -204,8 +208,8 @@
   elseif MIDIByte2 = 0x6A and MIDIByte3 = 0x7F
     Call @InitVariables
 
-    Exit
   endif
+
 @End
 
 @InitVariables
@@ -243,8 +247,6 @@
 
   latchTiming = 1
   latchKeysPressed = 0
-
-  channel = 0 // channel specific
 
   // reset xtouch lighting and params and, indirectly, lfo and launchkey mapping filter
   sendData = [0xFF, 0x1B, 0x00]
@@ -303,12 +305,8 @@
       // reset arrays and send note releases
       if keysPressed > 0 // necessary because for loops include 0 on 'for i = 0 to 0'
         for i = 0 to keysPressed - 1
-          // NOTE this works for standard latch and latch + arp, but latch + phrase (with infiniteGate) does not turn off keys
-          // if latch is turned off and infiniteGate is on right when notes are transposed,
-          // turning off infiniteGate should fix any issues that may come up with this arp, as well as with phrase in general
-          // a lot of work with processing filter suggests that latch might work best if migrated there,
-          // although this would likely force a possibly non-functional refactor with arp and phrase
-          // NOTE ideally would not have to send MIDINoteOff from launchkey, due to possible issues it can craete in processing
+          // NOTE ideally would not have to send MIDINoteOff from launchkey, due to possible issues it can create in processing
+          // this is currently handled, however
           SendMIDINoteOff channel, keyValuesPressed[i], 0x00
           keyValuesPressed[i] = 0
           keyOrderPressed[i] = 0
@@ -518,7 +516,7 @@
   SendSysex sendData, 3
 @End
 
-@InsertionSort // isOrder length
+@InsertionSort
 
   // sort by value
   if arpValueModeMod < 6 and keysPressed > 1

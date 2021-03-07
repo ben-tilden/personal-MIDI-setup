@@ -1,11 +1,5 @@
 // channel one
 
-// only happens when multiple note are pressed?
-// TODO velocity might need to be sent separately for FM
-// TODO if same note, sometimes noteoff comes at the same time or similar time as note on - causing tempo to be slightly different
-// in the future could add an infinite gate mode to work with situations like this
-
-
 @OnLoad
 
   // minimal layout
@@ -15,7 +9,7 @@
 
   channel = 0 // channel specific (obviously)
 
-  phraseSysexOffsetConstant = 42 // artifact of initial SB setup - could be changed
+  phraseSysexOffsetConstant = 42 // NOTE artifact of initial SB setup - could be cleaned up
 
   // variable
 
@@ -32,10 +26,9 @@
 
   ReceiveSysex sysexData
 
-
-  // ALLOW CC C1
-  // BLOCK 11 0F 01 FF 3F (+ xtouch program change, key presses, key releases, and CC's)
-  if sysexData[0] > 0xFC or sysexData[0] = 0x11 or sysexData[0] < 0xC1
+  // ALLOW FC CC C1
+  // BLOCK 11 0F 01 FF 3F 9F (+ xtouch program change, key presses, key releases, and CC's)
+  if sysexData[0] <> 0xCC and sysexData[0] <> 0xC1 and and sysexData[0] <> 0xFC
     Exit
 
   // clock message triggered by host clock starting

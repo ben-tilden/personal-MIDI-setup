@@ -1,7 +1,12 @@
 // launchkey mapping filter
 
 @OnLoad
+
+  // minimal layout
+  ShowLayout 4
+
   // constant
+
   MIDIDrumVals = [0x31, 0x32, 0x33, 0x2D, 0x2E, 0x2F]
 
   MIDILaunchkeyPadVals = [0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x30]
@@ -13,9 +18,11 @@
   MIDIBassKnobVals = [0x0B, 0x31, 0x05, 0x28]
 
   // variable
+
   padMode = 0
   // previous vals for drum
   FillArray drumVals, 60, 6
+
 @End
 
 // sysex reception
@@ -84,14 +91,17 @@
 @End
 
 @OnMIDICC
+
   // map launchkey knobs for drum and bass
   if MIDIByte2 = 0x1C
     SendMIDIOut MIDIByte1, MIDIDrumKnobVals[7], MIDIByte3
     Exit
+
   elseif MIDIByte2 = 0x68 or MIDIByte2 = 0x6A or MIDIByte2 = 0x6B or MIDIByte2 = 0x6C or MIDIByte2 = 0x6D
     // 69 could be added here if functionality added
     SendMIDIThru
     Exit
+
   elseif MIDIChannel < 0x06
     for i = 0 to 6
       if MIDIByte2 = MIDILaunchkeyKnobVals[i]
@@ -99,6 +109,7 @@
         Exit
       endif
     endfor
+
   elseif MIDIChannel = 0x07
     for i = 0 to 3
       if MIDIByte2 = MIDILaunchkeyKnobVals[i]
@@ -106,5 +117,7 @@
         Exit
       endif
     endfor
+
   endif
+
 @End

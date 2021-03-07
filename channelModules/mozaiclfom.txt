@@ -8,6 +8,41 @@
 
 // NOTE tip: when using chain modulation, often the best results come from alternating inversion among the lfos
 
+@Onload
+  // SetMetroPPQN 20 is the metric we're going off here
+  SetTimerInterval 25 // set for 120bpm ((60000 / bpm) / 20)
+  StartTimer
+
+  // constant
+
+  channel = 0 // channel specific
+  syncVal = [0, 14, 28, 42, 56, 70, 84, 98, 112, 128]
+  modeTempo = [24, 1, 26, 51, 76, 101] // 5
+  modeZeroTempo = [12, 1, 14, 27, 40, 53, 66, 79, 92, 105, 118] // 10
+
+  // variable
+  
+  lfoTargetKnob = [0, 0, 0, 0]
+  lfoSync = [0, 0, 0, 0]
+  lfoBase = [0, 0, 0, 0]
+  lfoInvert = [0, 0, 0, 0]
+  lfoOnOff = [0, 0, 0, 0]
+  lfoMuteAll = 0
+  lfoRate = [0, 0, 0, 0]
+  lfoDepth = [0, 0, 0, 0]
+  lfoVal = [0, 0, 0, 0]
+  SetupLFO 0, 0, 0, no, 0
+  SetupLFO 1, 0, 0, no, 0
+  SetupLFO 2, 0, 0, no, 0
+  SetupLFO 3, 0, 0, no, 0
+  tempoMode = 0
+  tempoIndex = 0
+  tempoZeroIndex = 0
+  visualizeLfos = 0
+  lfoView = 0
+
+@End
+
 @OnSysex
   ReceiveSysex data
 
@@ -18,13 +53,12 @@
   elseif data[1] = 13
 
     // NOTE could add multiple sources of modulation for lfos in the future if desired
-    // NOTE chain modulating data will not be sent for lfo 1 - (see '# ensure attempting to chain modulate from lfo 1 exits gracefully')
+    // NOTE chain modulating data will not be sent for lfo 1
     if data[3] < 8
       lfoTargetKnob[data[2]] = data[3] + 1 // need to add one since knob turn input is +1 from knob push input
     else
       lfoTargetKnob[data[2]] = data[3] - 13 // need to subtract 13 since knob turn input is -13 (18 - B) from knob push input
     endif
-
 
   // set lfo to sync with tempo / not
   elseif data[1] = 14
@@ -133,36 +167,6 @@
     modeZeroTempo = [12, 1, 14, 27, 40, 53, 66, 79, 92, 105, 118] // 10
 
   endif
-@End
-
-@Onload
-  // SetMetroPPQN 20 is the metric we're going off here
-  SetTimerInterval 25 // set for 120bpm ((60000 / bpm) / 20)
-  StartTimer
-  // init variables
-  lfoTargetKnob = [0, 0, 0, 0]
-  lfoSync = [0, 0, 0, 0]
-  lfoBase = [0, 0, 0, 0]
-  lfoInvert = [0, 0, 0, 0]
-  lfoOnOff = [0, 0, 0, 0]
-  lfoMuteAll = 0
-  lfoRate = [0, 0, 0, 0]
-  lfoDepth = [0, 0, 0, 0]
-  lfoVal = [0, 0, 0, 0]
-  SetupLFO 0, 0, 0, no, 0
-  SetupLFO 1, 0, 0, no, 0
-  SetupLFO 2, 0, 0, no, 0
-  SetupLFO 3, 0, 0, no, 0
-  tempoMode = 0
-  tempoIndex = 0
-  tempoZeroIndex = 0
-  visualizeLfos = 0
-  lfoView = 0
-  // init constants
-  channel = 0 // channel specific
-  syncVal = [0, 14, 28, 42, 56, 70, 84, 98, 112, 128]
-  modeTempo = [24, 1, 26, 51, 76, 101] // 5
-  modeZeroTempo = [12, 1, 14, 27, 40, 53, 66, 79, 92, 105, 118] // 10
 @End
 
 @OnTimer

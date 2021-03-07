@@ -1,6 +1,9 @@
 // xtouch mapping filter
 
 @Onload
+  // minimal layout
+  ShowLayout 4
+
   channel = 0
 @End
 
@@ -10,7 +13,6 @@
   ReceiveSysex sysexData
 
   // block all sysex except channel and init
-
   if sysexData[0] = 0xCC and sysexData[1] = 0x1C
     channel = 0
   elseif sysexData[1] = 0x4B

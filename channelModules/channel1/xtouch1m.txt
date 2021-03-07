@@ -2,15 +2,16 @@
 
 @OnLoad
 
-  // timer interval is .05 second
+  // timer interval is .025 second
 
-  SetTimerInterval 50
+  SetTimerInterval 25
 
   // minimal layout
 
   ShowLayout 4
 
   // constant
+
   // 1, 2, 3, 4, 6, 9, 18, 24, 36, 54, 72, 114, 150
   tempoMode0Vals = [0x48, 0x36, 0x24, 0x18, 0x12, 0x09, 0x06, 0x04, 0x03, 0x02, 0x01]
   tempoMode1Vals = [0x24, 0x12, 0x09, 0x06, 0x04, 0x03]
@@ -86,6 +87,7 @@
 
 @End
 
+// timer necessary because of the way Mozaic prioritizes sysex over other sent values
 // timerVal is 1-4 (inclusive) - init:
 // change program to b, init b, change program to a, init a
 // timerVal is 5-8 (inclusive) - channelChange:
@@ -357,7 +359,9 @@
 
   ReceiveSysex sysexData
 
-  if sysexData[0] < 0xFC
+  // ALLOW FF
+  // BLOCK 11 CC 0F 01 3F 9F (+ xtouch program change, key presses, key releases, and CC's)
+  if sysexData[0] <> 0xFC and sysexData[0] <> 0xFF
     Exit
 
   // clock message triggered by host clock starting
@@ -426,19 +430,19 @@
     Exit
 
   elseif MIDIByte2 = 0x7C // converted from note on
-
     Call @HandleNoteOn
 
   elseif MIDIByte2 = 0x7D // converted from note off
-
     Call @HandleNoteOff
 
+  // transpose
   elseif MIDIByte2 = 0x09
     if transposeMute = 0
       sendData = [0x11, 0xEE, channelCC, 0x7A, MIDIByte3]
       SendSysex sendData, 5
     endif
 
+  // transpose
   elseif MIDIByte2 = 0x0A
     if transposeMute = 0
       sendData = [0x11, 0xEE, channelCC, 0x7B, MIDIByte3]
@@ -446,7 +450,6 @@
     endif
 
   else
-
     MIDIByte2Temp = MIDIByte2
     MIDIByte3Temp = MIDIByte3
     Call @HandleKnobTurn

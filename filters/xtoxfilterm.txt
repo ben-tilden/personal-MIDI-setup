@@ -1,4 +1,5 @@
 # xtouch to xtouch filter
+# stream byter used here because it can handle over 32 sysex messages at once - mozaic cannot
 
 IF LOAD
   ALIAS I0 sendThru
