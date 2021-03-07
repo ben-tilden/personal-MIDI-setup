@@ -1,42 +1,26 @@
 # xtouch to xtouch filter
+# stream byter used here because it can handle over 32 sysex messages at once - mozaic cannot
 
-# filter out messages that don't have 0F as their routing (01, 11, C1, CC)
+IF LOAD
+  ALIAS I0 sendThru
+END
 
-# messages expected:   
-
-# BLOCK | F0 11 1A 2E F7 - rest, sent from xtouch to launchkey
-# ALLOW | F0 0F EE M0 M1 M2 F7 - message sent from xtouch to xtouch filter to send lighting back to xtouch (CC and note messages)
-# BLOCK | F0 11 EE M0 M1 M2 F7 - message sent from xtouch to launchkey for CC output
-
-# BLOCK | F0 C1    01    val  F7      arpPhraseToggle
-# BLOCK | F0 C1    02    val  F7      arpPhraseOnOffToggle
-# BLOCK | F0 CC    03    val  F7      tempoPulse
-# BLOCK | F0 CC    04    val1 val2 F7 gate
-# BLOCK | F0 C1    05    val  F7      velocity
-# BLOCK | F0 C1    06    val  F7      arpValueModeMod
-# BLOCK | F0 11/FF 07    val  F7      setPhrase
-# BLOCK | F0 11    0B    val  F7      latch
-# BLOCK | F0 CC/FF 19    60   F7      gateOpened
-
-# BLOCK | F0 01    0D    val1 val2 F7 lfoKnob
-# BLOCK | F0 01    0E    val1 val2 F7 lfoSync
-# BLOCK | F0 01    0F    val1 val2 F7 lfoBase
-# BLOCK | F0 01    10    val1 val2 F7 lfoInvert
-# BLOCK | F0 01    11    val1 val2 F7 lfoOnOff
-# BLOCK | F0 01    12    val  F7      lfoMuteAll
-# BLOCK | F0 01    13    val1 val2 F7 lfoType
-# BLOCK | F0 01    14    val  F7      lfoReset
-# BLOCK | F0 01    15    00   F7      lfoResetAll
-# BLOCK | F0 01    16    val1 val2 F7 lfoRate
-# BLOCK | F0 01    17    val1 val2 F7 lfoDepth
-# BLOCK | F0 01    18    val1 F7      lfoTempo
-# BLOCK | F0 01    19    00   F7      lfoInit
+ASS sendThru = 0
 
 IF M0 == F0
-  IF M1 == 0F EE
-    ASS M0 = M3 M4 M5 00 00 00 00
-  ELSE
-    BLOCK
-    EXIT
+  IF M1 == 0F
+    IF M2 == EE
+      ASS M0 = M3 M4 M5
+      ASS sendThru = 1
+    END
   END
+END
+
+IF M0 == C0
+  ASS sendThru = 1
+END
+
+IF sendThru == 0
+  BLOCK
+  EXIT
 END

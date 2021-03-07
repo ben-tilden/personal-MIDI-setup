@@ -1,176 +1,123 @@
-# launchkey mapping filter
+// launchkey mapping filter
 
-# NOTE this is not changed on init due to routing / filter complications - should not have an impact on functionality
-IF LOAD
-  ALIAS G1 padMode
-  # previous vals for drum
-  ALIAS I0 drumVal1
-  ALIAS I1 drumVal2
-  ALIAS I2 drumVal3
-  ALIAS I3 drumVal4
-  ALIAS I4 drumVal5
-  ALIAS I5 drumVal6
-  ASS I0 = 3C 3C 3C 3C 3C 3C
-END
+@OnLoad
 
-# 4. mapping individual notes
-# seemingly out of order due to StreamByter being very literal with the way it assigns
-# CC's need to be remapped before they are mapped again
+  // minimal layout
+  ShowLayout 4
 
+  // constant
 
-IF M0 == 90
-  ASS drumVal1 = M1
-END
+  MIDIDrumVals = [0x31, 0x32, 0x33, 0x2D, 0x2E, 0x2F]
 
-IF M0 == 91
-  ASS drumVal2 = M1
-END
+  MIDILaunchkeyPadVals = [0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x30]
+  MIDIBeatsVals = [0x2A, 0x2E, 0x4B, 0x43, 0x24, 0x26, 0x2B, 0x32, 0x31, 0x27]
+  MIDISampleVals = [0x41, 0x42, 0x43, 0x44, 0x3C, 0x3D, 0x3E, 0x3F, 0x45, 0x40]
 
-IF M0 == 92
-  ASS drumVal3 = M1
-END
+  MIDILaunchkeyKnobVals = [0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B]
+  MIDIDrumKnobVals = [0x31, 0x32, 0x33, 0x34, 0x0A, 0x67, 0x7E, 0x7F] // NOTE these last two vals are dummy vals to prevent inadvertent overloading
+  MIDIBassKnobVals = [0x0B, 0x31, 0x05, 0x28]
 
-IF M0 == 93
-  ASS drumVal4 = M1
-END
+  // variable
 
-IF M0 == 94
-  ASS drumVal5 = M1
-END
+  padMode = 0
+  // previous vals for drum
+  FillArray drumVals, 60, 6
 
-IF M0 == 95
-  ASS drumVal6 = M1
-END
+@End
 
-IF padMode == 0
+// sysex reception
 
-  # N9 32 = X1 I1 # remap 50 to 62 for channel 10 volca drum pt 2
-  IF MC == 09
-    IF M1 == 32
-      MATH M0 = MT + 01
-      ASS M1 = drumVal2
-    END
-  END
+@OnSysex
+  ReceiveSysex sysexData
 
-  N9 2B = X9 32 # remap 43 to 50 for channel 10 hi tom
-  N9 2A = X9 2B # remap 42 to 43 for channel 10 lo tom
-  N9 24 = X9 2A # remap 36 to 40 for channel 10 cl hat
-  N9 28 = X9 24 # remap 40 to 36 for channel 10 bass
-  N9 26 = X9 4B # remap 38 to 75 for channel 10 claves
-  N9 29 = X9 26 # remap 41 to 38 for channel 10 snare
+  // block all sysex except padMode and init
 
-  # N9 2E = X4 drumVal5 # remap 46 to 67 for channel 10 volca drum pt 5
-  IF MC == 09
-    IF M1 == 2E
-      MATH M0 = MT + 04
-      ASS M1 = drumVal5
-    END
-  END
+  if sysexData[0] = 0x01 and sysexData[1] = 0x1D
+    padMode = 0
+    // previous vals for drum
+    FillArray drumVals, 60, 6
+  elseif sysexData[0] <> 0x3F // will receive channel as well
+    Exit
+  elseif sysexData[1] = 0x0C
+    padMode = sysexData[2]
+    Exit
+  endif
 
-  N9 25 = X9 2E # remap 37 to 46 for channel 10 op hat
-  N9 27 = X9 43 # remap 39 to 67 for channel 10 agogo
-  N9 30 = X9 27 # remap 48 to 39 for channel 10 clap
+@End
 
-  # N9 31 = X0 drumVal1 # remap 49 to 60 for channel 10 volca drum pt 1
-  IF MC == 09
-    IF M1 == 31
-      MATH M0 = MT + 00
-      ASS M1 = drumVal1
-    END
-  END
+@OnMIDINote
 
-  N9 2C = X9 31 # remap 44 to 49 for channel 10 crash
+  // set drumVals from channels 1-6 so pad (channel 10) matches up with last played note on drum
+  if MIDICommand = 0x90 and MIDIChannel < 0x06
+    drumVals[MIDIchannel] = MIDINote
+  endif
 
-  # N9 33 = X2 drumVal3 # remap 51 to 64 for channel 10 volca drum pt 3
-  IF MC == 09
-    IF M1 == 33
-      MATH M0 = MT + 02
-      ASS M1 = drumVal3
-    END
-  END
+  // map channel 10 pads
+  if MIDIChannel = 09 and (MIDICommand = 0x90 or MIDICommand = 0x80)
 
-  # N9 2D = X3 drumVal4 # remap 45 to 65 for channel 10 volca drum pt 4
-  IF MC == 09
-    IF M1 == 2D
-      MATH M0 = MT + 03
-      ASS M1 = drumVal4
-    END
-  END
+    for i = 0 to 5
+      if MIDINote = MIDIDrumVals[i]
+        drumChannel = i + MIDICommand
+        SendMIDIOut drumChannel, drumVals[i], MIDIByte3
+        Exit
+      endif
+    endfor
 
-  # N9 2F = X5 drumVal6 # remap 47 to 69 for channel 10 volca drum pt 6
-  IF MC == 09
-    IF M1 == 2F
-      MATH M0 = MT + 05
-      ASS M1 = drumVal6
-    END
-  END
+    if padMode = 0
 
-ELSE
+      for i = 0 to 9
+        if MIDINote = MIDILaunchkeyPadVals[i]
+          beatsChannel = 9 + MIDICommand
+          SendMIDIOut beatsChannel, MIDIBeatsVals[i], MIDIByte3
+          Exit
+        endif
+      endfor
 
-  N9 28 = XA 3C # remap 40 to 60 for channel 10 volca sample pt 1
-  N9 29 = XA 3D # remap 41 to 61 for channel 10 volca sample pt 2
-  N9 2A = XA 3E # remap 42 to 62 for channel 10 volca sample pt 3
-  N9 2B = XA 3F # remap 43 to 63 for channel 10 volca sample pt 4
-  N9 30 = XA 40 # remap 48 to 64 for channel 10 volca sample pt 5
-  N9 24 = XA 41 # remap 36 to 65 for channel 10 volca sample pt 6
-  N9 25 = XA 42 # remap 37 to 66 for channel 10 volca sample pt 7
-  N9 26 = XA 43 # remap 38 to 67 for channel 10 volca sample pt 8
-  N9 27 = XA 44 # remap 39 to 68 for channel 10 volca sample pt 9
-  N9 2C = XA 45 # remap 44 to 69 for channel 10 volca sample pt 10
+    else
 
-  # N9 2D = X3 drumVal4 # remap 45 to 65 for channel 10 volca drum pt 4
-  IF MC == 09
-    IF M1 == 2D
-      MATH M0 = MT + 03
-      ASS M1 = drumVal4
-    END
-  END
+      for i = 0 to 9
+        if MIDINote = MIDILaunchkeyPadVals[i]
+          sampleChannel = 11 + MIDICommand
+          SendMIDIOut sampleChannel, MIDISampleVals[i], MIDIByte3
+          Exit
+        endif
+      endfor
 
-  # N9 2E = X4 drumVal5 # remap 46 to 67 for channel 10 volca drum pt 5
-  IF MC == 09
-    IF M1 == 2E
-      MATH M0 = MT + 04
-      ASS M1 = drumVal5
-    END
-  END
+    endif
+  else
+    SendMIDIThru
+  endif
 
-  # N9 2F = X5 drumVal6 # remap 47 to 69 for channel 10 volca drum pt 6
-  IF MC == 09
-    IF M1 == 2F
-      MATH M0 = MT + 05
-      ASS M1 = drumVal6
-    END
-  END
+@End
 
-  # N9 31 = X0 drumVal1 # remap 49 to 60 for channel 10 volca drum pt 1
-  IF MC == 09
-    IF M1 == 31
-      MATH M0 = MT + 00
-      ASS M1 = drumVal1
-    END
-  END
+@OnMIDICC
 
-  # N9 32 = X1 I1 # remap 50 to 62 for channel 10 volca drum pt 2
-  IF MC == 09
-    IF M1 == 32
-      MATH M0 = MT + 01
-      ASS M1 = drumVal2
-    END
-  END
+  // map launchkey knobs for drum and bass
+  if MIDIByte2 = 0x1C
+    SendMIDIOut MIDIByte1, MIDIDrumKnobVals[7], MIDIByte3
+    Exit
 
-  # N9 33 = X2 drumVal3 # remap 51 to 64 for channel 10 volca drum pt 3
-  IF MC == 09
-    IF M1 == 33
-      MATH M0 = MT + 02
-      ASS M1 = drumVal3
-    END
-  END
+  elseif MIDIByte2 = 0x68 or MIDIByte2 = 0x6A or MIDIByte2 = 0x6B or MIDIByte2 = 0x6C or MIDIByte2 = 0x6D
+    // 69 could be added here if functionality added
+    SendMIDIThru
+    Exit
 
-END
+  elseif MIDIChannel < 0x06
+    for i = 0 to 6
+      if MIDIByte2 = MIDILaunchkeyKnobVals[i]
+        SendMIDIOut MIDIByte1, MIDIDrumKnobVals[i], MIDIByte3
+        Exit
+      endif
+    endfor
 
-# 5. mapping individual controls
+  elseif MIDIChannel = 0x07
+    for i = 0 to 3
+      if MIDIByte2 = MIDILaunchkeyKnobVals[i]
+        SendMIDIOut MIDIByte1, MIDIBassKnobVals[i], MIDIByte3
+        Exit
+      endif
+    endfor
 
-# commenting out for now, since this is functional only for hardware
+  endif
 
-#BX 6C 7F = FA # map start control
-#BX 6D 7F = FC # map stop control
+@End

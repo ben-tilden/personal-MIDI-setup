@@ -1,586 +1,290 @@
-# channel six
+// channel six
 
-# this instance will constantly be receiving clock, the question will be whether it responds to it or not
-# there will be another service receiving note in - if arpPhraseOnOffToggle is on, notes will be processed, otherwise, they will not
+@OnLoad
 
-# note that the assumption here is that the global array information will be used, not the local array
-# the local array will just be used for storage
+  // minimal layout
+  ShowLayout 4
 
-# possible future updates - addings 'reverse' and 'bounce' for phrase (stochastic etc. whatever)
+  // constant
 
-# need to reassign arpIndex whenever mode is changed
+  channel = 5 // channel specific (obviously)
 
-# NOTE maxVal for clockNum is based off 227 * 288 = floor(65,535 / 288) * (ffff / lcm of all possible tempoPulse)
+  phraseSysexOffsetConstant = 42 // NOTE artifact of initial SB setup - could be cleaned up
 
-# arpTypes
-# 1: ascending one octave
-# 2: ascending two octave
-# 3: ascending three octave
-# 4: descending one octave
-# 5: descending two octave
-# 6: descending three octave
-# 7: random one octave
-# 8: random two octave
-# 9: random three octave
-# 10: order pressed one octave
-# 11: order pressed two octave
-# 12: order pressed three octave
+  // variable
 
-IF LOAD
+  clockNum = 0
 
-  # constant
+  arpMode = 0
+  modFactor = 1
 
-  ALIAS 05 channelVal # channel specific (obviously)
-  ALIAS F078 maxValClockNumNorm
-  ALIAS FF78 maxValClockNumEdge
-  ALIAS 20 arpOffset
+@End
 
-  # local
+// sysex reception
 
-  ALIAS I0 channelCC
-  ALIAS I1 channelNoteOn
-  ALIAS I2 channelNoteOff
-  ALIAS I3 maxValClockNum
-  ALIAS I4 clockNum
-  ALIAS I5 clockNumMod
-  ALIAS I6 arpIndex
-  ALIAS I7 isOctave
-  ALIAS I8 isOctaveMod
-  ALIAS I9 arpOctaveValue
-  ALIAS IA phraseValSend
-  ALIAS IB phraseIndex # NOTE this phraseIndex is the playing index, not the setting index
-  ALIAS IC numPressedOffset
-  ALIAS ID phraseTemp
-  ALIAS IE gateTemp
+@OnSysex
 
-  # sysex
+  ReceiveSysex sysexData
 
-  ALIAS J0 numPressed
-  ALIAS J1 arpPhraseToggle
-  ALIAS J2 arpPhraseOnOffToggle
-  ALIAS J3 tempoPulse
-  ALIAS J4 gate
-  ALIAS J5 velocity
-  ALIAS J6 arpValueModeMod
-  ALIAS J8 phraseVal
-  ALIAS JA phraseLengthPlusOffset
-  ALIAS J15 gateOpened
-  ALIAS J48 arpMute
+  // ALLOW FC CC C1
+  // BLOCK 11 0F 01 FF 3F 9F (+ xtouch program change, key presses, key releases, and CC's)
+  if sysexData[0] <> 0xCC and sysexData[0] <> 0xC1 and and sysexData[0] <> 0xFC
+    Exit
 
-  # assign local
+  // clock message triggered by host clock starting
+  elseif sysexData[0] = 0x7D and sysexData[1] = 0x01
+    Exit
 
-  # these are only defined here, since they are essentially constants - will not change past this
-  MATH channelCC = B0 + channelVal
-  MATH channelNoteOn = 90 + channelVal
-  MATH channelNoteOff = 80 + channelVal
+  elseif sysexData[1] = 0x00
+    numPressed = sysexData[2]
+    if numPressed = 0
+      // NOTE clockNum used to be reset by gateOpened, but was causing issues of multiple notes getting fired milliseconds apart (and overlapping in an awkward way)
+      clockNum = 0
+    endif
+    Exit
 
-  ASS clockNum = 0
-  ASS isOctave = 0
-  ASS maxValClockNum = maxValClockNumNorm
+  elseif sysexData[1] = 0x01
+    arpPhraseToggle = sysexData[2]
+    Exit
 
-END
+  elseif sysexData[1] = 0x02
+    arpPhraseOnOffToggle = sysexData[2]
+    Exit
 
-# sysex reception
+  elseif sysexData[1] = 0x03
+    tempoPulse = sysexData[2]
+    Exit
 
-# clock message triggered by host clock starting
-IF M0 == F0 7D 01
-  BLOCK
-  EXIT
-END
+  elseif sysexData[1] = 0x04
+    gate = sysexData[2] * 256 + sysexData[3] // 0x100
+    Exit
 
-IF M0 == F0
+  elseif sysexData[1] = 0x05
+    velocity = sysexData[2]
+    Exit
 
-  IF M2 == 00
-    ASS numPressed = M3
-    IF numPressed == 0
-      # NOTE this used to be impacted by gateOpened, but was causing issues of multiple notes getting fired milliseconds apart (and overlapping in an awkward way)
-      ASS clockNum = 0
-    END
-    BLOCK
-    EXIT
-  END
+  elseif sysexData[1] = 0x06
+    arpValueModeMod = sysexData[2]
 
-  IF M2 == 01
-    ASS arpPhraseToggle = M3
-    BLOCK
-    EXIT
-  END
+    if arpValueModeMod = 0 or arpValueModeMod = 1 or arpValueModeMod = 2
+      arpMode = 0 // asc
+    elseif arpValueModeMod = 3 or arpValueModeMod = 4 or arpValueModeMod = 5
+      arpMode = 1 // desc
+    elseif arpValueModeMod = 6 or arpValueModeMod = 7 or arpValueModeMod = 8
+      arpMode = 2 // rand
+    elseif arpValueModeMod = 9 or arpValueModeMod = 10 or arpValueModeMod = 11
+      arpMode = 3 // ord
+    endif
 
-  IF M2 == 02
-    ASS arpPhraseOnOffToggle = M3
-    BLOCK
-    EXIT
-  END
+    if arpMode = 0 or arpMode = 3 // asc, order
+      initIndex = numPressed - 1 
+      endIndex = 0
+      iterConstant = -1
+      // NOTE commenting this out likely can cause issues if arpValues are changed at a similar time to arpMode
+      //arpIndex = initIndex
+      octaveOffset = 0
+    elseif arpMode = 1 // desc
+      initIndex = 0
+      endIndex = numPressed - 1
+      iterConstant = 1
+      // NOTE commenting this out likely can cause issues if arpValues are changed at a similar time to arpMode
+      //arpIndex = initIndex
+      octaveOffset = 0
+    endif
 
-  IF M2 == 03
-    ASS tempoPulse = M3
-    IF tempoPulse == 96
-      ASS maxValClockNum = maxValClockNumEdge
-    ELSE
-      ASS maxValClockNum = maxValClockNumNorm
-    END
-    BLOCK
-    EXIT
-  END
+    if arpValueModeMod = 0 or arpValueModeMod = 3 or arpValueModeMod = 6 or arpValueModeMod = 9
+      modFactor = 1
+    elseif arpValueModeMod = 1 or arpValueModeMod = 4 or arpValueModeMod = 7 or arpValueModeMod = 10
+      modFactor = 2
+    elseif arpValueModeMod = 2 or arpValueModeMod = 5 or arpValueModeMod = 8 or arpValueModeMod = 11
+      modFactor = 3
+    endif
 
-  IF M2 == 04
-    MATH gateTemp = M3 * 100
-    MATH gateTemp = gateTemp + M4
-    ASS gate = gateTemp
-    BLOCK
-    EXIT
-  END
+    Exit
 
-  IF M2 == 05
-    ASS velocity = M3
-    BLOCK
-    EXIT
-  END
+  elseif sysexData[1] = 0x08
+    phraseVal = sysexData[2]
+    Exit
 
-  IF M2 == 06
-    ASS arpValueModeMod = M3
-    BLOCK
-    EXIT
-  END
+  elseif sysexData[1] = 0x0A
+    phraseLength = sysexData[2]
+    Exit
 
-  IF M2 == 08
-    ASS phraseVal = M3
-    BLOCK
-    EXIT
-  END
+  elseif sysexData[1] = 0x19
+    gateOpened = 1
+    Exit
 
-  IF M2 == 0A
-    ASS phraseLengthPlusOffset = M3
-    BLOCK
-    EXIT
-  END
+  elseif sysexData[1] = 0x20
+    for i = 2 to 11
+      arpValues[i - 2] = sysexData[i]
+    endfor
+    Exit
 
-  IF M2 == 19
-    ASS gateOpened = 1
-    BLOCK
-    EXIT
-  END
+  elseif sysexData[1] > 41 and sysexData[1] < 72
+    // reset phraseValues if we're restarting
+    if sysexData[1] = 42
+      for i = 0 to 31
+        phraseOffsetValues[i] = 0
+      endfor
+    endif
+    setPhraseIndex = sysexData[1] - phraseSysexOffsetConstant // artifact of initial SB setup - could be changed
+    if sysexData[2] <= 128
+      phraseOffsetValues[setPhraseIndex] = sysexData[2]
+    elseif sysexData[2] > 128
+      phraseOffsetValues[setPhraseIndex] = sysexData[2] + -256 // negative value
+    endif
 
-  IF M2 == 20
-    ASS J20 = M3 M4 M5 M6 M7 M8 M9 MA MB M$12 # MC hardcoded incorrectly in sb
-    BLOCK
-    EXIT
-  END
+    Exit
 
-  IF M2 > 29
-    IF M2 < 48
-      # reset phraseValues if we're restarting
-      IF M2 == 2A
-        ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-      END
-      MATH phraseTemp = M3 * 100
-      MATH phraseTemp = phraseTemp + M4
-      ASS JM2 = phraseTemp
-      BLOCK
-      EXIT
-    END
-  END
+  elseif sysexData[1] = 0x4A
+    arpMute = sysexData[2]
+    Exit
 
-  IF M2 == 48
-    ASS arpMute = M3
-    BLOCK
-    EXIT
-  END
+  elseif sysexData[1] = 0x4C
+    // infiniteGate used for two main uses cases:
+    // 1. prevent MIDI note-offs from restricting the highest possible tempo for synths that can be interrupted by note-offs
+    // 2. ensure that whenever arp or phrase with latch is converted to just latch, note-offs do not interrupt full note transition
+    infiniteGate = sysexData[2]
+    Exit
 
-  # reset channel when init sysex received
-  IF M2 == 1C 00
-    # (re)set sysex variables
-    # NOTE could move this also into the init load for completeness (or remove local from init load?)
+  // reset channel when init sysex received
+  elseif sysexData[1] = 0x1C and sysexData[2] = 0x00
 
-    ASS numPressed = 0
-    ASS arpPhraseToggle = 0
-    ASS arpPhraseOnOffToggle = 0
-    ASS tempoPulse = 24
-    ASS gate = 0
-    ASS velocity = 64
-    ASS arpValueModeMod = 0
-    ASS phraseVal = 0
-    ASS phraseLengthPlusOffset = 2A
-    ASS gateOpened = 0
-    ASS arpMute = 0
-    ASS J20 = 00 00 00 00 00 00 00 00 00 00 # arp values (J10 J11 J12 J13 J14 J15 J16 J17 J18 J19)
-    ASS J2A = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 # phrase sequence (J2A J2B J2C J2D J2E J2F J30 J31 J32 J33 J34 J35 J36 J37 J38 J39 ETC.)
+    clockNum = 0
 
-    # reset necessary local variables
-    ASS clockNum = 0
-    ASS isOctave = 0
-    ASS maxValClockNum = maxValClockNumNorm
+    arpMode = 0
+    modFactor = 1
 
-    BLOCK
-    EXIT
-  END
-END
+    // (re)set sysex variables
+    // NOTE could move this also into the init load for completeness (or remove local from init load?)
 
-# end sysex reception
+    numPressed = 0
+    arpPhraseToggle = 0
+    arpPhraseOnOffToggle = 0
+    tempoPulse = 36 // 0x24
+    infiniteGate = 0
+    gate = 0
+    velocity = 100 // 0x64
+    arpValueModeMod = 0
+    phraseVal = 0
+    phraseLength = 0
+    gateOpened = 0
+    arpMute = 0
+    for i = 0 to 9
+      arpValues[i] = 0
+    endfor
+    for i = 0 to 31
+      phraseOffsetValues[i] = 0
+    endfor
 
-# if message is clock
-# NOTE could likely change order of conditionals here - might be more efficient
-IF M0 == F8
-  # if gate is open (numPressed is greater than zero)
-  IF numPressed > 0
-    # if arpPhraseOnOffToggle is on
-    IF arpPhraseOnOffToggle == 1
-      # process midi clock
-      # maxVal = (floor of (ffff / lcm of all possible tempoPulse)) * lcm of all possible tempoPulse
-      IF clockNum == maxValClockNum
-        ASS clockNum = 0
-      END
-      IF gateOpened == 1
-        ASS arpMute = 0
-      END
-      MATH clockNumMod = clockNum % tempoPulse
-      # if clockNum modulo the number set from above is zero, allow clock
-      IF clockNumMod == 0
-        # if isArp
-        IF arpPhraseToggle == 0
-          IF arpMute == 0
-            # if value mode is 0 (asc 1)
-            IF arpValueModeMod == 0
-              # if gateOpened, or if first instance of clock since first key was pressed
-              IF gateOpened == 1
-                MATH arpIndex = numPressed + arpOffset
-                ASS gateOpened = 0
-              END
-              # arpIndex will initially be set to numPressed + 32, but after it's set to numPressed + 32 - 1, it will be automatically decreased each run through
-              # this decrease stops once we go under 32 - at that point it's reset
-              MATH arpIndex = arpIndex - 1
-              IF arpIndex == 1F
-                MATH arpIndex = numPressed + arpOffset
-                # NOTE need to subtract one here because subtraction always needs to occur after reset
-                MATH arpIndex = arpIndex - 1
-              END
-              SEND channelNoteOn JI6 velocity
-              SEND channelNoteOff JI6 velocity +DJ4
-            END
-            # if value mode is 1 (asc 2)
-            IF arpValueModeMod == 1
-              # if gateOpened, or if first instance of clock since first key was pressed
-              IF gateOpened == 1
-                MATH arpIndex = numPressed + arpOffset
-                ASS isOctave = 0
-                ASS gateOpened = 0
-              END
-              # if not isOctave, business as usual
-              IF isOctave == 0
-                MATH arpIndex = arpIndex - 1
-                IF arpIndex == 1F
-                  MATH arpIndex = numPressed + arpOffset
-                  # NOTE need to subtract one here because subtraction always needs to occur after reset
-                  MATH arpIndex = arpIndex - 1
-                END
-                SEND channelNoteOn JI6 velocity
-                SEND channelNoteOff JI6 velocity +DJ4
-                ASS isOctave = 1
-              # if isOctave, add 12 semitones and send that instead
-              ELSE
-                MATH arpOctaveValue = JI6 + $12 # NOTE see if this should be -12 or +12
-                SEND channelNoteOn arpOctaveValue velocity
-                SEND channelNoteOff arpOctaveValue velocity +DJ4
-                ASS isOctave = 0
-              END
-            END
-            # if value mode is 2 (asc 3)
-            IF arpValueModeMod == 2
-              # if gateOpened, or if first instance of clock since first key was pressed
-              IF gateOpened == 1
-                MATH arpIndex = numPressed + arpOffset
-                ASS isOctave = 0
-                ASS gateOpened = 0
-              END
-              MATH isOctaveMod = isOctave % 3
-              # if isOctaveMod is 0, business as usual
-              IF isOctaveMod == 0
-                MATH arpIndex = arpIndex - 1
-                IF arpIndex == 1F
-                  MATH arpIndex = numPressed + arpOffset
-                  # NOTE need to subtract one here because subtraction always needs to occur after reset
-                  MATH arpIndex = arpIndex - 1
-                END
-                SEND channelNoteOn JI6 velocity
-                SEND channelNoteOff JI6 velocity +DJ4
-                MATH isOctave = isOctave + 1
-              END
-              # if isOctaveMod is 1, add 12 semitones and send that instead
-              IF isOctaveMod == 1
-                MATH arpOctaveValue = JI6 + $12 # NOTE see if this should be -12 or +12
-                SEND channelNoteOn arpOctaveValue velocity
-                SEND channelNoteOff arpOctaveValue velocity +DJ4
-                MATH isOctave = isOctave + 1
-              END
-              # if isOctaveMod is 2, add 24 semitones and send that instead
-              IF isOctaveMod == 2
-                MATH arpOctaveValue = JI6 + $24 # NOTE see if this should be -12 or +12
-                SEND channelNoteOn arpOctaveValue velocity
-                SEND channelNoteOff arpOctaveValue velocity +DJ4
-                MATH isOctave = isOctave + 1
-              END
-            END
-            # if value mode is 3 (desc 1)
-            IF arpValueModeMod == 3
-              # if gateOpened, or if first instance of clock since first key was pressed
-              IF gateOpened == 1
-                ASS arpIndex = 1F
-                ASS gateOpened = 0
-              END
-              # arpIndex will initially be set to 31, but after it's set to 32, it will be automatically increased each run through
-              # this increase stops once we go over numPressed - at that point it's reset
-              MATH arpIndex = arpIndex + 1
-              MATH numPressedOffset = numPressed + arpOffset
-              IF arpIndex >= numPressedOffset
-                ASS arpIndex = 1F
-                # NOTE need to add one here because subtraction always needs to occur after reset
-                MATH arpIndex = arpIndex + 1
-              END
-              SEND channelNoteOn JI6 velocity
-              SEND channelNoteOff JI6 velocity +DJ4
-            END
-            # if value mode is 4 (desc 2)
-            IF arpValueModeMod == 4
-              # if gateOpened, or if first instance of clock since first key was pressed
-              IF gateOpened == 1
-                ASS arpIndex = 1F
-                ASS isOctave = 0
-                ASS gateOpened = 0
-              END
-              # if not isOctave, business as usual
-              IF isOctave == 0
-                MATH arpIndex = arpIndex + 1
-                MATH numPressedOffset = numPressed + arpOffset
-                IF arpIndex >= numPressedOffset
-                  ASS arpIndex = 1F
-                  # NOTE need to add one here because subtraction always needs to occur after reset
-                  MATH arpIndex = arpIndex + 1
-                END
-                SEND channelNoteOn JI6 velocity
-                SEND channelNoteOff JI6 velocity +DJ4
-                ASS isOctave = 1
-              # if isOctave, add 12 semitones and send that instead
-              ELSE
-                MATH arpOctaveValue = JI6 + $12 # NOTE see if this should be -12 or +12
-                SEND channelNoteOn arpOctaveValue velocity
-                SEND channelNoteOff arpOctaveValue velocity +DJ4
-                ASS isOctave = 0
-              END
-            END
-            # if value mode is 5 (desc 3)
-            IF arpValueModeMod == 5
-              # if gateOpened, or if first instance of clock since first key was pressed
-              IF gateOpened == 1
-                ASS arpIndex = 1F
-                ASS isOctave = 0
-                ASS gateOpened = 0
-              END
-              MATH isOctaveMod = isOctave % 3
-              # if isOctaveMod is 0, business as usual
-              IF isOctaveMod == 0
-                MATH arpIndex = arpIndex + 1
-                MATH numPressedOffset = numPressed + arpOffset
-                IF arpIndex >= numPressedOffset
-                  ASS arpIndex = 1F
-                  # NOTE need to add one here because subtraction always needs to occur after reset
-                  MATH arpIndex = arpIndex + 1
-                END
-                SEND channelNoteOn JI6 velocity
-                SEND channelNoteOff JI6 velocity +DJ4
-                ASS isOctave = 1
-              END
-              # if isOctaveMod is 1, add 12 semitones and send that instead
-              IF isOctaveMod == 1
-                MATH arpOctaveValue = JI6 + $12 # NOTE see if this should be -12 or +12
-                SEND channelNoteOn arpOctaveValue velocity
-                SEND channelNoteOff arpOctaveValue velocity +DJ4
-                MATH isOctave = isOctave + 1
-              END
-              # if isOctaveMod is 2, add 24 semitones and send that instead
-              IF isOctaveMod == 2
-                MATH arpOctaveValue = JI6 + $24 # NOTE see if this should be -12 or +12
-                SEND channelNoteOn arpOctaveValue velocity
-                SEND channelNoteOff arpOctaveValue velocity +DJ4
-                MATH isOctave = isOctave + 1
-              END
-              # NOTE could use if else here, have chosen not to because I think this is more readable
-              # NOTE also might be able to multiply isOctaveMod by 12, add, and always send arpOctaveValue
-              # NOTE could make this a subroutine
-            END
-            # if value mode is 6 (rand 1)
-            IF arpValueModeMod == 6
-              # if gateOpened, or if first instance of clock since first key was pressed
-              IF gateOpened == 1
-                ASS gateOpened = 0
-              END
-              MATH arpIndex = RFF % numPressed
-              MATH arpIndex = arpIndex + arpOffset
-              SEND channelNoteOn JI6 velocity
-              SEND channelNoteOff JI6 velocity +DJ4
-            END
-            # if value mode is 7 (rand 2)
-            IF arpValueModeMod == 7
-              # if gateOpened, or if first instance of clock since first key was pressed
-              IF gateOpened == 1
-                ASS gateOpened = 0
-              END
-              # NOTE this is completely random - thus ignoring the note played before it - the octave will not necessarily match up with previous note
-              MATH arpIndex = RFF % numPressed
-              MATH isOctaveMod = RFF % 2
-              MATH arpIndex = arpIndex + arpOffset
-              # if not isOctaveMod, business as usual
-              IF isOctaveMod == 0
-                SEND channelNoteOn JI6 velocity
-                SEND channelNoteOff JI6 velocity +DJ4
-              # if isOctaveMod, add 12 semitones and send that instead
-              ELSE
-                MATH arpOctaveValue = JI6 + $12 # NOTE see if this should be -12 or +12
-                SEND channelNoteOn arpOctaveValue velocity
-                SEND channelNoteOff arpOctaveValue velocity +DJ4
-              END
-            END
-            # if value mode is 8 (rand 3)
-            IF arpValueModeMod == 8
-              # if gateOpened, or if first instance of clock since first key was pressed
-              IF gateOpened == 1
-                ASS gateOpened = 0
-              END
-              MATH arpIndex = RFF % numPressed
-              MATH isOctaveMod = RFF % 3
-              MATH arpIndex = arpIndex + arpOffset
-              # if isOctaveMod is 0, business as usual
-              IF isOctaveMod == 0
-                SEND channelNoteOn JI6 velocity
-                SEND channelNoteOff JI6 velocity +DJ4
-              END
-              # if isOctaveMod is 1, add 12 semitones and send that instead
-              IF isOctaveMod == 1
-                MATH arpOctaveValue = JI6 + $12 # NOTE see if this should be -12 or +12
-                SEND channelNoteOn arpOctaveValue velocity
-                SEND channelNoteOff arpOctaveValue velocity +DJ4
-              END
-              # if isOctaveMod is 2, add 24 semitones and send that instead
-              IF isOctaveMod == 2
-                MATH arpOctaveValue = JI6 + $24 # NOTE see if this should be -12 or +12
-                SEND channelNoteOn arpOctaveValue velocity
-                SEND channelNoteOff arpOctaveValue velocity +DJ4
-              END
-            END
-            # NOTE this currently appears the same as the general asc - this is because the way they are sorted will be the same
-            # if value mode is 9 (order 1)
-            IF arpValueModeMod == 9
-              IF gateOpened == 1
-                MATH arpIndex = numPressed + arpOffset
-                ASS gateOpened = 0
-              END
-              # arpIndex will initially be set to numPressed + 32, but after it's set to numPressed + 32 - 1, it will be automatically decreased each run through
-              # this decrease stops once we go under 32 - at that point it's reset
-              MATH arpIndex = arpIndex - 1
-              IF arpIndex == 1F
-                MATH arpIndex = numPressed + arpOffset
-                # NOTE need to subtract one here because subtraction always needs to occur after reset
-                MATH arpIndex = arpIndex - 1
-              END
-              SEND channelNoteOn JI6 velocity
-              SEND channelNoteOff JI6 velocity +DJ4
-            END
-            # if value mode is 10 (order 2)
-            IF arpValueModeMod == A
-              # if gateOpened, or if first instance of clock since first key was pressed
-              IF gateOpened == 1
-                MATH arpIndex = numPressed + arpOffset
-                ASS isOctave = 0
-                ASS gateOpened = 0
-              END
-              # if not isOctave, business as usual
-              IF isOctave == 0
-                MATH arpIndex = arpIndex - 1
-                IF arpIndex == 1F
-                  MATH arpIndex = numPressed + arpOffset
-                  # NOTE need to subtract one here because subtraction always needs to occur after reset
-                  MATH arpIndex = arpIndex - 1
-                END
-                SEND channelNoteOn JI6 velocity
-                SEND channelNoteOff JI6 velocity +DJ4
-                ASS isOctave = 1
-              # if isOctave, add 12 semitones and send that instead
-              ELSE
-                MATH arpOctaveValue = JI6 + $12 # NOTE see if this should be -12 or +12
-                SEND channelNoteOn arpOctaveValue velocity
-                SEND channelNoteOff arpOctaveValue velocity +DJ4
-                ASS isOctave = 0
-              END
-            END
-            # if value mode is 11 (order 3)
-            IF arpValueModeMod == B
-              # if gateOpened, or if first instance of clock since first key was pressed
-              IF gateOpened == 1
-                MATH arpIndex = numPressed + arpOffset
-                ASS isOctave = 0
-                ASS gateOpened = 0
-              END
-              MATH isOctaveMod = isOctave % 3
-              # if isOctaveMod is 0, business as usual
-              IF isOctaveMod == 0
-                MATH arpIndex = arpIndex - 1
-                IF arpIndex == 1F
-                  MATH arpIndex = numPressed + arpOffset
-                  # NOTE need to subtract one here because subtraction always needs to occur after reset
-                  MATH arpIndex = arpIndex - 1
-                END
-                SEND channelNoteOn JI6 velocity
-                SEND channelNoteOff JI6 velocity +DJ4
-                MATH isOctave = isOctave + 1
-              END
-              # if isOctaveMod is 1, add 12 semitones and send that instead
-              IF isOctaveMod == 1
-                MATH arpOctaveValue = JI6 + $12 # NOTE see if this should be -12 or +12
-                SEND channelNoteOn arpOctaveValue velocity
-                SEND channelNoteOff arpOctaveValue velocity +DJ4
-                MATH isOctave = isOctave + 1
-              END
-              # if isOctaveMod is 2, add 24 semitones and send that instead
-              IF isOctaveMod == 2
-                MATH arpOctaveValue = JI6 + $24 # NOTE see if this should be -12 or +12
-                SEND channelNoteOn arpOctaveValue velocity
-                SEND channelNoteOff arpOctaveValue velocity +DJ4
-                MATH isOctave = isOctave + 1
-              END
-            END
-          END
-        # else isPhrase
-        # because we need the phrase to be relative, we'll need the global array to contain offset, not note value
-        # offset will be used in conjunction with note in, also stored in the global array
-        # additionally, -1 implies a rest, so nothing will be played
-        ELSE
-          # if gateOpened, or if first instance of clock since first key was pressed
-          IF gateOpened == 1
-            ASS phraseIndex = 2A
-            ASS gateOpened = 0
-          END
-          # if phrase offset is not a rest
-          IF JIB != 2E57
-            MATH phraseValSend = phraseVal + JIB
-            SEND channelNoteOn phraseValSend velocity
-            SEND channelNoteOff phraseValSend velocity +DJ4
-          END
-          IF phraseIndex != phraseLengthPlusOffset
-            MATH phraseIndex = phraseIndex + 1
-          ELSE
-            ASS phraseIndex = 2A
-          END
-        END
-        F8 = XX +B
-      ELSE
-        XX = XX +B
-      END
-      MATH clockNum = clockNum + 1
-    ELSE
-      XX = XX +B
-    END
-  ELSE
-    XX = XX +B
-  END
-ELSE
-  XX = XX +B
-END
+    // reset necessary local variables
+    clockNum = 102500
+
+  endif
+
+@End
+
+// end sysex reception
+
+@HandleClockRandom
+  octaveOffset = random 0, modFactor - 1
+  arpIndex = random 0, numPressed - 1
+  arpValSend = arpValues[arpIndex] + octaveOffset * 12
+  SendMIDINoteOn channel, arpValSend, velocity
+  if infiniteGate = 0
+    SendMIDINoteOff channel, arpValSend, velocity, gate
+  endif
+@End
+
+@HandleClockPattern
+  arpValSend = arpValues[arpIndex] + octaveOffset * 12 * -1 * iterConstant
+  SendMIDINoteOn channel, arpValSend, velocity
+  if infiniteGate = 0
+    SendMIDINoteOff channel, arpValSend, velocity, gate
+  endif
+  if arpIndex = endIndex
+    arpIndex = initIndex
+    octaveOffset = (octaveOffset + 1) % modFactor
+  else
+    arpIndex = arpIndex + iterConstant
+  endif
+@End
+
+// uncomment to change to old sequence for clock patterns
+//@HandleClockPattern
+//  octaveOffset = (octaveOffset + 1) % modFactor
+//  arpValSend = arpValues[arpIndex] + octaveOffset * 12
+//  SendMIDINoteOn channel, arpValSend, velocity
+//  if infiniteGate = 0
+//    SendMIDINoteOff channel, arpValSend, velocity, gate
+//  endif
+//  if octaveOffset = modFactor - 1 // NOTE a couple of ways to do this
+//    if arpIndex = endIndex
+//      arpIndex = initIndex
+//    else
+//      arpIndex = arpIndex + iterConstant
+//    endif
+//  endif
+//@End
+
+@OnMIDIInput
+  if arpPhraseOnOffToggle = 1 and numPressed > 0 and MIDIByte1 = 0xF8
+    if gateOpened = 1
+      arpMute = 0
+    endif
+
+    if clockNum % tempoPulse = 0 // note sent - allow clock
+      // if isArp
+      if arpPhraseToggle = 0 and arpMute = 0
+
+        // if gateOpened, or if first instance of clock since first key was pressed
+        if gateOpened = 1 // NOTE could make handler out of the following, since used twice
+          if arpMode = 0 or arpMode = 3 // asc, order
+            initIndex = numPressed - 1 
+            endIndex = 0
+            iterConstant = -1
+            arpIndex = initIndex
+            octaveOffset = 0
+          elseif arpMode = 1 // desc
+            initIndex = 0
+            endIndex = numPressed - 1
+            iterConstant = 1
+            arpIndex = initIndex
+            octaveOffset = 0
+          endif
+          gateOpened = 0
+        endif
+
+        if arpMode = 2 // rand
+          Call @HandleClockRandom
+        else
+          Call @HandleClockPattern
+        endif
+
+      // else isPhrase
+      // because we need the phrase to be relative, we'll need the global array to contain offset, not note value
+      elseif arpPhraseToggle = 1 and arpMute = 0
+        // if gateOpened, or if first instance of clock since first key was pressed
+        if gateOpened = 1
+          phraseIndex = 0
+          gateOpened = 0
+        endif
+        // if phrase offset is not a rest
+        if phraseOffsetValues[phraseIndex] <> 128
+          phraseValSend = phraseVal + phraseOffsetValues[phraseIndex]
+          SendMIDINoteOn channel, phraseValSend, velocity
+          if infiniteGate = 0
+            SendMIDINoteOff channel, phraseValSend, velocity, gate
+          endif
+        endif
+        if phraseIndex <> phraseLength // NOTE this is really phraseLength - 1
+          phraseIndex = phraseIndex + 1
+        else
+          phraseIndex = 0
+        endif
+      endif
+    endif
+    clockNum = clockNum + 1
+  endif
+
+@End

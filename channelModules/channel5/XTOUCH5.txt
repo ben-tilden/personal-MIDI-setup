@@ -1,5009 +1,1488 @@
-# xtouch mini
-
-# this file builds out the arpeggiator / drum roll for each channel
-# because tempo will be determined by ableton link midi clock, the first knob will determine which clock messages are heeded and which are ignored
-# link runs clock at 24 ppqn, or 24 pulses per quarter note / beat
-# there are multiple tempos, determined by knob 1 on the xtouch:
-#
-# 0. full range - this is as many tempos as we can fit
-# 8/1 - 48
-# 6/1 - 36
-# 4/1 - 24
-# 3/1 - 18
-# 2/1 - 12
-# 3/2 - 9
-# 1/1 - 6
-# 2/3 - 4
-# 1/2 - 3
-# 1/3 - 2
-# 1/6 - 1
-#
-# 1. beatmaker - based on the default tempos of the drum roll in beatmaker pro - slightly fewer options than full range
-# 4/1 - 24
-# 2/1 - 12
-# 3/2 - 9
-# 1/1 - 6
-# 2/3 - 4
-# 1/2 - 3
-#
-# 2. factor of two - any tempo that is a factor of 2 of a 4/4 beat
-# 16/1 - 96
-# 8/1 - 48
-# 4/1 - 24
-# 2/1 - 12
-# 1/1 - 6
-# 1/2 - 3
-#
-# 3. factor of three - any tempo that is a factor of 3 of a 4/4 beat
-# 12/1 - 72
-# 6/1 - 36
-# 3/1 - 18
-# 3/2 - 9
-# 2/3 - 4
-# 1/3 - 2
-#
-# For the first, we have 11 modes, which translates to around 11.5 per
-# 12 11 11 12 12 12 12 12 11 11 12
-# For the second, we have 6 modes, which translates to around 21 per
-# 22 21 21 21 21 22
-# button 1 will decrease arp type / turn on set phrase mode
-# button 9 will increase arp type / add rest as part of phrase
-# button 2 will toggle arp / phrase
-# button 10 will turn arp / phrase on or off
-
-# NOTE compatible and incompatible functionality
-# groupPushKnob and pushKnob:
-  # with groupPushKnob on, pushKnob will not do anything
-  # with pushKnob on, groupPushKnob will prevent knob release from doing anything
-# groupPushKnob / pushKnob and drumParams
-  # with either on (knob # 6, 7, and 8 for pushKnob), drumParams will not be able to be changed
-# groupPushKnob / pushKnob and lfoNum
-  # with either on (knob # 4 for pushKnob), lfoNum will not be able to be changed
-
-IF LOAD
-
-  # global
-
-  ALIAS G1 padMode
-
-  # constant
-
-  # channel specific
-
-  ALIAS 04 channelVal
-  ALIAS 0A knob6Val
-  ALIAS 34 knob7Val
-  ALIAS 33 knob8Val
-  ALIAS FFFF knob9Val # drumParams
-  ALIAS FFFF knob10Val # drumParams
-  ALIAS FFFF knob11Val # drumParams
-  ALIAS 67 knob12Val
-  ALIAS 31 knob13Val
-  ALIAS 32 knob14Val
-  ALIAS FFFF knob15Val # unspecified
-  ALIAS FFFF knob16Val # unspecified
-
-  # local
-
-  ALIAS I0 channelCC
-  ALIAS I1 channelNoteOn
-  ALIAS I2 channelNoteOff
-  ALIAS I3 tempoMode
-  ALIAS I4 tempoModeMod # NOTE this was later changed to a sysex variable, not updating at the current time
-  ALIAS I5 arpValueMode
-  # TODO
-  ALIAS I7 gateMode
-  ALIAS I8 gateModeMod
-  ALIAS I9 gateFactor
-  ALIAS IA gateTemp
-  ALIAS IB setLfo
-  ALIAS IC lfoNum
-  ALIAS ID programChange
-  ALIAS IE resetIndex
-  ALIAS IF resetIndexTemp
-  ALIAS I10 knob1Push
-  ALIAS I11 knob1Turn
-  ALIAS I12 knob2Push
-  ALIAS I13 knob2Turn
-  ALIAS I14 knob3Push
-  ALIAS I15 knob3Turn
-  ALIAS I16 knob4Push
-  ALIAS I17 knob4Turn
-  ALIAS I18 knob5Push
-  ALIAS I19 knob5Turn
-  ALIAS I1A knob6Push
-  ALIAS I1B knob6Turn
-  ALIAS I1C knob7Push
-  ALIAS I1D knob7Turn
-  ALIAS I1E knob8Push
-  ALIAS I1F knob8Turn
-  ALIAS I20 knob9Push
-  ALIAS I21 knob9Turn
-  ALIAS I22 knob10Push
-  ALIAS I23 knob10Turn
-  ALIAS I24 knob11Push
-  ALIAS I25 knob11Turn
-  ALIAS I26 knob12Push
-  ALIAS I27 knob12Turn
-  ALIAS I28 knob13Push
-  ALIAS I29 knob13Turn
-  ALIAS I2A knob14Push
-  ALIAS I2B knob14Turn
-  ALIAS I2C knob15Push
-  ALIAS I2D knob15Turn
-  ALIAS I2E knob16Push
-  ALIAS I2F knob16Turn
-  ALIAS I30 knobTemp
-  ALIAS I31 groupKnobPush
-  ALIAS I32 lfoTemp # TODO
-  ALIAS I33 lfo1PushPass
-  ALIAS I34 lfo2PushPass
-  ALIAS I35 lfo3PushPass
-  ALIAS I36 lfo4PushPass
-  ALIAS I37 knob6CurrentVal
-  ALIAS I38 knob7CurrentVal
-  ALIAS I39 knob8CurrentVal
-  # channel specific - not necessary here due to drumParams setup
-  # ALIAS I3A knob9CurrentVal
-  # ALIAS I3B knob10CurrentVal
-  # ALIAS I3C knob11CurrentVal
-  ALIAS I3D knob12CurrentVal
-  ALIAS I3E knob13CurrentVal
-  ALIAS I3F knob14CurrentVal
-  ALIAS I40 knob15CurrentVal
-  ALIAS I41 knob16CurrentVal
-
-  # sysex
-
-  ALIAS J1 arpPhraseToggle
-  ALIAS J2 arpPhraseOnOffToggle
-  ALIAS J3 tempoPulse
-  ALIAS J4 gate
-  ALIAS J5 velocity
-  ALIAS J6 arpValueModeMod
-  ALIAS J7 setPhrase
-  ALIAS JB latch
-  # TODO
-  ALIAS JD lfoNumMod
-  ALIAS JE trackingMode # channel specific
-  # TODO
-  ALIAS J10 lfoTypeMod
-  ALIAS J15 arpModeSwitched # NOTE gateOpened
-  ALIAS J20 lfo1Type
-  ALIAS J21 lfo1Rate
-  ALIAS J22 lfo1Depth
-  ALIAS J23 lfo2Type
-  ALIAS J24 lfo2Rate
-  ALIAS J25 lfo2Depth
-  ALIAS J26 lfo3Type
-  ALIAS J27 lfo3Rate
-  ALIAS J28 lfo3Depth
-  ALIAS J29 lfo4Type
-  ALIAS J2A lfo4Rate
-  ALIAS J2B lfo4Depth
-  ALIAS J2C lfo1OnOffToggle
-  ALIAS J2D lfo2OnOffToggle
-  ALIAS J2E lfo3OnOffToggle
-  ALIAS J2F lfo4OnOffToggle
-  ALIAS J30 lfoMuteAll
-  ALIAS J31 lfo1Sync
-  ALIAS J32 lfo2Sync
-  ALIAS J33 lfo3Sync
-  ALIAS J34 lfo4Sync
-  ALIAS J35 lfo1Base
-  ALIAS J36 lfo2Base
-  ALIAS J37 lfo3Base
-  ALIAS J38 lfo4Base
-  ALIAS J39 lfo1Invert
-  ALIAS J3A lfo2Invert
-  ALIAS J3B lfo3Invert
-  ALIAS J3C lfo4Invert
-  ALIAS J3D lfo1Knob # NOTE used as index (also NOTE this is not listed for all indices)
-  ALIAS J3E lfo2Knob # NOTE used as index
-  ALIAS J3F lfo3Knob # NOTE used as index
-  ALIAS J40 lfo4Knob # NOTE used as index
-
-  # channel specific
-
-  ALIAS K0 select1
-  ALIAS K1 select2
-  ALIAS K2 selectBoth
-  ALIAS K3 level1
-  ALIAS K4 level2
-  ALIAS K5 levelBoth
-  ALIAS K6 attack1
-  ALIAS K7 attack2
-  ALIAS K8 attackBoth
-  ALIAS K9 release1
-  ALIAS KA release2
-  ALIAS KB releaseBoth
-  ALIAS KC pitch1
-  ALIAS KD pitch2
-  ALIAS KE pitchBoth
-  ALIAS KF modAmount1
-  ALIAS K10 modAmount2
-  ALIAS K11 modAmountBoth
-  ALIAS K12 modRate1
-  ALIAS K13 modRate2
-  ALIAS K14 modRateBoth
-  ALIAS K15 waveguideDecay
-  ALIAS K16 waveguideBody
-  ALIAS K17 waveguideTune
-  ALIAS K18 pitchQuantize
-  ALIAS K19 waveguideToggle
-  ALIAS K1A drumParams # includes all drumParams, so K1B and K1C as well
-  ALIAS K1D previousDrumVal
-  ALIAS K1E previousTrackingMode
-
-  # assign local
-
-  # these are only defined here, since they are essentially constants - will not change past this
-  MATH channelCC = B0 + channelVal
-  MATH channelNoteOn = 90 + channelVal
-  MATH channelNoteOff = 80 + channelVal
-
-  # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
-  ASS tempoMode = 0
-  # NOTE needs to be done in case reset occurs when on other tempoMode, since this isn't reset by sysex
-  ASS tempoModeMod = 0
-  # NOTE if this isn't reset on each 'install', then it's technically possible it could decrease/increase to the value min/max
-  ASS arpValueMode = 8004
-  # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
-  ASS gateMode = 0
-  # NOTE needs to be done in case reset occurs when on other gateMode, since this isn't reset by sysex
-  ASS gateModeMod = 0
-  # NOTE if these aren't reset on each 'install', then it's technically possible they could increase to the value max
-  ASS lfo1Type = 0
-  ASS lfo2Type = 0
-  ASS lfo3Type = 0
-  ASS lfo4Type = 0
-  # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
-  ASS lfoNum = 0
-
-  # NOTE this is set to 'select' on initial load
-  ASS gateFactor = 1
-  ASS programChange = 0
-
-  # TODO while loop
-  ASS knob1Push = 0
-  ASS knob1Turn = 0
-  ASS knob2Push = 0
-  ASS knob2Turn = 0
-  ASS knob3Push = 0
-  ASS knob3Turn = 0
-  ASS knob4Push = 0
-  ASS knob4Turn = 0
-  ASS knob5Push = 0
-  ASS knob5Turn = 0
-  ASS knob6Push = 0
-  ASS knob6Turn = 0
-  ASS knob7Push = 0
-  ASS knob7Turn = 0
-  ASS knob8Push = 0
-  ASS knob8Turn = 0
-  ASS knob9Push = 0
-  ASS knob9Turn = 0
-  ASS knob10Push = 0
-  ASS knob10Turn = 0
-  ASS knob11Push = 0
-  ASS knob11Turn = 0
-  ASS knob12Push = 0
-  ASS knob12Turn = 0
-  ASS knob13Push = 0
-  ASS knob13Turn = 0
-  ASS knob14Push = 0
-  ASS knob14Turn = 0
-  ASS knob15Push = 0
-  ASS knob15Turn = 0
-  ASS knob16Push = 0
-  ASS knob16Turn = 0
-  ASS groupKnobPush = 0
-  ASS lfo1PushPass = FFFF
-  ASS lfo2PushPass = FFFF
-  ASS lfo3PushPass = FFFF
-  ASS lfo4PushPass = FFFF
-
-  ASS knob6CurrentVal = 40 # channel specific
-  ASS knob7CurrentVal = 0
-  ASS knob8CurrentVal = 0
-  # channel specific - not necessary here due to drumParams setup
-  # ASS knob9CurrentVal = 0
-  # ASS knob10CurrentVal = 0
-  # ASS knob11CurrentVal = 0
-  ASS knob12CurrentVal = 0
-  ASS knob13CurrentVal = 0
-  ASS knob14CurrentVal = 0
-  ASS knob15CurrentVal = 0
-  ASS knob16CurrentVal = 0
-
-  # NOTE L array is used for lighting storage for push control - these are init values
-  # channel specific
-  ASS L0 = 0E 00 64 00 00 40 00 00
-  ASS L18 = 00 00 00 00 00 00 00 00
-
-  # assign channel specific
-
-  ASS K0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0E 0F 10 00 05
-
-END
-
-# sysex reception
-
-# clock message triggered by host clock starting
-# NOTE only needs to be blocked in files where arpPhraseToggle is processed, since sb automatically blocks passage
-IF M0 == F0 7D 01
-  BLOCK
-  EXIT
-END
-
-IF M0 == F0
-
-  IF M2 == 07
-    ASS setPhrase = M3
-    # Turn off setPhrase light when sysex received
-    IF setPhrase == 0
-      SEND F0 0F EE 90 00 00 F7 +F
-    END
-    BLOCK
-    EXIT
-  END
-
-  IF M2 == 15
-    ASS arpModeSwitched = M3
-    BLOCK
-    EXIT
-  END
-
-  # Turn off lights when init sysex received
-  IF M2 == 1B 00
-
-    # reset lfo
-    SEND F0 01 1D 00 F7 +F
-
-    # reset lights for mode 'B'
-    SEND C0 01
-
-    ASS resetIndex = 0
-    # loop until this is done for all sixteen buttons
-    WHILE resetIndex < 10
-      MATH resetIndexTemp = resetIndex + B
-      # these should only go up to eight
-      IF resetIndex < 8
-        # reset lighting on knobs
-        SEND F0 0F EE BA resetIndexTemp 00 F7 +F
-      END
-      # reset button lighting
-      SEND F0 0F EE 90 resetIndex 00 F7 +F
-      MATH resetIndex = resetIndex + 1
-    END
-
-    # send init drum lighting
-    SEND F0 0F EE 90 00 01 F7 +F
-
-    # send init trackingMode lighting
-    SEND F0 0F EE 90 05 01 F7 +F
-
-    SEND C0 00
-
-    ASS resetIndex = 0
-    # loop until this is done for all sixteen buttons
-    WHILE resetIndex < 10
-      MATH resetIndexTemp = resetIndex + 1
-      # these should only go up to eight
-      IF resetIndex < 8
-        # reset lighting on knobs
-        SEND F0 0F EE BA resetIndexTemp 00 F7 +F
-        # set lighting to 'pan'
-        SEND F0 0F EE B0 resetIndexTemp 02 F7 +F
-      END
-      # reset button lighting
-      SEND F0 0F EE 90 resetIndex 00 F7 +F
-      MATH resetIndex = resetIndex + 1
-    END
-
-    # (re)set sysex variables
-    # NOTE could move this also into the init load for completeness (or remove local from init load?)
-
-    ASS arpPhraseToggle = 0
-    ASS arpPhraseOnOffToggle = 0
-    ASS tempoPulse = 24
-    ASS gate = 0
-    ASS velocity = 64
-    ASS arpValueModeMod = 0
-    ASS setPhrase = 0
-    ASS latch = 0
-    ASS lfoNumMod = 0
-    ASS trackingMode = 0 # channel specific
-    ASS lfoTypeMod = 0
-    ASS arpModeSwitched = 0
-    ASS lfo1Rate = 0
-    ASS lfo1Depth = 0
-    ASS lfo2Rate = 0
-    ASS lfo2Depth = 0
-    ASS lfo3Rate = 0
-    ASS lfo3Depth = 0
-    ASS lfo4Rate = 0
-    ASS lfo4Depth = 0
-    ASS lfo1OnOffToggle = 0
-    ASS lfo2OnOffToggle = 0
-    ASS lfo3OnOffToggle = 0
-    ASS lfo4OnOffToggle = 0
-    ASS lfoMuteAll = 0
-    ASS lfo1Sync = 0
-    ASS lfo2Sync = 0
-    ASS lfo3Sync = 0
-    ASS lfo4Sync = 0
-    ASS lfo1Base = 0
-    ASS lfo2Base = 0
-    ASS lfo3Base = 0
-    ASS lfo4Base = 0
-    ASS lfo1Invert = 0
-    ASS lfo2Invert = 0
-    ASS lfo3Invert = 0
-    ASS lfo4Invert = 0
-    ASS lfo1Knob = 26 # NOTE set not to modulate anything initially
-    ASS lfo2Knob = 26
-    ASS lfo3Knob = 26
-    ASS lfo4Knob = 26
-
-    # reset necessary local variables
-    # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
-    ASS tempoMode = 0
-    # NOTE needs to be done in case reset occurs when on other tempoMode
-    ASS tempoModeMod = 0
-    # NOTE if this isn't reset on each 'install', then it's technically possible it could decrease/increase to the value min/max
-    ASS arpValueMode = 8004
-    # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
-    ASS gateMode = 0
-    # NOTE if these aren't reset on each 'install', then it's technically possible they could increase to the value max
-    ASS lfo1Type = 0
-    ASS lfo2Type = 0
-    ASS lfo3Type = 0
-    ASS lfo4Type = 0
-    # NOTE if this isn't reset on each 'install', then it's technically possible it could increase to the value max
-    ASS lfoNum = 0
-    # NOTE this is set to 'select' on initial load
-    ASS gateFactor = 1
-    ASS programChange = 0
-
-    # TODO while loop
-    ASS knob1Push = 0
-    ASS knob1Turn = 0
-    ASS knob2Push = 0
-    ASS knob2Turn = 0
-    ASS knob3Push = 0
-    ASS knob3Turn = 0
-    ASS knob4Push = 0
-    ASS knob4Turn = 0
-    ASS knob5Push = 0
-    ASS knob5Turn = 0
-    ASS knob6Push = 0
-    ASS knob6Turn = 0
-    ASS knob7Push = 0
-    ASS knob7Turn = 0
-    ASS knob8Push = 0
-    ASS knob8Turn = 0
-    ASS knob9Push = 0
-    ASS knob9Turn = 0
-    ASS knob10Push = 0
-    ASS knob10Turn = 0
-    ASS knob11Push = 0
-    ASS knob11Turn = 0
-    ASS knob12Push = 0
-    ASS knob12Turn = 0
-    ASS knob13Push = 0
-    ASS knob13Turn = 0
-    ASS knob14Push = 0
-    ASS knob14Turn = 0
-    ASS knob15Push = 0
-    ASS knob15Turn = 0
-    ASS knob16Push = 0
-    ASS knob16Turn = 0
-    ASS groupKnobPush = 0
-    ASS lfo1PushPass = FFFF
-    ASS lfo2PushPass = FFFF
-    ASS lfo3PushPass = FFFF
-    ASS lfo4PushPass = FFFF
-
-    ASS knob6CurrentVal = 40 # channel specific
-    ASS knob7CurrentVal = 0
-    ASS knob8CurrentVal = 0
-    # channel specific - not necessary here due to drumParams setup
-    # ASS knob9CurrentVal = 0
-    # ASS knob10CurrentVal = 0
-    # ASS knob11CurrentVal = 0
-    ASS knob12CurrentVal = 0
-    ASS knob13CurrentVal = 0
-    ASS knob14CurrentVal = 0
-    ASS knob15CurrentVal = 0
-    ASS knob16CurrentVal = 0
-
-    # NOTE L array is used for lighting storage for push control - these are init values
-    # channel specific
-    ASS L0 = 0E 00 64 00 00 40 00 00
-    ASS L18 = 00 00 00 00 00 00 00 00
-
-    # reset channel specific
-
-    ASS K0 = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0E 0F 10 00 05
-
-    # send init tempo lighting
-    SEND F0 0F EE BA 01 $26 F7 +F
-    # send init velocity lighting
-    SEND F0 0F EE BA 03 $100 F7 +F
-
-    BLOCK
-    EXIT
-  END
-
-  # Send lights when channel change sysex received
-  IF M2 == 1E CC
-
-    # reset lights for mode 'B'
-    SEND C0 01
-
-    ASS resetIndex = 0
-    # need to reset lights from other channel
-    # loop until this is done for all sixteen buttons
-    WHILE resetIndex < 10
-      # reset button lighting
-      SEND F0 0F EE 90 resetIndex 00 F7 +F
-      MATH resetIndex = resetIndex + 1
-    END
-
-    # channel specific
-
-    # send trackingMode lighting
-    SEND F0 0F EE 90 previousTrackingMode 01 F7 +F
-
-    # send drum lighting
-    SEND F0 0F EE 90 previousDrumVal 01 F7 +F
-
-    IF drumParams == $14
-      SEND F0 0F EE BA 0B select1 F7 +F
-      SEND F0 0F EE BA 0C select2 F7 +F
-      SEND F0 0F EE BA 0D selectBoth F7 +F
-    END
-    IF drumParams == $17
-      SEND F0 0F EE BA 0B level1 F7 +F
-      SEND F0 0F EE BA 0C level2 F7 +F
-      SEND F0 0F EE BA 0D levelBoth F7 +F
-    END
-    IF drumParams == $20
-      SEND F0 0F EE BA 0B attack1 F7 +F
-      SEND F0 0F EE BA 0C attack2 F7 +F
-      SEND F0 0F EE BA 0D attackBoth F7 +F
-    END
-    IF drumParams == $23
-      SEND F0 0F EE BA 0B release1 F7 +F
-      SEND F0 0F EE BA 0C release2 F7 +F
-      SEND F0 0F EE BA 0D releaseBoth F7 +F
-    END
-    IF drumParams == $26
-      SEND F0 0F EE BA 0B pitch1 F7 +F
-      SEND F0 0F EE BA 0C pitch2 F7 +F
-      SEND F0 0F EE BA 0D pitchBoth F7 +F
-    END
-    IF drumParams == $29
-      SEND F0 0F EE BA 0B modAmount1 F7 +F
-      SEND F0 0F EE BA 0C modAmount2 F7 +F
-      SEND F0 0F EE BA 0D modAmountBoth F7 +F
-    END
-    IF drumParams == $46
-      SEND F0 0F EE BA 0B modRate1 F7 +F
-      SEND F0 0F EE BA 0C modRate2 F7 +F
-      SEND F0 0F EE BA 0D modRateBoth F7 +F
-    END
-    IF drumParams == $117
-      SEND F0 0F EE BA 0B waveguideDecay F7 +F
-      SEND F0 0F EE BA 0C waveguideBody F7 +F
-      SEND F0 0F EE BA 0D waveguideTune F7 +F
-    END
-
-
-    # end channel specific
-
-    # send knob12CurrentVal lighting
-    SEND F0 0F EE BA 0E knob12CurrentVal F7 +F
-
-    # send knob13CurrentVal lighting
-    SEND F0 0F EE BA 0F knob13CurrentVal F7 +F
-
-    # send knob14CurrentVal lighting
-    SEND F0 0F EE BA 10 knob14CurrentVal F7 +F
-
-    # send knob15CurrentVal lighting
-    SEND F0 0F EE BA 11 knob15CurrentVal F7 +F
-
-    # send knob16CurrentVal lighting
-    SEND F0 0F EE BA 12 knob16CurrentVal F7 +F
-
-    # change program back to 'A'
-    SEND C0 00
-
-    ASS resetIndex = 0
-    # need to reset lights from other channel
-    # loop until this is done for all sixteen buttons
-    WHILE resetIndex < 10
-      MATH resetIndexTemp = resetIndex + 1
-      # these should only go up to eight
-      IF resetIndex < 8
-        # set lighting to 'pan'
-        SEND F0 0F EE B0 resetIndexTemp 02 F7 +F
-        LOG PAN_SENT
-      END
-      # reset button lighting
-      SEND F0 0F EE 90 resetIndex 00 F7 +F
-      MATH resetIndex = resetIndex + 1
-    END
-
-    IF arpPhraseToggle == 1
-      SEND F0 0F EE 90 01 01 F7 +F
-      IF setPhrase == 1
-        SEND F0 0F EE 90 00 01 F7 +F
-      END
-    END
-    IF arpPhraseOnOffToggle == 1
-      SEND F0 0F EE 90 09 01 F7 +F
-    END
-    IF latch == 1
-      SEND F0 0F EE 90 02 01 F7 +F
-    END
-    # NOTE because setLfo is a temporary and restrictive state, it should reset on channel switching
-    IF setLfo == 1
-      ASS setLfo = 0
-    END
-    # NOTE knobPush in general is complicated - pushing knobs while switching channel will almost certainly break something (esp with setLfo on), since knobPush will not be reset on switch. Should resolve itself on the next knobPush for that number and channel, but might be confusing to see
-    # because switching channel is designed to use two hands, hoping this won't come up
-    # would be fairly simple to resolve, just possibly a little convoluted (see conditionals when groupPushKnob is turned off; these would likely just be copied and pasted here)
-    IF groupKnobPush == 1
-      SEND F0 0F EE 90 0A 01 F7 +F
-    END
-    IF padMode == 1
-      SEND F0 0F EE 90 03 01 F7 +F
-    END
-    IF lfoMuteAll == 1
-      SEND F0 0F EE 90 0C 01 F7 +F
-    END
-
-    # NOTE other lfo specific button lighting sent later, with flashing knob lighting
-
-    # NOTE can't be done via L array due to groupKnobPush being possibly on
-    # send tempo lighting
-    IF tempoModeMod == 0
-      IF tempoPulse == 48
-        SEND F0 0F EE BA 01 $0 F7 +F
-      END
-      IF tempoPulse == 36
-        SEND F0 0F EE BA 01 $13 F7 +F
-      END
-      IF tempoPulse == 24
-        SEND F0 0F EE BA 01 $26 F7 +F
-      END
-      IF tempoPulse == 18
-        SEND F0 0F EE BA 01 $39 F7 +F
-      END
-      IF tempoPulse == 12
-        SEND F0 0F EE BA 01 $52 F7 +F
-      END
-      IF tempoPulse == 9
-        SEND F0 0F EE BA 01 $65 F7 +F
-      END
-      IF tempoPulse == 6
-        SEND F0 0F EE BA 01 $78 F7 +F
-      END
-      IF tempoPulse == 4
-        SEND F0 0F EE BA 01 $91 F7 +F
-      END
-      IF tempoPulse == 3
-        SEND F0 0F EE BA 01 $104 F7 +F
-      END
-      IF tempoPulse == 2
-        SEND F0 0F EE BA 01 $117 F7 +F
-      END
-      IF tempoPulse == 1
-        SEND F0 0F EE BA 01 $127 F7 +F
-      END
-    END
-    IF tempoModeMod == 1
-      IF tempoPulse == 24
-        SEND F0 0F EE BA 01 00 F7 +F
-      END
-      IF tempoPulse == 12
-        SEND F0 0F EE BA 01 $25 F7 +F
-      END
-      IF tempoPulse == 9
-        SEND F0 0F EE BA 01 $50 F7 +F
-      END
-      IF tempoPulse == 6
-        SEND F0 0F EE BA 01 $75 F7 +F
-      END
-      IF tempoPulse == 4
-        SEND F0 0F EE BA 01 $100 F7 +F
-      END
-      IF tempoPulse == 3
-        SEND F0 0F EE BA 01 $127 F7 +F
-      END
-    END
-    IF tempoModeMod == 2
-      IF tempoPulse == 96
-        SEND F0 0F EE BA 01 00 F7 +F
-      END
-      IF tempoPulse == 48
-        SEND F0 0F EE BA 01 $25 F7 +F
-      END
-      IF tempoPulse == 24
-        SEND F0 0F EE BA 01 $50 F7 +F
-      END
-      IF tempoPulse == 12
-        SEND F0 0F EE BA 01 $75 F7 +F
-      END
-      IF tempoPulse == 6
-        SEND F0 0F EE BA 01 $100 F7 +F
-      END
-      IF tempoPulse == 3
-        SEND F0 0F EE BA 01 $127 F7 +F
-      END
-    END
-    IF tempoModeMod == 3
-      IF tempoPulse == 72
-        SEND F0 0F EE BA 01 00 F7 +F
-      END
-      IF tempoPulse == 36
-        SEND F0 0F EE BA 01 $25 F7 +F
-      END
-      IF tempoPulse == 18
-        SEND F0 0F EE BA 01 $50 F7 +F
-      END
-      IF tempoPulse == 9
-        SEND F0 0F EE BA 01 $75 F7 +F
-      END
-      IF tempoPulse == 4
-        SEND F0 0F EE BA 01 $100 F7 +F
-      END
-      IF tempoPulse == 2
-        SEND F0 0F EE BA 01 $127 F7 +F
-      END
-    END
-
-    # send gate lighting
-    MATH gateTemp = gate / gateFactor
-    SEND F0 0F EE BA 02 gateTemp F7 +F
-    
-    # send velocity lighting
-    SEND F0 0F EE BA 03 velocity F7 +F
-
-    # send knob6CurrentVal lighting
-    SEND F0 0F EE BA 06 knob6CurrentVal F7 +F
-
-    # send knob7CurrentVal lighting
-    SEND F0 0F EE BA 07 knob7CurrentVal F7 +F
-
-    # send knob8CurrentVal lighting
-    SEND F0 0F EE BA 08 knob8CurrentVal F7 +F
-
-
-    # lfo flashing lights, if present, need to be send regardless of lfoNumMod under some conditions
-    IF lfoMuteAll == 0
-      IF lfo1OnOffToggle == 1
-        IF lfo1Knob < 8
-          MATH lfoTemp = lfo1Knob + 9
-          SEND F0 0F EE B0 lfoTemp 1C F7 +F
-        END
-      END
-      IF lfo2OnOffToggle == 1
-        IF lfo2Knob < 8
-          IF lfo2Knob < 3
-            MATH lfoTemp = lfo2Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-          IF lfo2Knob > 4
-            MATH lfoTemp = lfo2Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-        END
-      END
-      IF lfo3OnOffToggle == 1
-        IF lfo3Knob < 8
-          IF lfo3Knob < 3
-            MATH lfoTemp = lfo3Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-          IF lfo3Knob > 4
-            MATH lfoTemp = lfo3Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-        END
-      END
-      IF lfo4OnOffToggle == 1
-        IF lfo4Knob < 8
-          IF lfo4Knob < 3
-            MATH lfoTemp = lfo4Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-          IF lfo4Knob > 4
-            MATH lfoTemp = lfo4Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-        END
-      END
-    END
-
-    IF lfoNumMod == 0
-      SEND F0 0F EE BA 04 lfo1Rate F7 +F # lfo rate
-      SEND F0 0F EE BA 05 lfo1Depth F7 +F # lfo depth
-      IF lfo1OnOffToggle == 1
-        SEND F0 0F EE 90 04 01 F7 +F
-      END
-      IF lfoMuteAll == 0
-        IF lfo2OnOffToggle == 1
-          IF lfo2Knob == 3
-            SEND F0 0F EE B0 0C 1C F7 +F
-          END
-          IF lfo2Knob == 4
-            SEND F0 0F EE B0 0D 1C F7 +F
-          END
-        END
-      END
-      IF lfo1Sync == 1
-        SEND F0 0F EE 90 06 01 F7 +F
-      END
-      IF lfo1Base == 1
-        SEND F0 0F EE 90 0E 01 F7 +F
-      END
-      IF lfo1Invert == 1
-        SEND F0 0F EE 90 07 01 F7 +F
-      END
-    END
-    IF lfoNumMod == 1
-      SEND F0 0F EE BA 04 lfo2Rate F7 +F # lfo rate
-      SEND F0 0F EE BA 05 lfo2Depth F7 +F # lfo depth
-      IF lfo2OnOffToggle == 1
-        SEND F0 0F EE 90 04 01 F7 +F
-      END
-      IF lfoMuteAll == 0
-        IF lfo3OnOffToggle == 1
-          IF lfo3Knob == 3
-            SEND F0 0F EE B0 0C 1C F7 +F
-          END
-          IF lfo3Knob == 4
-            SEND F0 0F EE B0 0D 1C F7 +F
-          END
-        END
-      END
-      IF lfo2Sync == 1
-        SEND F0 0F EE 90 06 01 F7 +F
-      END
-      IF lfo2Base == 1
-        SEND F0 0F EE 90 0E 01 F7 +F
-      END
-      IF lfo2Invert == 1
-        SEND F0 0F EE 90 07 01 F7 +F
-      END
-    END
-    IF lfoNumMod == 2
-      SEND F0 0F EE BA 04 lfo3Rate F7 +F # lfo rate
-      SEND F0 0F EE BA 05 lfo3Depth F7 +F # lfo depth
-      IF lfo3OnOffToggle == 1
-        SEND F0 0F EE 90 04 01 F7 +F
-      END
-      IF lfoMuteAll == 0
-        IF lfo4OnOffToggle == 1
-          IF lfo4Knob == 3
-            SEND F0 0F EE B0 0C 1C F7 +F
-          END
-          IF lfo4Knob == 4
-            SEND F0 0F EE B0 0D 1C F7 +F
-          END
-        END
-      END
-      IF lfo3Sync == 1
-        SEND F0 0F EE 90 06 01 F7 +F
-      END
-      IF lfo3Base == 1
-        SEND F0 0F EE 90 0E 01 F7 +F
-      END
-      IF lfo3Invert == 1
-        SEND F0 0F EE 90 07 01 F7 +F
-      END
-    END
-    IF lfoNumMod == 3
-      SEND F0 0F EE BA 04 lfo4Rate F7 +F # lfo rate
-      SEND F0 0F EE BA 05 lfo4Depth F7 +F # lfo depth
-      IF lfo4OnOffToggle == 1
-        SEND F0 0F EE 90 04 01 F7 +F
-      END
-      IF lfo4Sync == 1
-        SEND F0 0F EE 90 06 01 F7 +F
-      END
-      IF lfo4Base == 1
-        SEND F0 0F EE 90 0E 01 F7 +F
-      END
-      IF lfo4Invert == 1
-        SEND F0 0F EE 90 07 01 F7 +F
-      END
-    END
-
-
-
-    BLOCK
-    EXIT
-  END
-
-END
-
-# end sysex reception
-
-# if it is a button push
-IF MT == 90
-
-  # don't assign if setting lfo - this prevents push control issues when setting lfo
-  IF setLfo == 0
-
-    # chain modulating lfos should not be impacted by the conditionals below, since push control should work with them when they are being modulated
-    # the reason push control caused issues for the other knobs was because the lfo information was getting sent directly back here for processing and turning on knobTurn inadvertently - with these two the processing all occurs in the lfo file
-
-    # assign knob4Push to true when knob4 is pushed - for push control
-    IF M1 == 3
-      ASS knob4Push = 1
-    END
-
-    # assign knob5Push to true when knob5 is pushed - for push control
-    IF M1 == 4
-      ASS knob5Push = 1
-    END
-
-    # TODO this could likely be a subroutine
-    # NOTE due to the complicated logic involved here and language syntax we had to try to keep it relatively clean here
-
-    # if there is an lfo currently modulating that is on
-    IF lfoMuteAll == 0
-      IF lfo1Knob == M1
-        IF lfo1OnOffToggle == 1
-          ASS lfo1PushPass = M1
-        END
-      END
-      IF lfo2Knob == M1
-        IF lfo2OnOffToggle == 1
-          ASS lfo2PushPass = M1
-        END
-      END
-      IF lfo3Knob == M1
-        IF lfo3OnOffToggle == 1
-          ASS lfo3PushPass = M1
-        END
-      END
-      IF lfo4Knob == M1
-        IF lfo4OnOffToggle == 1
-          ASS lfo4PushPass = M1
-        END
-      END
-    END
-
-    IF lfo1PushPass != M1
-      IF lfo2PushPass != M1
-        IF lfo3PushPass != M1
-          IF lfo4PushPass != M1
-
-            # assign knob1Push to true when knob1 is pushed - for push control
-            IF M1 == 0
-              ASS knob1Push = 1
-            END
-
-            # assign knob2Push to true when knob2 is pushed - for push control
-            IF M1 == 1
-              ASS knob2Push = 1
-            END
-
-            # assign knob3Push to true when knob3 is pushed - for push control
-            IF M1 == 2
-              ASS knob3Push = 1
-            END
-
-            # assign knob6Push to true when knob6 is pushed - for push control
-            IF M1 == 5
-              ASS knob6Push = 1
-            END
-
-            # assign knob7Push to true when knob7 is pushed - for push control
-            IF M1 == 6
-              ASS knob7Push = 1
-            END
-
-            # assign knob8Push to true when knob8 is pushed - for push control
-            IF M1 == 7
-              ASS knob8Push = 1
-            END
-
-            # assign knob9Push to true when knob9 is pushed - for push control
-            IF M1 == 18
-              ASS knob9Push = 1
-            END
-
-            # assign knob10Push to true when knob10 is pushed - for push control
-            IF M1 == 19
-              ASS knob10Push = 1
-            END
-
-            # assign knob11Push to true when knob11 is pushed - for push control
-            IF M1 == 1A
-              ASS knob11Push = 1
-            END
-
-            # assign knob12Push to true when knob12 is pushed - for push control
-            IF M1 == 1B
-              ASS knob12Push = 1
-            END
-
-            # assign knob13Push to true when knob13 is pushed - for push control
-            IF M1 == 1C
-              ASS knob13Push = 1
-            END
-
-            # assign knob14Push to true when knob14 is pushed - for push control
-            IF M1 == 1D
-              ASS knob14Push = 1
-            END
-
-            # assign knob15Push to true when knob15 is pushed - for push control
-            IF M1 == 1E
-              ASS knob15Push = 1
-            END
-
-            # assign knob16Push to true when knob16 is pushed - for push control
-            IF M1 == 1F
-              ASS knob16Push = 1
-            END
-
-          END
-        END
-      END
-    END
-    
-    # reset lfo push pass here - could use else statements in logic above as well
-    ASS lfo1PushPass = FFFF
-    ASS lfo2PushPass = FFFF
-    ASS lfo3PushPass = FFFF
-    ASS lfo4PushPass = FFFF
-
-  END
-
-  # if it is a button 1 push
-  IF M1 == 08 7F
-    # if arp then increase variable
-    IF arpPhraseToggle == 0
-      MATH arpValueMode = arpValueMode + 1
-      # set value mode to variable modulo 12
-      MATH arpValueModeMod = arpValueMode % C
-      SEND F0 C1 06 arpValueModeMod F7 +F
-      # NOTE uncommenting this and adding sysex makes clockNum, isOctave, and arpIndex reset whenever the arpMode changes
-      # ASS arpModeSwitched = 1
-    # if phrase then toggle setPhrase
-    ELSE
-      IF setPhrase == 0
-        ASS setPhrase = 1
-        SEND F0 11 07 setPhrase F7 +F
-      ELSE
-        ASS setPhrase = 0
-        SEND F0 11 07 setPhrase F7 +F
-      END
-    END
-  END
-
-  # if it is a button 9 push
-  IF M1 == 10 7F
-    # if arp then decrease variable
-    IF arpPhraseToggle == 0
-      MATH arpValueMode = arpValueMode - 1
-      # set value mode to variable modulo 12
-      MATH arpValueModeMod = arpValueMode % C
-      SEND F0 C1 06 arpValueModeMod F7 +F
-    # if phrase then add rest to phrase sequence
-    ELSE
-      IF setPhrase == 1
-        SEND F0 11 1A 2E F7 +F
-        # NOTE not currently planning on handling this, but there may is likely a race condition between rest and note that could cause issues
-      END
-    END
-  END
-
-  # if it is a button 2 push toggle arp / phrase
-  IF M1 == 09 7F
-    IF arpPhraseToggle == 0
-      ASS arpPhraseToggle = 1
-      SEND F0 C1 01 arpPhraseToggle F7 +F
-    ELSE
-      ASS arpPhraseToggle = 0
-      SEND F0 C1 01 arpPhraseToggle F7 +F
-      IF setPhrase == 1
-        ASS setPhrase = 0
-        SEND F0 11 07 setPhrase F7 +F
-      END
-    END
-  END
-
-  # if it is a button 10 push toggle button 2 selection on / off
-  IF M1 == 11 7F
-    IF arpPhraseOnOffToggle == 0
-      ASS arpPhraseOnOffToggle = 1
-      SEND F0 C1 02 arpPhraseOnOffToggle F7 +F
-    ELSE
-      ASS arpPhraseOnOffToggle = 0
-      SEND F0 C1 02 arpPhraseOnOffToggle F7 +F
-    END
-  END
-
-  # if it is a button 3 push toggle latch
-  IF M1 == 0A 7F
-    IF latch == 0
-      ASS latch = 1
-      SEND F0 11 0B latch F7 +F
-    ELSE
-      ASS latch = 0
-      SEND F0 11 0B latch F7 +F
-    END
-  END
-
-  # if it is a button 11 push toggle groupKnobPush
-  IF M1 == 12 7F
-    IF groupKnobPush == 0
-      ASS groupKnobPush = 1
-    ELSE
-      ASS groupKnobPush = 0
-    END
-    # NOTE currently when turning on and off, this exits during the following conditionals, which can be inconsistent
-    # the main point is that once this action is complete, there should be no need for further action anyway
-    # might be good at some point to BLOCK and EXIT out of all of the conditional statements in each section
-  END
-
-  # if it is a button 4 push toggle padMode
-  IF M1 == 0B 7F
-    # isBeats
-    IF padMode == 0
-      ASS padMode = 1
-    # isSample
-    ELSE
-      ASS padMode = 0
-    END
-  END
-
-  # if it is a button 12 set lfo
-  IF M1 == 13 7F
-    # setLfo prevents knobPush when on - this is in place to ensure knobPush and Turn can't set lfoKnob and not reset push control
-    # see blocks for handling of setLfo in release below - no handling for push control
-    IF knob1Push == 1
-      BLOCK
-      EXIT
-    END
-    IF knob2Push == 1
-      BLOCK
-      EXIT
-    END
-    IF knob3Push == 1
-      BLOCK
-      EXIT
-    END
-    IF knob4Push == 1
-      BLOCK
-      EXIT
-    END
-    IF knob5Push == 1
-      BLOCK
-      EXIT
-    END
-    IF knob6Push == 1
-      BLOCK
-      EXIT
-    END
-    IF knob7Push == 1
-      BLOCK
-      EXIT
-    END
-    IF knob8Push == 1
-      BLOCK
-      EXIT
-    END
-    IF knob9Push == 1
-      BLOCK
-      EXIT
-    END
-    IF knob10Push == 1
-      BLOCK
-      EXIT
-    END
-    IF knob11Push == 1
-      BLOCK
-      EXIT
-    END
-    IF knob12Push == 1
-      BLOCK
-      EXIT
-    END
-    IF knob13Push == 1
-      BLOCK
-      EXIT
-    END
-    IF knob14Push == 1
-      BLOCK
-      EXIT
-    END
-    IF knob15Push == 1
-      BLOCK
-      EXIT
-    END
-    IF knob16Push == 1
-      BLOCK
-      EXIT
-    END
-    IF setLfo == 0
-      ASS setLfo = 1
-    ELSE
-      ASS setLfo = 0
-    END
-  END
-
-  # if it is a button 5 push toggle current lfo
-  IF M1 == 0C 7F
-    IF lfoNumMod == 0
-      IF lfo1OnOffToggle == 0
-        ASS lfo1OnOffToggle = 1
-      ELSE
-        ASS lfo1OnOffToggle = 0
-      END
-      SEND F0 01 11 lfoNumMod lfo1OnOffToggle F7 +F
-    END
-    IF lfoNumMod == 1
-      IF lfo2OnOffToggle == 0
-        ASS lfo2OnOffToggle = 1
-      ELSE
-        ASS lfo2OnOffToggle = 0
-      END
-      SEND F0 01 11 lfoNumMod lfo2OnOffToggle F7 +F
-    END
-    IF lfoNumMod == 2
-      IF lfo3OnOffToggle == 0
-        ASS lfo3OnOffToggle = 1
-      ELSE
-        ASS lfo3OnOffToggle = 0
-      END
-      SEND F0 01 11 lfoNumMod lfo3OnOffToggle F7 +F
-    END
-    IF lfoNumMod == 3
-      IF lfo4OnOffToggle == 0
-        ASS lfo4OnOffToggle = 1
-      ELSE
-        ASS lfo4OnOffToggle = 0
-      END
-      SEND F0 01 11 lfoNumMod lfo4OnOffToggle F7 +F
-    END
-  END
-
-  # if it is a button 13 push toggle mute of all lfos
-  IF M1 == 14 7F
-    IF lfoMuteAll == 0
-      ASS lfoMuteAll = 1
-    ELSE
-      ASS lfoMuteAll = 0
-    END
-    SEND F0 01 12 lfoMuteAll F7 +F
-  END
-
-  # if it is a button 6 push restart lfo
-  IF M1 == 0D 7F
-    SEND F0 01 14 lfoNumMod F7 +F
-
-  END
-
-  # if it is a button 14 push restart all lfos
-  IF M1 == 15 7F
-    SEND F0 01 15 00 F7 +F
-
-  END
-
-  # if it is a button 7 push sync lfo to tempo
-  IF M1 == 0E 7F
-    IF lfoNumMod == 0
-      IF lfo1Sync == 0
-        ASS lfo1Sync = 1
-      ELSE
-        ASS lfo1Sync = 0
-      END
-      SEND F0 01 0E lfoNumMod lfo1Sync F7 +F
-    END
-    IF lfoNumMod == 1
-      IF lfo2Sync == 0
-        ASS lfo2Sync = 1
-      ELSE
-        ASS lfo2Sync = 0
-      END
-      SEND F0 01 0E lfoNumMod lfo2Sync F7 +F
-    END
-    IF lfoNumMod == 1
-      IF lfo3Sync == 0
-        ASS lfo3Sync = 1
-      ELSE
-        ASS lfo3Sync = 0
-      END
-      SEND F0 01 0E lfoNumMod lfo3Sync F7 +F
-    END
-    IF lfoNumMod == 3
-      IF lfo4Sync == 0
-        ASS lfo4Sync = 1
-      ELSE
-        ASS lfo4Sync = 0
-      END
-      SEND F0 01 0E lfoNumMod lfo4Sync F7 +F
-    END
-  END
-
-  # if it is a button 15 push toggle lfo base (1: middle or 0: bottom)
-  IF M1 == 16 7F
-    IF lfoNumMod == 0
-      IF lfo1Base == 0
-        ASS lfo1Base = 1
-      ELSE
-        ASS lfo1Base = 0
-      END
-      SEND F0 01 0F lfoNumMod lfo1Base F7 +F
-    END
-    IF lfoNumMod == 1
-      IF lfo2Base == 0
-        ASS lfo2Base = 1
-      ELSE
-        ASS lfo2Base = 0
-      END
-      SEND F0 01 0F lfoNumMod lfo2Base F7 +F
-    END
-    IF lfoNumMod == 2
-      IF lfo3Base == 0
-        ASS lfo3Base = 1
-      ELSE
-        ASS lfo3Base = 0
-      END
-      SEND F0 01 0F lfoNumMod lfo3Base F7 +F
-    END
-    IF lfoNumMod == 3
-      IF lfo4Base == 0
-        ASS lfo4Base = 1
-      ELSE
-        ASS lfo4Base = 0
-      END
-      SEND F0 01 0F lfoNumMod lfo4Base F7 +F
-    END
-  END
-
-  # if it is a button 8 push toggle lfo inversion
-  IF M1 == 0F 7F
-    IF lfoNumMod == 0
-      IF lfo1Invert == 0
-        ASS lfo1Invert = 1
-      ELSE
-        ASS lfo1Invert = 0
-      END
-      SEND F0 01 10 lfoNumMod lfo1Invert F7 +F
-    END
-    IF lfoNumMod == 1
-      IF lfo2Invert == 0
-        ASS lfo2Invert = 1
-      ELSE
-        ASS lfo2Invert = 0
-      END
-      SEND F0 01 10 lfoNumMod lfo2Invert F7 +F
-    END
-    IF lfoNumMod == 2
-      IF lfo3Invert == 0
-        ASS lfo3Invert = 1
-      ELSE
-        ASS lfo3Invert = 0
-      END
-      SEND F0 01 10 lfoNumMod lfo3Invert F7 +F
-    END
-    IF lfoNumMod == 3
-      IF lfo4Invert == 0
-        ASS lfo4Invert = 1
-      ELSE
-        ASS lfo4Invert = 0
-      END
-      SEND F0 01 10 lfoNumMod lfo4Invert F7 +F
-    END
-  END
-
-  # if it is a button 16 send 'pan' lighting (reset after mode change)
-  IF M1 == 17 7F
-    ASS resetIndex = 1
-    LOG resetIndex resetIndex
-    # loop until this is done for all eight knobs
-    WHILE resetIndex < 9
-      log here
-      # set lighting to 'pan'
-      SEND F0 0F EE B0 resetIndex 02 F7 +F
-      MATH resetIndex = resetIndex + 1
-    END
-    IF lfoMuteAll == 0
-      IF lfo1OnOffToggle == 1
-        IF lfo1Knob < 8
-          IF lfo1Knob < 3
-            MATH lfoTemp = lfo1Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-          IF lfo1Knob > 4
-            MATH lfoTemp = lfo1Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-        END
-      END
-      IF lfo2OnOffToggle == 1
-        IF lfo2Knob < 8
-          IF lfoNumMod == 0
-            IF lfo2Knob == 3
-              SEND F0 0F EE B0 0C 1C F7 +F
-            END
-            IF lfo2Knob == 4
-              SEND F0 0F EE B0 0D 1C F7 +F
-            END
-          END
-          IF lfo2Knob < 3
-            MATH lfoTemp = lfo2Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-          IF lfo2Knob > 4
-            MATH lfoTemp = lfo2Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-        END
-      END
-      IF lfo3OnOffToggle == 1
-        IF lfo3Knob < 8
-          IF lfoNumMod == 1
-            IF lfo3Knob == 3
-              SEND F0 0F EE B0 0C 1C F7 +F
-            END
-            IF lfo3Knob == 4
-              SEND F0 0F EE B0 0D 1C F7 +F
-            END
-          END
-          IF lfo3Knob < 3
-            MATH lfoTemp = lfo3Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-          IF lfo3Knob > 4
-            MATH lfoTemp = lfo3Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-        END
-      END
-      IF lfo4OnOffToggle == 1
-        IF lfo4Knob < 8
-          IF lfoNumMod == 2
-            IF lfo4Knob == 3
-              SEND F0 0F EE B0 0C 1C F7 +F
-            END
-            IF lfo4Knob == 4
-              SEND F0 0F EE B0 0D 1C F7 +F
-            END
-          END
-          IF lfo4Knob < 3
-            MATH lfoTemp = lfo4Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-          IF lfo4Knob > 4
-            MATH lfoTemp = lfo4Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-        END
-      END
-    END
-
-  END
-
-  # if it is a button 32 reset lfo modulation lighting
-  # TODO because used elsewhere, could be a subroutine
-  IF M1 == 2F 7F
-    IF lfoMuteAll == 0
-      IF lfo1OnOffToggle == 1
-        IF lfo1Knob > 17
-          # only done for mode 'B', since action only applicable to mode 'B'
-          MATH lfoTemp = lfo1Knob - F
-          SEND F0 0F EE B0 lfoTemp 1C F7 +F
-        END
-      END
-      IF lfo2OnOffToggle == 1
-        IF lfo2Knob > 17
-          # only done for mode 'B', since action only applicable to mode 'B'
-          MATH lfoTemp = lfo2Knob - F
-          SEND F0 0F EE B0 lfoTemp 1C F7 +F
-        END
-      END
-      IF lfo3OnOffToggle == 1
-        IF lfo3Knob > 17
-          # only done for mode 'B', since action only applicable to mode 'B'
-          MATH lfoTemp = lfo3Knob - F
-          SEND F0 0F EE B0 lfoTemp 1C F7 +F
-        END
-      END
-      IF lfo4OnOffToggle == 1
-        IF lfo4Knob > 17
-          # only done for mode 'B', since action only applicable to mode 'B'
-          MATH lfoTemp = lfo4Knob - F
-          SEND F0 0F EE B0 lfoTemp 1C F7 +F
-        END
-      END
-    END
-
-  END
-
-  # channel specific
-
-  # tracking off
-  IF M1 == 25 7F
-    ASS trackingMode = 0
-    IF previousTrackingMode != 5
-      SEND F0 0F EE 90 previousTrackingMode 00 F7 +F
-    END
-    SEND F0 11 1F trackingMode F7 +F
-
-  END
-
-  # tracking mode double
-  IF M1 == 24 7F
-    ASS trackingMode = 2
-    IF previousTrackingMode != 4
-      SEND F0 0F EE 90 previousTrackingMode 00 F7 +F
-    END
-    SEND F0 11 1F trackingMode F7 +F
-
-  END
-
-  # tracking mode single
-  IF M1 == 2C 7F
-    ASS trackingMode = 1
-    IF previousTrackingMode != C
-      SEND F0 0F EE 90 previousTrackingMode 00 F7 +F
-    END
-    SEND F0 11 1F trackingMode F7 +F
-
-  END
-
-  # if knob is pressed and a drumParam is changed, the value in the L array will not match up correctly
-  # NOTE monitor for actions that this may be blocking that are unrelated to drum
-  IF groupKnobPush == 1
-    BLOCK
-    EXIT
-  END
-  IF knob9Push == 1
-    BLOCK
-    EXIT
-  END
-  IF knob10Push == 1
-    BLOCK
-    EXIT
-  END
-  IF knob11Push == 1
-    BLOCK
-    EXIT
-  END
-
-# for all except the last, order is part 1, part 2, part 1 and 2
-  # if it is button 1 - knobs control 'select'
-  IF M1 == 20 7F
-    ASS drumParams = $14 $15 $16
-    IF previousDrumVal != 00
-      SEND F0 0F EE 90 previousDrumVal 00 F7 +F
-    END
-    SEND F0 0F EE BA 0B select1 F7 +F
-    ASS L18 = select1
-    SEND F0 0F EE BA 0C select2 F7 +F
-    ASS L19 = select2
-    SEND F0 0F EE BA 0D selectBoth F7 +F
-    ASS L1A = selectBoth
-  END
-  # if it is button 2 - knobs control 'level'
-  IF M1 == 21 7F
-    ASS drumParams = $17 $18 $19
-    IF previousDrumVal != 01
-      SEND F0 0F EE 90 previousDrumVal 00 F7 +F
-    END
-    SEND F0 0F EE BA 0B level1 F7 +F
-    ASS L18 = level1
-    SEND F0 0F EE BA 0C level2 F7 +F
-    ASS L19 = level2
-    SEND F0 0F EE BA 0D levelBoth F7 +F
-    ASS L1A = levelBoth
-  END
-  # if it is button 3 - knobs control 'attack'
-  IF M1 == 22 7F
-    ASS drumParams = $20 $21 $22
-    IF previousDrumVal != 02
-      SEND F0 0F EE 90 previousDrumVal 00 F7 +F
-    END
-    SEND F0 0F EE BA 0B attack1 F7 +F
-    ASS L18 = attack1
-    SEND F0 0F EE BA 0C attack2 F7 +F
-    ASS L19 = attack2
-    SEND F0 0F EE BA 0D attackBoth F7 +F
-    ASS L1A = attackBoth
-  END
-  # if it is button 4 - knobs control 'release'
-  IF M1 == 23 7F
-    ASS drumParams = $23 $24 $25
-    IF previousDrumVal != 03
-      SEND F0 0F EE 90 previousDrumVal 00 F7 +F
-    END
-    SEND F0 0F EE BA 0B release1 F7 +F
-    ASS L18 = release1
-    SEND F0 0F EE BA 0C release2 F7 +F
-    ASS L19 = release2
-    SEND F0 0F EE BA 0D releaseBoth F7 +F
-    ASS L1A = releaseBoth
-  END
-  # if it is button 9 - knobs control 'pitch'
-  IF M1 == 28 7F
-    ASS drumParams = $26 $27 $28
-    IF previousDrumVal != 08
-      SEND F0 0F EE 90 previousDrumVal 00 F7 +F
-    END
-    SEND F0 0F EE BA 0B pitch1 F7 +F
-    ASS L18 = pitch1
-    SEND F0 0F EE BA 0C pitch2 F7 +F
-    ASS L19 = pitch2
-    SEND F0 0F EE BA 0D pitchBoth F7 +F
-    ASS L1A = pitchBoth
-  END
-  # if it is button 10 - knobs control 'modAmount'
-  IF M1 == 29 7F
-    ASS drumParams = $29 $30 $31
-    IF previousDrumVal != 09
-      SEND F0 0F EE 90 previousDrumVal 00 F7 +F
-    END
-    SEND F0 0F EE BA 0B modAmount1 F7 +F
-    ASS L18 = modAmount1
-    SEND F0 0F EE BA 0C modAmount2 F7 +F
-    ASS L19 = modAmount2
-    SEND F0 0F EE BA 0D modAmountBoth F7 +F
-    ASS L1A = modAmountBoth
-  END
-  # if it is button 11 - knobs control 'modRate'
-  IF M1 == 2A 7F
-    ASS drumParams = $46 $47 $48
-    IF previousDrumVal != 0A
-      SEND F0 0F EE 90 previousDrumVal 00 F7 +F
-    END
-    SEND F0 0F EE BA 0B modRate1 F7 +F
-    ASS L18 = modRate1
-    SEND F0 0F EE BA 0C modRate2 F7 +F
-    ASS L19 = modRate2
-    SEND F0 0F EE BA 0D modRateBoth F7 +F
-    ASS L1A = modRateBoth
-  END
-  # order is decay, body, tune, send
-  # if it is button 12 - knobs control 'waveguide'
-  IF M1 == 2B 7F
-    ASS drumParams = $117 $118 $119
-    IF previousDrumVal != 0B
-      SEND F0 0F EE 90 previousDrumVal 00 F7 +F
-    END
-    SEND F0 0F EE BA 0B waveguideDecay F7 +F
-    ASS L18 = waveguideDecay
-    SEND F0 0F EE BA 0C waveguideBody F7 +F
-    ASS L19 = waveguideBody
-    SEND F0 0F EE BA 0D waveguideTune F7 +F
-    ASS L1A = waveguideTune
-  END
-
-  # end channel specific
-
-END
-
-# if it is a button note-off (important for lighting)
-IF MT == 80
-
-  # if it's a knobPush (and / or knobTurn) and we're trying to set lfo we need to ignore other associated functionality
-  # mode 'A'
-  IF M1 < 8
-    IF setLfo == 1
-      # chained modulation will automatically default to lfo modulating lfo immediately below it
-      # need to prevent chained modulation from looping infinitely, so lfo 1 (0) will not be able to modulate another lfo
-      # NOTE could attempt to make the chain more flexible (i.e. 0, 3, 2, 1; 1, 0, 3, 2) but don't feel that's necessary at this point
-      IF lfoNumMod == 0
-
-        IF M1 == 03
-          BLOCK
-          EXIT
-        END
-        IF M1 == 04
-          BLOCK
-          EXIT
-        END
-
-        IF lfo2Knob == M1
-          BLOCK
-          EXIT
-        END
-        IF lfo3Knob == M1
-          BLOCK
-          EXIT
-        END
-        IF lfo4Knob == M1
-          BLOCK
-          EXIT
-        END
-
-        # NOTE lfo1Knob can be set to only < 8 because it cannot be set to 3 or 4
-        # NOTE originally had checks to send for values M1 > 17, but original conditional prevents this
-        # send L value to old knob
-        IF lfoMuteAll == 0
-          IF lfo1OnOffToggle == 1
-            IF lfo1Knob < 8
-              IF M1 < 8
-                MATH knobTemp = lfo1Knob + 1
-                IF M1 == 0
-                  SEND BA knobTemp LJ3D +I
-                ELSE
-                  SEND F0 0F EE BA knobTemp LJ3D F7 +F
-                END
-              END
-            END
-          END
-        END
-
-        ASS lfo1Knob = M1
-        SEND F0 01 0D lfoNumMod lfo1Knob F7 +F
-
-        # send flash to new knob
-        IF lfoMuteAll == 0
-          IF lfo1OnOffToggle == 1
-            IF lfo1Knob < 8
-              MATH lfoTemp = lfo1Knob + 9
-              SEND F0 0F EE B0 lfoTemp 1C F7 +F
-            END
-          END
-        END
-
-      END
-      IF lfoNumMod == 1
-
-        # lfo knobs (3 and 4) can modulate each other
-        IF M1 != 3
-          IF M1 != 4
-            IF lfo1Knob == M1
-              BLOCK
-              EXIT
-            END
-            IF lfo3Knob == M1
-              BLOCK
-              EXIT
-            END
-            IF lfo4Knob == M1
-              BLOCK
-              EXIT
-            END
-          END
-        END
-
-        # send L value to old knob
-        IF lfoMuteAll == 0
-          IF lfo2OnOffToggle == 1
-            IF lfo2Knob < 8
-              IF M1 < 8
-                IF lfo2Knob != 3
-                  IF lfo2Knob != 4
-                    MATH knobTemp = lfo2Knob + 1
-                    IF M1 == 0
-                      SEND BA knobTemp LJ3E +I
-                    ELSE
-                      SEND F0 0F EE BA knobTemp LJ3E F7 +F
-                    END
-                  END
-                END
-              END
-            END
-          END
-        END
-
-        ASS lfo2Knob = M1
-        SEND F0 01 0D lfoNumMod lfo2Knob F7 +F
-
-        # send flash to new knob
-        IF lfoMuteAll == 0
-          IF lfo2OnOffToggle == 1
-            IF lfo2Knob < 8
-              IF lfo2Knob != 3
-                IF lfo2Knob != 4
-                  MATH lfoTemp = lfo2Knob + 9
-                  SEND F0 0F EE B0 lfoTemp 1C F7 +F
-                END
-              END
-            END
-          END
-        END
-
-      END
-      IF lfoNumMod == 2
-
-        # lfo knobs (3 and 4) can modulate each other
-        IF M1 != 3
-          IF M1 != 4
-            IF lfo1Knob == M1
-              BLOCK
-              EXIT
-            END
-            IF lfo2Knob == M1
-              BLOCK
-              EXIT
-            END
-            IF lfo4Knob == M1
-              BLOCK
-              EXIT
-            END
-          END
-        END
-
-        # send L value to old knob
-        IF lfoMuteAll == 0
-          IF lfo3OnOffToggle == 1
-            IF lfo3Knob < 8
-              IF M1 < 8
-                IF lfo3Knob != 3
-                  IF lfo3Knob != 4
-                    MATH knobTemp = lfo3Knob + 1
-                    IF M1 == 0
-                      SEND BA knobTemp LJ3F +I
-                    ELSE
-                      SEND F0 0F EE BA knobTemp LJ3F F7 +F
-                    END
-                  END
-                END
-              END
-            END
-          END
-        END
-
-        ASS lfo3Knob = M1
-        SEND F0 01 0D lfoNumMod lfo3Knob F7 +F
-
-        # send flash to new knob
-        IF lfoMuteAll == 0
-          IF lfo3OnOffToggle == 1
-            IF lfo3Knob < 8
-              IF lfo3Knob != 3
-                IF lfo3Knob != 4
-                  MATH lfoTemp = lfo3Knob + 9
-                  SEND F0 0F EE B0 lfoTemp 1C F7 +F
-                END
-              END
-            END
-          END
-        END
-
-      END
-      IF lfoNumMod == 3
-
-        # lfo knobs (3 and 4) can modulate each other
-        IF M1 != 3
-          IF M1 != 4
-            IF lfo1Knob == M1
-              BLOCK
-              EXIT
-            END
-            IF lfo2Knob == M1
-              BLOCK
-              EXIT
-            END
-            IF lfo3Knob == M1
-              BLOCK
-              EXIT
-            END
-          END
-        END
-
-        # send L value to old knob
-        IF lfoMuteAll == 0
-          IF lfo4OnOffToggle == 1
-            IF lfo4Knob < 8
-              IF M1 < 8
-                IF lfo4Knob != 3
-                  IF lfo4Knob != 4
-                    MATH knobTemp = lfo4Knob + 1
-                    IF M1 == 0
-                      SEND BA knobTemp LJ40 +I
-                    ELSE
-                      SEND F0 0F EE BA knobTemp LJ40 F7 +F
-                    END
-                  END
-                END
-              END
-            END
-          END
-        END
-
-        ASS lfo4Knob = M1
-        SEND F0 01 0D lfoNumMod lfo4Knob F7 +F
-
-        # send flash to new knob
-        IF lfoMuteAll == 0
-          IF lfo4OnOffToggle == 1
-            IF lfo4Knob < 8
-              IF lfo4Knob != 3
-                IF lfo4Knob != 4
-                  MATH lfoTemp = lfo4Knob + 9
-                  SEND F0 0F EE B0 lfoTemp 1C F7 +F
-                END
-              END
-            END
-          END
-        END
-
-      END
-      ASS setLfo = 0
-      SEND F0 0F EE 90 0B 00 F7 +F
-      BLOCK
-      EXIT
-    END
-  END
-  # if it's a knobPush (and / or knobTurn) and we're trying to set lfo we need to ignore other associated functionality
-  # mode 'B'
-  # no need for chain modulation checks here, since it isn't possible
-  IF M1 > 17
-    IF M1 < 20
-      IF setLfo == 1
-        IF lfoNumMod == 0
-
-          IF lfo2Knob == M1
-            BLOCK
-            EXIT
-          END
-          IF lfo3Knob == M1
-            BLOCK
-            EXIT
-          END
-          IF lfo4Knob == M1
-            BLOCK
-            EXIT
-          END
-
-          ASS lfo1Knob = M1
-          SEND F0 01 0D lfoNumMod lfo1Knob F7 +F
-
-        END
-        IF lfoNumMod == 1
-
-          IF lfo1Knob == M1
-            BLOCK
-            EXIT
-          END
-          IF lfo3Knob == M1
-            BLOCK
-            EXIT
-          END
-          IF lfo4Knob == M1
-            BLOCK
-            EXIT
-          END
-
-          ASS lfo2Knob = M1
-          SEND F0 01 0D lfoNumMod lfo2Knob F7 +F
-
-        END
-        IF lfoNumMod == 2
-
-          IF lfo1Knob == M1
-            BLOCK
-            EXIT
-          END
-          IF lfo2Knob == M1
-            BLOCK
-            EXIT
-          END
-          IF lfo4Knob == M1
-            BLOCK
-            EXIT
-          END
-
-          ASS lfo3Knob = M1
-          SEND F0 01 0D lfoNumMod lfo3Knob F7 +F
-
-        END
-        IF lfoNumMod == 3
-
-          IF lfo1Knob == M1
-            BLOCK
-            EXIT
-          END
-          IF lfo2Knob == M1
-            BLOCK
-            EXIT
-          END
-          IF lfo3Knob == M1
-            BLOCK
-            EXIT
-          END
-
-          ASS lfo4Knob = M1
-          SEND F0 01 0D lfoNumMod lfo4Knob F7 +F
-
-        END
-        ASS setLfo = 0
-        # reset flashing setLfo button
-        SEND C0 00
-        SEND F0 0F EE 90 0B 00 F7 +F
-        SEND C0 01
-        # resend lighting for mode 'B'
-        IF lfoMuteAll == 0
-          IF lfo1OnOffToggle == 1
-            IF lfo1Knob > 17
-              # only done for mode 'B', since action only applicable to mode 'B'
-              MATH lfoTemp = lfo1Knob - F
-              SEND F0 0F EE B0 lfoTemp 1C F7 +F
-            END
-          END
-          IF lfo2OnOffToggle == 1
-            IF lfo2Knob > 17
-              # only done for mode 'B', since action only applicable to mode 'B'
-              MATH lfoTemp = lfo2Knob - F
-              SEND F0 0F EE B0 lfoTemp 1C F7 +F
-            END
-          END
-          IF lfo3OnOffToggle == 1
-            IF lfo3Knob > 17
-              # only done for mode 'B', since action only applicable to mode 'B'
-              MATH lfoTemp = lfo3Knob - F
-              SEND F0 0F EE B0 lfoTemp 1C F7 +F
-            END
-          END
-          IF lfo4OnOffToggle == 1
-            IF lfo4Knob > 17
-              # only done for mode 'B', since action only applicable to mode 'B'
-              MATH lfoTemp = lfo4Knob - F
-              SEND F0 0F EE B0 lfoTemp 1C F7 +F
-            END
-          END
-        END
-
-        BLOCK
-        EXIT
-      END
-    END
-  END
-
-  # push control
-  # NOTE these conditionals are separate from other knob push conditionals below - likely better to consolidate at some point
-  # NOTE currently pushing a knob, then pressing groupKnobPush, then releasing the knob will not reset, which is expected at this point
-  # NOTE if groupKnobPush is active, any knob push will result in the standard functionality, even if the knob is turned
-
-  # ignore knobPush changes if groupKnobPush is on
-  IF groupKnobPush == 0
-
-    # TODO while loop
-    IF M1 == 00 00
-      IF knob1Turn == 1
-        MATH knobTemp = M1 + 1
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp LM1 +I
-        # no need to send lighting here, since tempo sends its own on injection
-        ASS knob1Push = 0
-        ASS knob1Turn = 0
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
-      ELSE
-        ASS knob1Push = 0
-      END
-    END
-
-    IF M1 == 01 00
-      IF knob2Turn == 1
-        MATH knobTemp = M1 + 1
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp LM1 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp LM1 F7 +F
-        ASS knob2Push = 0
-        ASS knob2Turn = 0
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
-      ELSE
-        ASS knob2Push = 0
-      END
-    END
-
-    IF M1 == 02 00
-      IF knob3Turn == 1
-        MATH knobTemp = M1 + 1
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp LM1 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp LM1 F7 +F
-        ASS knob3Push = 0
-        ASS knob3Turn = 0
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
-      ELSE
-        ASS knob3Push = 0
-      END
-    END
-
-    IF M1 == 03 00
-      IF knob4Turn == 1
-        MATH knobTemp = M1 + 1
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp LM1 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp LM1 F7 +F
-        ASS knob4Push = 0
-        ASS knob4Turn = 0
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
-      ELSE
-        ASS knob4Push = 0
-      END
-    END
-
-    IF M1 == 04 00
-      IF knob5Turn == 1
-        MATH knobTemp = M1 + 1
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp LM1 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp LM1 F7 +F
-        ASS knob5Push = 0
-        ASS knob5Turn = 0
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
-      ELSE
-        ASS knob5Push = 0
-      END
-    END
-
-    IF M1 == 05 00
-      IF knob6Turn == 1
-        MATH knobTemp = M1 + 1
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp LM1 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp LM1 F7 +F
-        ASS knob6Push = 0
-        ASS knob6Turn = 0
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
-      ELSE
-        ASS knob6Push = 0
-      END
-    END
-
-    IF M1 == 06 00
-      IF knob7Turn == 1
-        MATH knobTemp = M1 + 1
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp LM1 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp LM1 F7 +F
-        ASS knob7Push = 0
-        ASS knob7Turn = 0
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
-      ELSE
-        ASS knob7Push = 0
-      END
-    END
-
-    IF M1 == 07 00
-      IF knob8Turn == 1
-        MATH knobTemp = M1 + 1
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp LM1 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp LM1 F7 +F
-        ASS knob8Push = 0
-        ASS knob8Turn = 0
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
-      ELSE
-        ASS knob8Push = 0
-      END
-    END
-
-    IF M1 == 18 00
-      IF knob9Turn == 1
-        MATH knobTemp = M1 - D
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp LM1 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp LM1 F7 +F
-        ASS knob9Push = 0
-        ASS knob9Turn = 0
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
-      ELSE
-        ASS knob9Push = 0
-      END
-    END
-
-    IF M1 == 19 00
-      IF knob10Turn == 1
-        MATH knobTemp = M1 - D
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp LM1 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp LM1 F7 +F
-        ASS knob10Push = 0
-        ASS knob10Turn = 0
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
-      ELSE
-        ASS knob10Push = 0
-      END
-    END
-
-    IF M1 == 1A 00
-      IF knob11Turn == 1
-        MATH knobTemp = M1 - D
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp LM1 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp LM1 F7 +F
-        ASS knob11Push = 0
-        ASS knob11Turn = 0
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
-      ELSE
-        ASS knob11Push = 0
-      END
-    END
-
-    IF M1 == 1B 00
-      IF knob12Turn == 1
-        MATH knobTemp = M1 - D
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp LM1 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp LM1 F7 +F
-        ASS knob12Push = 0
-        ASS knob12Turn = 0
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
-      ELSE
-        ASS knob12Push = 0
-      END
-    END
-
-    IF M1 == 1C 00
-      IF knob13Turn == 1
-        MATH knobTemp = M1 - D
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp LM1 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp LM1 F7 +F
-        ASS knob13Push = 0
-        ASS knob13Turn = 0
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
-      ELSE
-        ASS knob13Push = 0
-      END
-    END
-
-    IF M1 == 1D 00
-      IF knob14Turn == 1
-        MATH knobTemp = M1 - D
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp LM1 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp LM1 F7 +F
-        ASS knob14Push = 0
-        ASS knob14Turn = 0
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
-      ELSE
-        ASS knob14Push = 0
-      END
-    END
-
-    IF M1 == 1E 00
-      IF knob15Turn == 1
-        MATH knobTemp = M1 - D
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp LM1 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp LM1 F7 +F
-        ASS knob15Push = 0
-        ASS knob15Turn = 0
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
-      ELSE
-        ASS knob15Push = 0
-      END
-    END
-
-    IF M1 == 1F 00
-      IF knob16Turn == 1
-        MATH knobTemp = M1 - D
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp LM1 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp LM1 F7 +F
-        ASS knob16Push = 0
-        ASS knob16Turn = 0
-        # if using push control, releasing the knob button should not have any effect
-        BLOCK
-        EXIT
-      ELSE
-        ASS knob16Push = 0
-      END
-    END
-  END
-
-  # end push control
-
-  # if it is a knob 1 button release, increase tempo mode
-  # NOTE if variable is too high, reset (not implemented)
-  IF M1 == 00 00
-    MATH tempoMode = tempoMode + 1
-    # set tempo mode to variable modulo 4
-    MATH tempoModeMod = tempoMode % 4
-    SEND F0 01 18 tempoModeMod F7 +F
-
-    IF tempoModeMod == 0
-      ASS tempoPulse = $24
-      SEND F0 CC 03 tempoPulse F7 +F
-    END
-    # set each tempoPulse to default value on switching
-    # also send data to xtouch to reflect this
-    IF tempoModeMod == 1
-      ASS tempoPulse = $24
-      SEND F0 CC 03 tempoPulse F7 +F
-    END
-    IF tempoModeMod == 2
-      ASS tempoPulse = $24
-      SEND F0 CC 03 tempoPulse F7 +F
-    END
-    IF tempoModeMod == 3
-      ASS tempoPulse = $18
-      SEND F0 CC 03 tempoPulse F7 +F
-    END
-
-    # don't send lighting / L array val if knob is actively being modulated
-    IF lfo1Knob == 0
-      IF lfo1OnOffToggle == 1
-        IF lfoMuteAll == 0
-          BLOCK
-          EXIT
-        END
-      END
-    END
-    IF lfo2Knob == 0
-      IF lfo2OnOffToggle == 1
-        IF lfoMuteAll == 0
-          BLOCK
-          EXIT
-        END
-      END
-    END
-    IF lfo3Knob == 0
-      IF lfo3OnOffToggle == 1
-        IF lfoMuteAll == 0
-          BLOCK
-          EXIT
-        END
-      END
-    END
-    IF lfo4Knob == 0
-      IF lfo4OnOffToggle == 1
-        IF lfoMuteAll == 0
-          BLOCK
-          EXIT
-        END
-      END
-    END
-
-    IF tempoModeMod == 0
-      SEND F0 0F EE BA 01 $26 F7 +F
-      ASS L0 = $14
-    END
-    # set each tempoPulse to default value on switching
-    # also send data to xtouch to reflect this
-    IF tempoModeMod == 1
-      SEND F0 0F EE BA 01 00 F7 +F
-      ASS L0 = 00
-    END
-    IF tempoModeMod == 2
-      SEND F0 0F EE BA 01 $50 F7 +F
-      ASS L0 = $26
-    END
-    IF tempoModeMod == 3
-      SEND F0 0F EE BA 01 $50 F7 +F
-      ASS L0 = $26
-    END
-
-  END
-
-  # if it is a knob 2 button release, increase gate mode
-  # NOTE if variable is too high, reset (not implemented)
-  IF M1 == 01 00
-    MATH gateMode = gateMode + 1
-    # set gate mode to variable modulo 6
-    # NOTE preventing the light from sending will change the length more quickly, more easily
-    # NOTE will be testing with live to see best setup here
-    MATH gateModeMod = gateMode % 6
-
-    IF gateModeMod == 0
-      ASS gateFactor = 1
-    END
-    IF gateModeMod == 1
-      ASS gateFactor = 2
-    END
-    IF gateModeMod == 2
-      ASS gateFactor = 5
-    END
-    IF gateModeMod == 3
-      ASS gateFactor = 10
-    END
-    IF gateModeMod == 4
-      ASS gateFactor = 20
-    END
-    IF gateModeMod == 5
-      ASS gateFactor = 40
-    END
-
-    # don't send lighting / L array val if knob is actively being modulated
-    IF lfo1Knob == 1
-      IF lfo1OnOffToggle == 1
-        IF lfoMuteAll == 0
-          BLOCK
-          EXIT
-        END
-      END
-    END
-    IF lfo2Knob == 1
-      IF lfo2OnOffToggle == 1
-        IF lfoMuteAll == 0
-          BLOCK
-          EXIT
-        END
-      END
-    END
-    IF lfo3Knob == 1
-      IF lfo3OnOffToggle == 1
-        IF lfoMuteAll == 0
-          BLOCK
-          EXIT
-        END
-      END
-    END
-    IF lfo4Knob == 1
-      IF lfo4OnOffToggle == 1
-        IF lfoMuteAll == 0
-          BLOCK
-          EXIT
-        END
-      END
-    END
-
-    SEND F0 0F EE BA 02 00 F7 +F
-    ASS L1 = 00
-
-  END
-
-  # if it is a knob 4 button release, change lfo type
-  # NOTE if variable is too high, reset (not implemented)
-  # NOTE could add testing which reported the actual lfo type rather than a number
-  IF M1 == 03 00
-
-    IF lfoNumMod == 0
-      MATH lfo1Type = lfo1Type + 1
-      # set tempo mode to variable modulo 7
-      MATH lfoTypeMod = lfo1Type % 7
-      SEND F0 01 13 lfoNumMod lfoTypeMod F7 +F
-    END
-    IF lfoNumMod == 1
-      MATH lfo2Type = lfo2Type + 1
-      # set tempo mode to variable modulo 4
-      MATH lfoTypeMod = lfo2Type % 7
-      SEND F0 01 13 lfoNumMod lfoTypeMod F7 +F
-    END
-    IF lfoNumMod == 2
-      MATH lfo3Type = lfo3Type + 1
-      # set tempo mode to variable modulo 4
-      MATH lfoTypeMod = lfo3Type % 7
-      SEND F0 01 13 lfoNumMod lfoTypeMod F7 +F
-    END
-    IF lfoNumMod == 3
-      MATH lfo4Type = lfo4Type + 1
-      # set tempo mode to variable modulo 4
-      MATH lfoTypeMod = lfo4Type % 7
-      SEND F0 01 13 lfoNumMod lfoTypeMod F7 +F
-    END
-
-  END
-
-  # if it is a knob 5 button release, change lfo num (the lfo that's being edited)
-  # NOTE if variable is too high, reset (not implemented)
-  IF M1 == 04 00
-    # this will cause issues if groupKnobPush or knob4Push is on due to the values in L array
-    IF groupKnobPush == 1
-      BLOCK
-      EXIT
-    END
-    IF knob4Push == 1
-      BLOCK
-      EXIT
-    END
-    MATH lfoNum = lfoNum + 1
-    # set tempo mode to variable modulo 4
-    MATH lfoNumMod = lfoNum % 4
-
-    IF lfoNumMod == 0
-      # send lighting for lfo1Rate and depth
-      SEND F0 0F EE BA 04 lfo1Rate F7 +F
-      SEND F0 0F EE BA 05 lfo1Depth F7 +F
-      ASS L3 = lfo1Rate
-      ASS L4 = lfo1Depth
-      # send lighting for lfo1OnOff, lfo1Sync, lfo1Base, and lfo1Invert
-      IF lfo1OnOffToggle == 1
-        SEND F0 0F EE 90 04 01 F7 +F
-      ELSE
-        SEND F0 0F EE 90 04 00 F7 +F
-      END
-      IF lfo1Sync == 1
-        SEND F0 0F EE 90 06 01 F7 +F
-      ELSE
-        SEND F0 0F EE 90 06 00 F7 +F
-      END
-      IF lfo1Base == 1
-        SEND F0 0F EE 90 0E 01 F7 +F
-      ELSE
-        SEND F0 0F EE 90 0E 00 F7 +F
-      END
-      IF lfo1Invert == 1
-        SEND F0 0F EE 90 07 01 F7 +F
-      ELSE
-        SEND F0 0F EE 90 07 00 F7 +F
-      END
-      # send flashing lights if chain modulating
-      IF lfo2Knob == 3
-        IF lfoMuteAll == 0
-          IF lfo2OnOffToggle == 1
-            SEND F0 0F EE B0 0C 1C F7 +F
-          END
-        END
-      END
-      IF lfo2Knob == 4
-        IF lfoMuteAll == 0
-          IF lfo2OnOffToggle == 1
-            SEND F0 0F EE B0 0D 1C F7 +F
-          END
-        END
-      END
-    END
-    IF lfoNumMod == 1
-      # send lighting for lfo2Rate and depth
-      SEND F0 0F EE BA 04 lfo2Rate F7 +F
-      SEND F0 0F EE BA 05 lfo2Depth F7 +F
-      ASS L3 = lfo2Rate
-      ASS L4 = lfo2Depth
-        # send lighting for lfo2OnOff, lfo2Sync, lfo2Base, and lfo2Invert
-      IF lfo2OnOffToggle == 1
-        SEND F0 0F EE 90 04 01 F7 +F
-      ELSE
-        SEND F0 0F EE 90 04 00 F7 +F
-      END
-      IF lfo2Sync == 1
-        SEND F0 0F EE 90 06 01 F7 +F
-      ELSE
-        SEND F0 0F EE 90 06 00 F7 +F
-      END
-      IF lfo2Base == 1
-        SEND F0 0F EE 90 0E 01 F7 +F
-      ELSE
-        SEND F0 0F EE 90 0E 00 F7 +F
-      END
-      IF lfo2Invert == 1
-        SEND F0 0F EE 90 07 01 F7 +F
-      ELSE
-        SEND F0 0F EE 90 07 00 F7 +F
-      END
-      # send flashing lights if chain modulating
-      IF lfo3Knob == 3
-        IF lfoMuteAll == 0
-          IF lfo3OnOffToggle == 1
-            SEND F0 0F EE B0 0C 1C F7 +F
-          END
-        END
-      END
-      IF lfo3Knob == 4
-        IF lfoMuteAll == 0
-          IF lfo3OnOffToggle == 1
-            SEND F0 0F EE B0 0D 1C F7 +F
-          END
-        END
-      END
-    END
-    IF lfoNumMod == 2
-      # send lighting for lfo3Rate and depth
-      SEND F0 0F EE BA 04 lfo3Rate F7 +F
-      SEND F0 0F EE BA 05 lfo3Depth F7 +F
-      ASS L3 = lfo3Rate
-      ASS L4 = lfo3Depth
-      # send lighting for lfo3OnOff, lfo3Sync, lfo3Base, and lfo3Invert
-      IF lfo3OnOffToggle == 1
-        SEND F0 0F EE 90 04 01 F7 +F
-      ELSE
-        SEND F0 0F EE 90 04 00 F7 +F
-      END
-      IF lfo3Sync == 1
-        SEND F0 0F EE 90 06 01 F7 +F
-      ELSE
-        SEND F0 0F EE 90 06 00 F7 +F
-      END
-      IF lfo3Base == 1
-        SEND F0 0F EE 90 0E 01 F7 +F
-      ELSE
-        SEND F0 0F EE 90 0E 00 F7 +F
-      END
-      IF lfo3Invert == 1
-        SEND F0 0F EE 90 07 01 F7 +F
-      ELSE
-        SEND F0 0F EE 90 07 00 F7 +F
-      END
-      # send flashing lights if chain modulating
-      IF lfo4Knob == 3
-        IF lfoMuteAll == 0
-          IF lfo4OnOffToggle == 1
-            SEND F0 0F EE B0 0C 1C F7 +F
-          END
-        END
-      END
-      IF lfo4Knob == 4
-        IF lfoMuteAll == 0
-          IF lfo4OnOffToggle == 1
-            SEND F0 0F EE B0 0D 1C F7 +F
-          END
-        END
-      END
-    END
-    IF lfoNumMod == 3
-      # send lighting for lfo4Rate and depth
-      SEND F0 0F EE BA 04 lfo4Rate F7 +F
-      SEND F0 0F EE BA 05 lfo4Depth F7 +F
-      ASS L3 = lfo4Rate
-      ASS L4 = lfo4Depth
-      # send lighting for lfo4OnOff, lfo4Sync, lfo4Base, and lfo4Invert
-      IF lfo4OnOffToggle == 1
-        SEND F0 0F EE 90 04 01 F7 +F
-      ELSE
-        SEND F0 0F EE 90 04 00 F7 +F
-      END
-      IF lfo4Sync == 1
-        SEND F0 0F EE 90 06 01 F7 +F
-      ELSE
-        SEND F0 0F EE 90 06 00 F7 +F
-      END
-      IF lfo4Base == 1
-        SEND F0 0F EE 90 0E 01 F7 +F
-      ELSE
-        SEND F0 0F EE 90 0E 00 F7 +F
-      END
-      IF lfo4Invert == 1
-        SEND F0 0F EE 90 07 01 F7 +F
-      ELSE
-        SEND F0 0F EE 90 07 00 F7 +F
-      END
-    END
-
-  END
-
-  IF M1 == 08 00
-    IF arpPhraseToggle == 1
-      IF setPhrase == 1
-        SEND F0 0F EE 90 00 01 F7 +F
-      END
-    END
-  END
-
-  IF M1 == 09 00
-    IF arpPhraseToggle == 1
-      SEND F0 0F EE 90 01 01 F7 +F
-    ELSE
-      # NOTE this sends even when light is off
-      IF setPhrase == 0
-        SEND F0 0F EE 90 00 00 F7 +F
-      END
-    END
-  END
-
-  IF M1 == 0A 00
-    IF latch == 1
-      SEND F0 0F EE 90 02 01 F7 +F
-    END
-  END
-
-  IF M1 == 0B 00
-    IF padMode == 1
-      SEND F0 0F EE 90 03 01 F7 +F
-    END
-  END
-
-  IF M1 == 11 00
-    IF arpPhraseOnOffToggle == 1
-      SEND F0 0F EE 90 09 01 F7 +F
-    END
-  END
-
-  IF M1 == 12 00
-    IF groupKnobPush == 1
-      SEND F0 0F EE 90 0A 01 F7 +F
-
-      # turn on knobPush for all knobs that aren't currently being modulated
-      IF lfo1Knob != 0
-        IF lfo2Knob != 0
-          IF lfo3Knob != 0
-            IF lfo4Knob != 0
-              ASS knob1Push = 1
-            END
-          END
-        END
-      END
-      IF lfo1Knob != 1
-        IF lfo2Knob != 1
-          IF lfo3Knob != 1
-            IF lfo4Knob != 1
-              ASS knob2Push = 1
-            END
-          END
-        END
-      END
-      IF lfo1Knob != 2
-        IF lfo2Knob != 2
-          IF lfo3Knob != 2
-            IF lfo4Knob != 2
-              ASS knob3Push = 1
-            END
-          END
-        END
-      END
-      IF lfo1Knob != 3
-        IF lfo2Knob != 3
-          IF lfo3Knob != 3
-            IF lfo4Knob != 3
-              ASS knob4Push = 1
-            END
-          END
-        END
-      END
-      IF lfo1Knob != 4
-        IF lfo2Knob != 4
-          IF lfo3Knob != 4
-            IF lfo4Knob != 4
-              ASS knob5Push = 1
-            END
-          END
-        END
-      END
-      IF lfo1Knob != 5
-        IF lfo2Knob != 5
-          IF lfo3Knob != 5
-            IF lfo4Knob != 5
-              ASS knob6Push = 1
-            END
-          END
-        END
-      END
-      IF lfo1Knob != 6
-        IF lfo2Knob != 6
-          IF lfo3Knob != 6
-            IF lfo4Knob != 6
-              ASS knob7Push = 1
-            END
-          END
-        END
-      END
-      IF lfo1Knob != 7
-        IF lfo2Knob != 7
-          IF lfo3Knob != 7
-            IF lfo4Knob != 7
-              ASS knob8Push = 1
-            END
-          END
-        END
-      END
-      IF lfo1Knob != 18
-        IF lfo2Knob != 18
-          IF lfo3Knob != 18
-            IF lfo4Knob != 18
-              ASS knob9Push = 1
-            END
-          END
-        END
-      END
-      IF lfo1Knob != 19
-        IF lfo2Knob != 19
-          IF lfo3Knob != 19
-            IF lfo4Knob != 19
-              ASS knob10Push = 1
-            END
-          END
-        END
-      END
-      IF lfo1Knob != 1A
-        IF lfo2Knob != 1A
-          IF lfo3Knob != 1A
-            IF lfo4Knob != 1A
-              ASS knob11Push = 1
-            END
-          END
-        END
-      END
-      IF lfo1Knob != 1B
-        IF lfo2Knob != 1B
-          IF lfo3Knob != 1B
-            IF lfo4Knob != 1B
-              ASS knob12Push = 1
-            END
-          END
-        END
-      END
-      IF lfo1Knob != 1C
-        IF lfo2Knob != 1C
-          IF lfo3Knob != 1C
-            IF lfo4Knob != 1C
-              ASS knob13Push = 1
-            END
-          END
-        END
-      END
-      IF lfo1Knob != 1D
-        IF lfo2Knob != 1D
-          IF lfo3Knob != 1D
-            IF lfo4Knob != 1D
-              ASS knob14Push = 1
-            END
-          END
-        END
-      END
-      IF lfo1Knob != 1E
-        IF lfo2Knob != 1E
-          IF lfo3Knob != 1E
-            IF lfo4Knob != 1E
-              ASS knob15Push = 1
-            END
-          END
-        END
-      END
-      IF lfo1Knob != 1F
-        IF lfo2Knob != 1F
-          IF lfo3Knob != 1F
-            IF lfo4Knob != 1F
-              ASS knob16Push = 1
-            END
-          END
-        END
-      END
-
-    # reset all knobs to L values if turning off
-    ELSE
-      IF knob1Turn == 1
-        ASS knobTemp = 1
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp L0 +I
-        # no need to send lighting here, since tempo sends its own on injection
-        ASS knob1Push = 0
-        ASS knob1Turn = 0
-      ELSE
-        ASS knob1Push = 0
-      END
-
-      IF knob2Turn == 1
-        ASS knobTemp = 2
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp L1 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp L1 F7 +F
-        ASS knob2Push = 0
-        ASS knob2Turn = 0
-      ELSE
-        ASS knob2Push = 0
-      END
-
-      IF knob3Turn == 1
-        ASS knobTemp = 3
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp L2 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp L2 F7 +F
-        ASS knob3Push = 0
-        ASS knob3Turn = 0
-      ELSE
-        ASS knob3Push = 0
-      END
-
-      IF knob4Turn == 1
-        ASS knobTemp = 4
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp L3 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp L3 F7 +F
-        ASS knob4Push = 0
-        ASS knob4Turn = 0
-      ELSE
-        ASS knob4Push = 0
-      END
-
-      IF knob5Turn == 1
-        ASS knobTemp = 5
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp L4 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp L4 F7 +F
-        ASS knob5Push = 0
-        ASS knob5Turn = 0
-      ELSE
-        ASS knob5Push = 0
-      END
-
-      IF knob6Turn == 1
-        ASS knobTemp = 6
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp L5 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp L5 F7 +F
-        ASS knob6Push = 0
-        ASS knob6Turn = 0
-      ELSE
-        ASS knob6Push = 0
-      END
-
-      IF knob7Turn == 1
-        ASS knobTemp = 7
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp L6 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp L6 F7 +F
-        ASS knob7Push = 0
-        ASS knob7Turn = 0
-      ELSE
-        ASS knob7Push = 0
-      END
-
-      IF knob8Turn == 1
-        ASS knobTemp = 8
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp L7 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp L7 F7 +F
-        ASS knob8Push = 0
-        ASS knob8Turn = 0
-      ELSE
-        ASS knob8Push = 0
-      END
-
-      IF knob9Turn == 1
-        # send program change to ensure lighting correctly sends - necessary for 'B' knobs
-        IF programChange == 0
-          ASS programChange = 1
-          SEND C0 01
-        END
-        ASS knobTemp = B
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp L18 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp L18 F7 +F
-        ASS knob9Push = 0
-        ASS knob9Turn = 0
-      ELSE
-        ASS knob9Push = 0
-      END
-
-      IF knob10Turn == 1
-        # send program change to ensure lighting correctly sends - necessary for 'B' knobs
-        IF programChange == 0
-          ASS programChange = 1
-          SEND C0 01
-        END
-        ASS knobTemp = C
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp L19 +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp L19 F7 +F
-        ASS knob10Push = 0
-        ASS knob10Turn = 0
-      ELSE
-        ASS knob10Push = 0
-      END
-
-      IF knob11Turn == 1
-        # send program change to ensure lighting correctly sends - necessary for 'B' knobs
-        IF programChange == 0
-          ASS programChange = 1
-          SEND C0 01
-        END
-        ASS knobTemp = D
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp L1A +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp L1A F7 +F
-        ASS knob11Push = 0
-        ASS knob11Turn = 0
-      ELSE
-        ASS knob11Push = 0
-      END
-
-      IF knob12Turn == 1
-        # send program change to ensure lighting correctly sends - necessary for 'B' knobs
-        IF programChange == 0
-          ASS programChange = 1
-          SEND C0 01
-        END
-        ASS knobTemp = E
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp L1B +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp L1B F7 +F
-        ASS knob12Push = 0
-        ASS knob12Turn = 0
-      ELSE
-        ASS knob12Push = 0
-      END
-
-      IF knob13Turn == 1
-        # send program change to ensure lighting correctly sends - necessary for 'B' knobs
-        IF programChange == 0
-          ASS programChange = 1
-          SEND C0 01
-        END
-        ASS knobTemp = F
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp L1C +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp L1C F7 +F
-        ASS knob13Push = 0
-        ASS knob13Turn = 0
-      ELSE
-        ASS knob13Push = 0
-      END
-
-      IF knob14Turn == 1
-        # send program change to ensure lighting correctly sends - necessary for 'B' knobs
-        IF programChange == 0
-          ASS programChange = 1
-          SEND C0 01
-        END
-        ASS knobTemp = 10
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp L1D +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp L1D F7 +F
-        ASS knob14Push = 0
-        ASS knob14Turn = 0
-      ELSE
-        ASS knob14Push = 0
-      END
-
-      IF knob15Turn == 1
-        # send program change to ensure lighting correctly sends - necessary for 'B' knobs
-        IF programChange == 0
-          ASS programChange = 1
-          SEND C0 01
-        END
-        ASS knobTemp = 11
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp L1E +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp L1E F7 +F
-        ASS knob15Push = 0
-        ASS knob15Turn = 0
-      ELSE
-        ASS knob15Push = 0
-      END
-
-      IF knob16Turn == 1
-        # send program change to ensure lighting correctly sends - necessary for 'B' knobs
-        IF programChange == 0
-          ASS programChange = 1
-          SEND C0 01
-        END
-        ASS knobTemp = 12
-        # injection makes sure the parameters are changed correctly
-        SEND BA knobTemp L1F +I
-        # send ensures the lighting changes correctly (not applicable to tempo, which sends its own)
-        SEND F0 0F EE BA knobTemp L1F F7 +F
-        ASS knob16Push = 0
-        ASS knob16Turn = 0
-      ELSE
-        ASS knob16Push = 0
-      END
-      # send program change to ensure lighting correctly appears after change - necessary for 'B' knobs
-      IF programChange == 1
-        ASS programChange = 0
-        SEND C0 00
-
-        # also set lighting to pan
-        ASS resetIndex = 1
-        LOG resetIndex resetIndex
-        # loop until this is done for all eight knobs
-        WHILE resetIndex < 9
-          log here
-          # set lighting to 'pan'
-          SEND F0 0F EE B0 resetIndex 02 F7 +F
-          MATH resetIndex = resetIndex + 1
-        END
-        IF lfoMuteAll == 0
-          IF lfo1OnOffToggle == 1
-            IF lfo1Knob < 8
-              IF lfo1Knob < 3
-                MATH lfoTemp = lfo1Knob + 9
-                SEND F0 0F EE B0 lfoTemp 1C F7 +F
-              END
-              IF lfo1Knob > 4
-                MATH lfoTemp = lfo1Knob + 9
-                SEND F0 0F EE B0 lfoTemp 1C F7 +F
-              END
-            END
-          END
-          IF lfo2OnOffToggle == 1
-            IF lfo2Knob < 8
-              IF lfoNumMod == 0
-                IF lfo2Knob == 3
-                  SEND F0 0F EE B0 0C 1C F7 +F
-                END
-                IF lfo2Knob == 4
-                  SEND F0 0F EE B0 0D 1C F7 +F
-                END
-              END
-              IF lfo2Knob < 3
-                MATH lfoTemp = lfo2Knob + 9
-                SEND F0 0F EE B0 lfoTemp 1C F7 +F
-              END
-              IF lfo2Knob > 4
-                MATH lfoTemp = lfo2Knob + 9
-                SEND F0 0F EE B0 lfoTemp 1C F7 +F
-              END
-            END
-          END
-          IF lfo3OnOffToggle == 1
-            IF lfo3Knob < 8
-              IF lfoNumMod == 1
-                IF lfo3Knob == 3
-                  SEND F0 0F EE B0 0C 1C F7 +F
-                END
-                IF lfo3Knob == 4
-                  SEND F0 0F EE B0 0D 1C F7 +F
-                END
-              END
-              IF lfo3Knob < 3
-                MATH lfoTemp = lfo3Knob + 9
-                SEND F0 0F EE B0 lfoTemp 1C F7 +F
-              END
-              IF lfo3Knob > 4
-                MATH lfoTemp = lfo3Knob + 9
-                SEND F0 0F EE B0 lfoTemp 1C F7 +F
-              END
-            END
-          END
-          IF lfo4OnOffToggle == 1
-            IF lfo4Knob < 8
-              IF lfoNumMod == 2
-                IF lfo4Knob == 3
-                  SEND F0 0F EE B0 0C 1C F7 +F
-                END
-                IF lfo4Knob == 4
-                  SEND F0 0F EE B0 0D 1C F7 +F
-                END
-              END
-              IF lfo4Knob < 3
-                MATH lfoTemp = lfo4Knob + 9
-                SEND F0 0F EE B0 lfoTemp 1C F7 +F
-              END
-              IF lfo4Knob > 4
-                MATH lfoTemp = lfo4Knob + 9
-                SEND F0 0F EE B0 lfoTemp 1C F7 +F
-              END
-            END
-          END
-        END
-
-      END
-      # if using group push control, releasing the knob button should not have any effect (not that it does here)
-      BLOCK
-      EXIT
-    END
-  END
-
-  IF M1 == 13 00
-    IF setLfo == 1
-      SEND F0 0F EE 90 0B 02 F7 +F
-    END
-  END
-
-  IF M1 == 0C 00
-    IF lfo1OnOffToggle == 1
-      IF lfoNumMod == 0
-        SEND F0 0F EE 90 04 01 F7 +F
-      END
-      IF lfoMuteAll == 0
-        # no chain modulation from lfo 1
-        IF lfo1Knob < 8
-          MATH lfoTemp = lfo1Knob + 9
-          SEND F0 0F EE B0 lfoTemp 1C F7 +F
-        END
-      END
-    ELSE
-      # don't want to send L values twice if we don't have to
-      IF lfoMuteAll == 0
-        IF lfo1Knob < 8
-          MATH knobTemp = lfo1Knob + 1
-          IF lfo1Knob == 0
-            SEND BA knobTemp LJ3D +I
-          ELSE
-            SEND F0 0F EE BA knobTemp LJ3D F7 +F
-          END
-        END
-      END
-    END
-    IF lfo2OnOffToggle == 1
-      IF lfoNumMod == 1
-        SEND F0 0F EE 90 04 01 F7 +F
-      END
-      IF lfoMuteAll == 0
-        IF lfo2Knob < 8
-          IF lfoNumMod == 0
-            IF lfo2Knob == 3
-              SEND F0 0F EE B0 0C 1C F7 +F
-            END
-            IF lfo2Knob == 4
-              SEND F0 0F EE B0 0D 1C F7 +F
-            END
-          END
-          IF lfo2Knob < 3
-            MATH lfoTemp = lfo2Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-          IF lfo2Knob > 4
-            MATH lfoTemp = lfo2Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-        END
-      END
-    ELSE
-      # don't want to send L values twice if we don't have to
-      IF lfoMuteAll == 0
-        IF lfo2Knob < 8
-          IF lfoNumMod == 0
-            IF lfo2Knob == 3
-              SEND F0 0F EE BA 04 LJ3E F7 +F
-            END
-            IF lfo2Knob == 4
-              SEND F0 0F EE BA 05 LJ3E F7 +F
-            END
-          END
-          MATH knobTemp = lfo2Knob + 1
-          IF lfo2Knob == 0
-            SEND BA knobTemp LJ3E +I
-          END
-          IF lfo2Knob == 1
-            SEND F0 0F EE BA knobTemp LJ3E F7 +F
-          END
-          IF lfo2Knob == 2
-            SEND F0 0F EE BA knobTemp LJ3E F7 +F
-          END
-          IF lfo2Knob > 4
-            SEND F0 0F EE BA knobTemp LJ3E F7 +F
-          END
-        END
-      END
-    END
-    IF lfo3OnOffToggle == 1
-      IF lfoNumMod == 2
-        SEND F0 0F EE 90 04 01 F7 +F
-      END
-      IF lfoMuteAll == 0
-        IF lfo3Knob < 8
-          IF lfoNumMod == 1
-            IF lfo3Knob == 3
-              SEND F0 0F EE B0 0C 1C F7 +F
-            END
-            IF lfo3Knob == 4
-              SEND F0 0F EE B0 0D 1C F7 +F
-            END
-          END
-          IF lfo3Knob < 3
-            MATH lfoTemp = lfo3Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-          IF lfo3Knob > 4
-            MATH lfoTemp = lfo3Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-        END
-      END
-    ELSE
-      # don't want to send L values twice if we don't have to
-      IF lfoMuteAll == 0
-        IF lfo3Knob < 8
-          IF lfoNumMod == 1
-            IF lfo3Knob == 3
-              SEND F0 0F EE BA 04 LJ3F F7 +F
-            END
-            IF lfo3Knob == 4
-              SEND F0 0F EE BA 05 LJ3F F7 +F
-            END
-          END
-          MATH knobTemp = lfo3Knob + 1
-          IF lfo3Knob == 0
-            SEND BA knobTemp LJ3F +I
-          END
-          IF lfo3Knob == 1
-            SEND F0 0F EE BA knobTemp LJ3F F7 +F
-          END
-          IF lfo3Knob == 2
-            SEND F0 0F EE BA knobTemp LJ3F F7 +F
-          END
-          IF lfo3Knob > 4
-            SEND F0 0F EE BA knobTemp LJ3F F7 +F
-          END
-        END
-      END
-    END
-    IF lfo4OnOffToggle == 1
-      IF lfoNumMod == 3
-        SEND F0 0F EE 90 04 01 F7 +F
-      END
-      IF lfoMuteAll == 0
-        IF lfo4Knob < 8
-          IF lfoNumMod == 2
-            IF lfo4Knob == 3
-              SEND F0 0F EE B0 0C 1C F7 +F
-            END
-            IF lfo4Knob == 4
-              SEND F0 0F EE B0 0D 1C F7 +F
-            END
-          END
-          IF lfo4Knob < 3
-            MATH lfoTemp = lfo4Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-          IF lfo4Knob > 4
-            MATH lfoTemp = lfo4Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-        END
-      END
-    ELSE
-      # don't want to send L values twice if we don't have to
-      IF lfoMuteAll == 0
-        IF lfo4Knob < 8
-          IF lfoNumMod == 2
-            IF lfo4Knob == 3
-              SEND F0 0F EE BA 04 LJ40 F7 +F
-            END
-            IF lfo4Knob == 4
-              SEND F0 0F EE BA 05 LJ40 F7 +F
-            END
-          END
-          MATH knobTemp = lfo4Knob + 1
-          IF lfo4Knob == 0
-            SEND BA knobTemp LJ40 +I
-          END
-          IF lfo4Knob == 1
-            SEND F0 0F EE BA knobTemp LJ40 F7 +F
-          END
-          IF lfo4Knob == 2
-            SEND F0 0F EE BA knobTemp LJ40 F7 +F
-          END
-          IF lfo4Knob > 4
-            SEND F0 0F EE BA knobTemp LJ40 F7 +F
-          END
-        END
-      END
-    END
-  END
-
-  IF M1 == 14 00
-    IF lfoMuteAll == 1
-      SEND F0 0F EE 90 0C 01 F7 +F
-      IF lfo1OnOffToggle == 1
-        # no chain modulation from lfo 1
-        IF lfo1Knob < 8
-          MATH knobTemp = lfo1Knob + 1
-          IF lfo1Knob == 0
-            SEND BA knobTemp LJ3D +I
-          ELSE
-            SEND F0 0F EE BA knobTemp LJ3D F7 +F
-          END
-        END
-      END
-      IF lfo2OnOffToggle == 1
-        IF lfo2Knob < 8
-          IF lfoNumMod == 0
-            IF lfo2Knob == 3
-              SEND F0 0F EE BA 04 LJ3E F7 +F
-            END
-            IF lfo2Knob == 4
-              SEND F0 0F EE BA 05 LJ3E F7 +F
-            END
-          END
-          MATH knobTemp = lfo2Knob + 1
-          IF lfo2Knob == 0
-            SEND BA knobTemp LJ3E +I
-          END
-          IF lfo2Knob == 1
-            SEND F0 0F EE BA knobTemp LJ3E F7 +F
-          END
-          IF lfo2Knob == 2
-            SEND F0 0F EE BA knobTemp LJ3E F7 +F
-          END
-          IF lfo2Knob > 4
-            MATH knobTemp = lfo2Knob + 1
-            SEND F0 0F EE BA knobTemp LJ3E F7 +F
-          END
-        END
-      END
-      IF lfo3OnOffToggle == 1
-        IF lfo3Knob < 8
-          IF lfoNumMod == 1
-            IF lfo3Knob == 3
-              SEND F0 0F EE BA 04 LJ3F F7 +F
-            END
-            IF lfo3Knob == 4
-              SEND F0 0F EE BA 05 LJ3F F7 +F
-            END
-          END
-          MATH knobTemp = lfo3Knob + 1
-          IF lfo3Knob == 0
-            SEND BA knobTemp LJ3F +I
-          END
-          IF lfo3Knob == 1
-            SEND F0 0F EE BA knobTemp LJ3F F7 +F
-          END
-          IF lfo3Knob == 2
-            SEND F0 0F EE BA knobTemp LJ3F F7 +F
-          END
-          IF lfo3Knob > 4
-            MATH knobTemp = lfo3Knob + 1
-            SEND F0 0F EE BA knobTemp LJ3F F7 +F
-          END
-        END
-      END
-      IF lfo4OnOffToggle == 1
-        IF lfo4Knob < 8
-          IF lfoNumMod == 2
-            IF lfo4Knob == 3
-              SEND F0 0F EE BA 04 LJ40 F7 +F
-            END
-            IF lfo4Knob == 4
-              SEND F0 0F EE BA 05 LJ40 F7 +F
-            END
-          END
-          MATH knobTemp = lfo4Knob + 1
-          IF lfo4Knob == 0
-            SEND BA knobTemp LJ40 +I
-          END
-          IF lfo4Knob == 1
-            SEND F0 0F EE BA knobTemp LJ40 F7 +F
-          END
-          IF lfo4Knob == 2
-            SEND F0 0F EE BA knobTemp LJ40 F7 +F
-          END
-          IF lfo4Knob > 4
-            MATH knobTemp = lfo4Knob + 1
-            SEND F0 0F EE BA knobTemp LJ40 F7 +F
-          END
-        END
-      END
-    ELSE
-      IF lfo1OnOffToggle == 1
-        # no chain modulation from lfo 1
-        IF lfo1Knob < 8
-          MATH lfoTemp = lfo1Knob + 9
-          SEND F0 0F EE B0 lfoTemp 1C F7 +F
-        END
-      END
-      IF lfo2OnOffToggle == 1
-        IF lfo2Knob < 8
-          IF lfoNumMod == 0
-            IF lfo2Knob == 3
-              SEND F0 0F EE B0 0C 1C F7 +F
-            END
-            IF lfo2Knob == 4
-              SEND F0 0F EE B0 0D 1C F7 +F
-            END
-          END
-          IF lfo2Knob < 3
-            MATH lfoTemp = lfo2Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-          IF lfo2Knob > 4
-            MATH lfoTemp = lfo2Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-        END
-      END
-      IF lfo3OnOffToggle == 1
-        IF lfo3Knob < 8
-          IF lfoNumMod == 1
-            IF lfo3Knob == 3
-              SEND F0 0F EE B0 0C 1C F7 +F
-            END
-            IF lfo3Knob == 4
-              SEND F0 0F EE B0 0D 1C F7 +F
-            END
-          END
-          IF lfo3Knob < 3
-            MATH lfoTemp = lfo3Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-          IF lfo3Knob > 4
-            MATH lfoTemp = lfo3Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-        END
-      END
-      IF lfo4OnOffToggle == 1
-        IF lfo4Knob < 8
-          IF lfoNumMod == 2
-            IF lfo4Knob == 3
-              SEND F0 0F EE B0 0C 1C F7 +F
-            END
-            IF lfo4Knob == 4
-              SEND F0 0F EE B0 0D 1C F7 +F
-            END
-          END
-          IF lfo4Knob < 3
-            MATH lfoTemp = lfo4Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-          IF lfo4Knob > 4
-            MATH lfoTemp = lfo4Knob + 9
-            SEND F0 0F EE B0 lfoTemp 1C F7 +F
-          END
-        END
-      END
-    END
-  END
-
-  IF M1 == 0E 00
-    IF lfoNumMod == 0
-      IF lfo1Sync == 1
-        SEND F0 0F EE 90 06 01 F7 +F
-      END
-    END
-    IF lfoNumMod == 1
-      IF lfo2Sync == 1
-        SEND F0 0F EE 90 06 01 F7 +F
-      END
-    END
-    IF lfoNumMod == 2
-      IF lfo3Sync == 1
-        SEND F0 0F EE 90 06 01 F7 +F
-      END
-    END
-    IF lfoNumMod == 3
-      IF lfo4Sync == 1
-        SEND F0 0F EE 90 06 01 F7 +F
-      END
-    END
-  END
-
-  IF M1 == 16 00
-    IF lfoNumMod == 0
-      IF lfo1Base == 1
-        SEND F0 0F EE 90 0E 01 F7 +F
-      END
-    END
-    IF lfoNumMod == 1
-      IF lfo2Base == 1
-        SEND F0 0F EE 90 0E 01 F7 +F
-      END
-    END
-    IF lfoNumMod == 2
-      IF lfo3Base == 1
-        SEND F0 0F EE 90 0E 01 F7 +F
-      END
-    END
-    IF lfoNumMod == 3
-      IF lfo4Base == 1
-        SEND F0 0F EE 90 0E 01 F7 +F
-      END
-    END
-  END
-
-  # if it is a button 15 push toggle lfo inversion
-  IF M1 == 0F 00
-    IF lfoNumMod == 0
-      IF lfo1Invert == 1
-        SEND F0 0F EE 90 07 01 F7 +F
-      END
-    END
-    IF lfoNumMod == 1
-      IF lfo2Invert == 1
-        SEND F0 0F EE 90 07 01 F7 +F
-      END
-    END
-    IF lfoNumMod == 2
-      IF lfo3Invert == 1
-        SEND F0 0F EE 90 07 01 F7 +F
-      END
-    END
-    IF lfoNumMod == 3
-      IF lfo4Invert == 1
-        SEND F0 0F EE 90 07 01 F7 +F
-      END
-    END
-  END
-
-  # channel specific
-
-  # if it is a knob 9 button release, toggle waveguide
-  IF M1 == 18 00
-    IF waveguideToggle == 0
-      ASS waveguideToggle = 1
-      # NOTE this is a little janky - waveguide doesn't seem to reset visually and requires a press on the machine itself
-      SEND F0 11 EE channelCC $116 7F F7 +F
-    ELSE
-      ASS waveguideToggle = 0
-      # NOTE this is a little janky - waveguide doesn't seem to reset visually and requires a press on the machine itself
-      SEND F0 11 EE channelCC $116 00 F7 +F
-    END
-  END
-
-  # if it is a knob 10 button release, toggle pitch quantize
-  IF M1 == 19 00
-    IF pitchQuantize == 0
-      ASS pitchQuantize = 1
-      SEND F0 11 EE channelCC $53 7F F7 +F
-    ELSE
-      ASS pitchQuantize = 0
-      SEND F0 11 EE channelCC $53 00 F7 +F
-    END
-  END
-
-  IF M1 == 25 00
-    SEND F0 0F EE 90 05 01 F7 +F
-    ASS previousTrackingMode = 05
-  END
-  IF M1 == 24 00
-    SEND F0 0F EE 90 04 01 F7 +F
-    ASS previousTrackingMode = 04
-  END
-  IF M1 == 2C 00
-    SEND F0 0F EE 90 0C 01 F7 +F
-    ASS previousTrackingMode = 0C
-  END
-
-  # if knob is pressed and a drumParam is changed, the value in the L array will not match up correctly
-  # NOTE monitor for actions that this may be blocking that are unrelated to drum
-  # send lighting if drumParam is the same so that the light doesn't just turn off
-  IF knob9Push == 1
-    IF M1 >= 20
-      IF M1 <= 23
-        MATH knobTemp = M1 - previousDrumVal
-        IF knobTemp == 20
-          SEND F0 0F EE 90 previousDrumVal 01 F7 +F
-        END
-      END
-    END
-    IF M1 >= 28
-      IF M1 <= 2B
-        MATH knobTemp = M1 - previousDrumVal
-        IF knobTemp == 20
-          SEND F0 0F EE 90 previousDrumVal 01 F7 +F
-        END
-      END
-    END
-    BLOCK
-    EXIT
-  END
-  IF knob10Push == 1
-    IF M1 >= 20
-      IF M1 <= 23
-        MATH knobTemp = M1 - previousDrumVal
-        IF knobTemp == 20
-          SEND F0 0F EE 90 previousDrumVal 01 F7 +F
-        END
-      END
-    END
-    IF M1 >= 28
-      IF M1 <= 2B
-        MATH knobTemp = M1 - previousDrumVal
-        IF knobTemp == 20
-          SEND F0 0F EE 90 previousDrumVal 01 F7 +F
-        END
-      END
-    END
-    BLOCK
-    EXIT
-  END
-  IF knob11Push == 1
-    IF M1 >= 20
-      IF M1 <= 23
-        MATH knobTemp = M1 - previousDrumVal
-        IF knobTemp == 20
-          SEND F0 0F EE 90 previousDrumVal 01 F7 +F
-        END
-      END
-    END
-    IF M1 >= 28
-      IF M1 <= 2B
-        MATH knobTemp = M1 - previousDrumVal
-        IF knobTemp == 20
-          SEND F0 0F EE 90 previousDrumVal 01 F7 +F
-        END
-      END
-    END
-    BLOCK
-    EXIT
-  END
-
-  IF M1 == 20 00
-    SEND F0 0F EE 90 00 01 F7 +F
-    IF lfo1Knob >= 18
-      IF lfo1Knob <= 20
-        MATH lfoTemp = lfo1Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo2Knob >= 18
-      IF lfo2Knob <= 20
-        MATH lfoTemp = lfo2Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo3Knob >= 18
-      IF lfo3Knob <= 20
-        MATH lfoTemp = lfo3Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo4Knob >= 18
-      IF lfo4Knob <= 20
-        MATH lfoTemp = lfo4Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    ASS previousDrumVal = 00
-  END
-  IF M1 == 21 00
-    SEND F0 0F EE 90 01 01 F7 +F
-    IF lfo1Knob >= 18
-      IF lfo1Knob <= 20
-        MATH lfoTemp = lfo1Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo2Knob >= 18
-      IF lfo2Knob <= 20
-        MATH lfoTemp = lfo2Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo3Knob >= 18
-      IF lfo3Knob <= 20
-        MATH lfoTemp = lfo3Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo4Knob >= 18
-      IF lfo4Knob <= 20
-        MATH lfoTemp = lfo4Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    ASS previousDrumVal = 01
-  END
-  IF M1 == 22 00
-    SEND F0 0F EE 90 02 01 F7 +F
-    IF lfo1Knob >= 18
-      IF lfo1Knob <= 20
-        MATH lfoTemp = lfo1Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo2Knob >= 18
-      IF lfo2Knob <= 20
-        MATH lfoTemp = lfo2Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo3Knob >= 18
-      IF lfo3Knob <= 20
-        MATH lfoTemp = lfo3Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo4Knob >= 18
-      IF lfo4Knob <= 20
-        MATH lfoTemp = lfo4Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    ASS previousDrumVal = 02
-  END
-  IF M1 == 23 00
-    SEND F0 0F EE 90 03 01 F7 +F
-    IF lfo1Knob >= 18
-      IF lfo1Knob <= 20
-        MATH lfoTemp = lfo1Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo2Knob >= 18
-      IF lfo2Knob <= 20
-        MATH lfoTemp = lfo2Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo3Knob >= 18
-      IF lfo3Knob <= 20
-        MATH lfoTemp = lfo3Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo4Knob >= 18
-      IF lfo4Knob <= 20
-        MATH lfoTemp = lfo4Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    ASS previousDrumVal = 03
-  END
-  IF M1 == 28 00
-    SEND F0 0F EE 90 08 01 F7 +F
-    IF lfo1Knob >= 18
-      IF lfo1Knob <= 20
-        MATH lfoTemp = lfo1Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo2Knob >= 18
-      IF lfo2Knob <= 20
-        MATH lfoTemp = lfo2Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo3Knob >= 18
-      IF lfo3Knob <= 20
-        MATH lfoTemp = lfo3Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo4Knob >= 18
-      IF lfo4Knob <= 20
-        MATH lfoTemp = lfo4Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    ASS previousDrumVal = 08
-  END
-  IF M1 == 29 00
-    SEND F0 0F EE 90 09 01 F7 +F
-    IF lfo1Knob >= 18
-      IF lfo1Knob <= 20
-        MATH lfoTemp = lfo1Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo2Knob >= 18
-      IF lfo2Knob <= 20
-        MATH lfoTemp = lfo2Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo3Knob >= 18
-      IF lfo3Knob <= 20
-        MATH lfoTemp = lfo3Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo4Knob >= 18
-      IF lfo4Knob <= 20
-        MATH lfoTemp = lfo4Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    ASS previousDrumVal = 09
-  END
-  IF M1 == 2A 00
-    SEND F0 0F EE 90 0A 01 F7 +F
-    IF lfo1Knob >= 18
-      IF lfo1Knob <= 20
-        MATH lfoTemp = lfo1Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo2Knob >= 18
-      IF lfo2Knob <= 20
-        MATH lfoTemp = lfo2Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo3Knob >= 18
-      IF lfo3Knob <= 20
-        MATH lfoTemp = lfo3Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo4Knob >= 18
-      IF lfo4Knob <= 20
-        MATH lfoTemp = lfo4Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    ASS previousDrumVal = 0A
-  END
-  IF M1 == 2B 00
-    SEND F0 0F EE 90 0B 01 F7 +F
-    IF lfo1Knob >= 18
-      IF lfo1Knob <= 20
-        MATH lfoTemp = lfo1Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo2Knob >= 18
-      IF lfo2Knob <= 20
-        MATH lfoTemp = lfo2Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo3Knob >= 18
-      IF lfo3Knob <= 20
-        MATH lfoTemp = lfo3Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    IF lfo4Knob >= 18
-      IF lfo4Knob <= 20
-        MATH lfoTemp = lfo4Knob - F
-        SEND F0 0F EE B0 lfoTemp 1C F7 +F
-      END
-    END
-    ASS previousDrumVal = 0B
-  END
-
-  # end channel specific
-
-END
-
-
-# if it is a knob turn
-IF MT == B0
-  # set knob turn to true if using push control
-  IF knob1Push == 1
-    IF M1 == 1
-      ASS knob1Turn = 1
-    END
-  END
-  IF knob2Push == 1
-    IF M1 == 2
-      ASS knob2Turn = 1
-    END
-  END
-  IF knob3Push == 1
-    IF M1 == 3
-      ASS knob3Turn = 1
-    END
-  END
-  IF knob4Push == 1
-    IF M1 == 4
-      ASS knob4Turn = 1
-    END
-  END
-  IF knob5Push == 1
-    IF M1 == 5
-      ASS knob5Turn = 1
-    END
-  END
-  IF knob6Push == 1
-    IF M1 == 6
-      ASS knob6Turn = 1
-    END
-  END
-  IF knob7Push == 1
-    IF M1 == 7
-      ASS knob7Turn = 1
-    END
-  END
-  IF knob8Push == 1
-    IF M1 == 8
-      ASS knob8Turn = 1
-    END
-  END
-  IF knob9Push == 1
-    IF M1 == 0B
-      ASS knob9Turn = 1
-    END
-  END
-  IF knob10Push == 1
-    IF M1 == 0C
-      ASS knob10Turn = 1
-    END
-  END
-  IF knob11Push == 1
-    IF M1 == 0D
-      ASS knob11Turn = 1
-    END
-  END
-  IF knob12Push == 1
-    IF M1 == 0E
-      ASS knob12Turn = 1
-    END
-  END
-  IF knob13Push == 1
-    IF M1 == 0F
-      ASS knob13Turn = 1
-    END
-  END
-  IF knob14Push == 1
-    IF M1 == 10
-      ASS knob14Turn = 1
-    END
-  END
-  IF knob15Push == 1
-    IF M1 == 11
-      ASS knob15Turn = 1
-    END
-  END
-  IF knob16Push == 1
-    IF M1 == 12
-      ASS knob16Turn = 1
-    END
-  END
-  # if knob is 1 (tempo)
-  # knob is sensitive down to one notch
-  IF M1 == 1
-    # if tempo mode is 0
-    IF tempoModeMod == 0
-      # NOTE because lighting does actually change the CC value, we need to handle this based on lighting
-      # turning up
-      # if knob value is 1
-      IF M2 >= 1
-        IF M2 <= 6
-          ASS tempoPulse = 36
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $13 F7 +F
-          IF knob1Push == 0
-            ASS L0 = 1
-          END
-        END
-      END
-      # if knob value is 14
-      IF M2 >= $14
-        IF M2 <= $19
-          ASS tempoPulse = 24
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $26 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $14
-          END
-        END
-      END
-      # if knob value is 27
-      IF M2 >= $27
-        IF M2 <= $32
-          ASS tempoPulse = 18
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $39 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $27
-          END
-        END
-      END
-      # if knob value is 40
-      IF M2 >= $40
-        IF M2 <= $45
-          ASS tempoPulse = 12
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $52 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $40
-          END
-        END
-      END
-      # if knob value is 53
-      IF M2 >= $53
-        IF M2 <= $58
-          ASS tempoPulse = 9
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $65 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $53
-          END
-        END
-      END
-      # if knob value is 66
-      IF M2 >= $66
-        IF M2 <= $71
-          ASS tempoPulse = 6
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $78 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $66
-          END
-        END
-      END
-      # if knob value is 79
-      IF M2 >= $79
-        IF M2 <= $84
-          ASS tempoPulse = 4
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $91 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $79
-          END
-        END
-      END
-      # if knob value is 92
-      IF M2 >= $92
-        IF M2 <= $97
-          ASS tempoPulse = 3
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $104 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $92
-          END
-        END
-      END
-      # if knob value is 105
-      IF M2 >= $105
-        IF M2 <= $110
-          ASS tempoPulse = 2
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $117 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $105
-          END
-        END
-      END
-      # if knob value is 118
-      IF M2 >= $118
-        IF M2 <= $122
-          ASS tempoPulse = 1
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $127 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $118
-          END
-        END
-      END
-      # turning down
-      # if knob value is 12
-      IF M2 >= 7
-        IF M2 <= $12
-          ASS tempoPulse = 48
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $0 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $12
-          END
-        END
-      END
-      # if knob value is 25
-      IF M2 >= $20
-        IF M2 <= $25
-          ASS tempoPulse = 36
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $13 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $25
-          END
-        END
-      END
-      # if knob value is 38
-      IF M2 >= $33
-        IF M2 <= $38
-          ASS tempoPulse = 24
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $26 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $38
-          END
-        END
-      END
-      # if knob value is 51
-      IF M2 >= $46
-        IF M2 <= $51
-          ASS tempoPulse = 18
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $39 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $51
-          END
-        END
-      END
-      # if knob value is 64
-      IF M2 >= $59
-        IF M2 <= $64
-          ASS tempoPulse = 12
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $52 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $64
-          END
-        END
-      END
-      # if knob value is 77
-      IF M2 >= $72
-        IF M2 <= $77
-          ASS tempoPulse = 9
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $65 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $77
-          END
-        END
-      END
-      # if knob value is 90
-      IF M2 >= $85
-        IF M2 <= $90
-          ASS tempoPulse = 6
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $78 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $90
-          END
-        END
-      END
-      # if knob value is 103
-      IF M2 >= $98
-        IF M2 <= $103
-          ASS tempoPulse = 4
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $91 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $103
-          END
-        END
-      END
-      # if knob value is 116
-      IF M2 >= $111
-        IF M2 <= $116
-          ASS tempoPulse = 3
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $104 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $116
-          END
-        END
-      END
-      # if knob value is 126
-      IF M2 >= $123
-        IF M2 <= $126
-          ASS tempoPulse = 2
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $117 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $126
-          END
-        END
-      END
-    END
-
-    # if tempo mode is 1
-    IF tempoModeMod == 1
-      # turning up
-      # if knob value is 1
-      IF M2 >= 1
-        IF M2 <= $12
-          ASS tempoPulse = 12
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $25 F7 +F
-          IF knob1Push == 0
-            ASS L0 = 1
-          END
-        END
-      END
-      # if knob value is 26
-      IF M2 >= $26
-        IF M2 <= $37
-          ASS tempoPulse = 9
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $50 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $26
-          END
-        END
-      END
-      # if knob value is 51
-      IF M2 >= $51
-        IF M2 <= $62
-          ASS tempoPulse = 6
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $75 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $51
-          END
-        END
-      END
-      # if knob value is 76
-      IF M2 >= $76
-        IF M2 <= $87
-          ASS tempoPulse = 4
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $100 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $76
-          END
-        END
-      END
-      # if knob value is 101
-      IF M2 >= $101
-        IF M2 <= $112
-          ASS tempoPulse = 3
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $127 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $101
-          END
-        END
-      END
-      # turning down
-      # if knob value is 24
-      IF M2 >= $13
-        IF M2 <= $24
-          ASS tempoPulse = 24
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 00 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $24
-          END
-        END
-      END
-      # if knob value is 49
-      IF M2 >= $38
-        IF M2 <= $49
-          ASS tempoPulse = 12
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $25 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $49
-          END
-        END
-      END
-      # if knob value is 74
-      IF M2 >= $63
-        IF M2 <= $74
-          ASS tempoPulse = 9
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $50 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $74
-          END
-        END
-      END
-      # if knob value is 99
-      IF M2 >= $88
-        IF M2 <= $99
-          ASS tempoPulse = 6
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $75 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $99
-          END
-        END
-      END
-      # if knob value is 126
-      IF M2 >= $113
-        IF M2 <= $126
-          ASS tempoPulse = 4
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $100 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $126
-          END
-        END
-      END
-    END
-
-    # if tempo mode is 2
-    IF tempoModeMod == 2
-      # turning up
-      # if knob value is 1
-      IF M2 >= 1
-        IF M2 <= $12
-          ASS tempoPulse = 48
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $25 F7 +F
-          IF knob1Push == 0
-            ASS L0 = 1
-          END
-        END
-      END
-      # if knob value is 26
-      IF M2 >= $26
-        IF M2 <= $37
-          ASS tempoPulse = 24
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $50 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $26
-          END
-        END
-      END
-      # if knob value is 51
-      IF M2 >= $51
-        IF M2 <= $62
-          ASS tempoPulse = 12
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $75 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $51
-          END
-        END
-      END
-      # if knob value is 76
-      IF M2 >= $76
-        IF M2 <= $87
-          ASS tempoPulse = 6
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $100 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $76
-          END
-        END
-      END
-      # if knob value is 101
-      IF M2 >= $101
-        IF M2 <= $112
-          ASS tempoPulse = 3
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $127 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $101
-          END
-        END
-      END
-      # turning down
-      # if knob value is 24
-      IF M2 >= $13
-        IF M2 <= $24
-          ASS tempoPulse = 96
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 00 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $24
-          END
-        END
-      END
-      # if knob value is 49
-      IF M2 >= $38
-        IF M2 <= $49
-          ASS tempoPulse = 48
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $25 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $49
-          END
-        END
-      END
-      # if knob value is 74
-      IF M2 >= $63
-        IF M2 <= $74
-          ASS tempoPulse = 24
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $50 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $74
-          END
-        END
-      END
-      # if knob value is 99
-      IF M2 >= $88
-        IF M2 <= $99
-          ASS tempoPulse = 12
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $75 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $99
-          END
-        END
-      END
-      # if knob value is 126
-      IF M2 >= $113
-        IF M2 <= $126
-          ASS tempoPulse = 6
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $100 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $126
-          END
-        END
-      END
-    END
-
-    # if tempo mode is 3
-    IF tempoModeMod == 3
-      # turning up
-      # if knob value is 1
-      IF M2 >= 1
-        IF M2 <= $12
-          ASS tempoPulse = 36
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $25 F7 +F
-          IF knob1Push == 0
-            ASS L0 = 1
-          END
-        END
-      END
-      # if knob value is 26
-      IF M2 >= $26
-        IF M2 <= $37
-          ASS tempoPulse = 18
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $50 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $26
-          END
-        END
-      END
-      # if knob value is 51
-      IF M2 >= $51
-        IF M2 <= $62
-          ASS tempoPulse = 9
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $75 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $51
-          END
-        END
-      END
-      # if knob value is 76
-      IF M2 >= $76
-        IF M2 <= $87
-          ASS tempoPulse = 4
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $100 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $76
-          END
-        END
-      END
-      # if knob value is 101
-      IF M2 >= $101
-        IF M2 <= $112
-          ASS tempoPulse = 2
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $127 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $101
-          END
-        END
-      END
-      # turning down
-      # if knob value is 24
-      IF M2 >= $13
-        IF M2 <= $24
-          ASS tempoPulse = 72
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 00 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $24
-          END
-        END
-      END
-      # if knob value is 49
-      IF M2 >= $38
-        IF M2 <= $49
-          ASS tempoPulse = 36
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $25 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $49
-          END
-        END
-      END
-      # if knob value is 74
-      IF M2 >= $63
-        IF M2 <= $74
-          ASS tempoPulse = 18
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $50 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $74
-          END
-        END
-      END
-      # if knob value is 99
-      IF M2 >= $88
-        IF M2 <= $99
-          ASS tempoPulse = 9
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $75 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $99
-          END
-        END
-      END
-      # if knob value is 126
-      IF M2 >= $113
-        IF M2 <= $126
-          ASS tempoPulse = 4
-          BX = XX +B
-          SEND F0 CC 03 tempoPulse F7 +F
-          SEND F0 0F EE BA 01 $100 F7 +F
-          IF knob1Push == 0
-            ASS L0 = $126
-          END
-        END
-      END
-    END
-  END
-  # if knob is 2 (gate)
-  # starting points: max will be ~5 seconds (5000), min will be .1 seconds (100)
-  # 2.5 seconds should be enough to handle 96 pulses at 120 bpm,  but slower bpm's can move up to 5 seconds
-  # overall: 0-127 (*2) (*5) (*10) (*20) (*40)
-  IF M1 == 2
-    # NOTE none of the values here end up sending an F7, but if changed it's possible they could, which would cause issues
-    MATH gate = M2 * gateFactor
-    MATH gateTemp = gate / 100
-    SEND F0 CC 04 gateTemp gate F7 +F
-    IF knob2Push == 0
-      ASS L1 = M2
-    END
-  END
-  # if knob is 3 (velocity)
-  IF M1 == 3
-    ASS velocity = M2
-    SEND F0 C1 05 velocity F7 +F
-    IF knob3Push == 0
-      ASS L2 = M2
-    END
-  END
-  # if knob is 4 (lfo rate)
-  IF M1 == 4
-    # needs to be sent out
-    # assign for push control
-    IF knob4Push == 0
-      ASS L3 = M2
-    END
-    IF lfoNumMod == 0
-      ASS lfo1Rate = M2
-      SEND F0 01 16 lfoNumMod lfo1Rate F7 +F
-    END
-    IF lfoNumMod == 1
-      ASS lfo2Rate = M2
-      SEND F0 01 16 lfoNumMod lfo2Rate F7 +F
-    END
-    IF lfoNumMod == 2
-      ASS lfo3Rate = M2
-      SEND F0 01 16 lfoNumMod lfo3Rate F7 +F
-    END
-    IF lfoNumMod == 3
-      ASS lfo4Rate = M2
-      SEND F0 01 16 lfoNumMod lfo4Rate F7 +F
-    END
-  END
-  # if knob is 5 (lfo depth)
-  IF M1 == 5
-    # needs to be sent out
-    # assign for push control
-    IF knob5Push == 0
-      ASS L4 = M2
-    END
-    IF lfoNumMod == 0
-      ASS lfo1Depth = M2
-      SEND F0 01 17 lfoNumMod lfo1Depth F7 +F
-    END
-    IF lfoNumMod == 1
-      ASS lfo2Depth = M2
-      SEND F0 01 17 lfoNumMod lfo2Depth F7 +F
-    END
-    IF lfoNumMod == 2
-      ASS lfo3Depth = M2
-      SEND F0 01 17 lfoNumMod lfo3Depth F7 +F
-    END
-    IF lfoNumMod == 3
-      ASS lfo4Depth = M2
-      SEND F0 01 17 lfoNumMod lfo4Depth F7 +F
-    END
-  END
-
-  # channel specific
-
-  # if knob is 6 (pan)
-  IF M1 == 6
-    # needs to be sent out
-    # assign for push control
-    IF knob6Push == 0
-      ASS L5 = M2
-    END
-    ASS knob6CurrentVal = M2
-
-    # send channel specific val
-    SEND F0 11 EE channelCC knob6Val M2 F7 +F
-  END
-  # if knob is 7 (dry gain)
-  IF M1 == 7
-    # needs to be sent out
-    # assign for push control
-    IF knob7Push == 0
-      ASS L6 = M2
-    END
-    ASS knob7CurrentVal = M2
-
-    # send channel specific val
-    SEND F0 11 EE channelCC knob7Val M2 F7 +F
-  END
-  # if knob is 8 (drive)
-  IF M1 == 8
-    # needs to be sent out
-    # assign for push control
-    IF knob8Push == 0
-      ASS L7 = M2
-    END
-    ASS knob8CurrentVal = M2
-
-    # send channel specific val
-    SEND F0 11 EE channelCC knob8Val M2 F7 +F
-  END
-  # if knob is B (drumParam 1)
-  IF M1 == B
-    # needs to be sent out
-    # assign for push control
-    IF knob9Push == 0
-      ASS L18 = M2
-    END
-    # if drumParams are 'select'
-    IF drumParams == $14 $15 $16
-      SEND F0 11 EE channelCC $14 M2 F7 +F
-      ASS select1 = M2
-    END
-    # if drumParams are 'level'
-    IF drumParams == $17 $18 $19
-      SEND F0 11 EE channelCC $17 M2 F7 +F
-      ASS level1 = M2
-    END
-    # if drumParams are 'attack'
-    IF drumParams == $20 $21 $22
-      SEND F0 11 EE channelCC $20 M2 F7 +F
-      ASS attack1 = M2
-    END
-    # if drumParams are 'release'
-    IF drumParams == $23 $24 $25
-      SEND F0 11 EE channelCC $23 M2 F7 +F
-      ASS release1 = M2
-    END
-    # if drumParams are 'pitch'
-    IF drumParams == $26 $27 $28
-      SEND F0 11 EE channelCC $26 M2 F7 +F
-      ASS pitch1 = M2
-    END
-    # if drumParams are 'modAmount'
-    IF drumParams == $29 $30 $31
-      SEND F0 11 EE channelCC $29 M2 F7 +F
-      ASS modAmount1 = M2
-    END
-    # if drumParams are 'modRate'
-    IF drumParams == $46 $47 $48
-      SEND F0 11 EE channelCC $46 M2 F7 +F
-      ASS modRate1 = M2
-    END
-    # if drumParams are 'waveguide'
-    IF drumParams == $117 $118 $119
-      SEND F0 11 EE channelCC $117 M2 F7 +F
-      ASS waveguideDecay = M2
-    END
-  END
-  # if knob is C (drumParam 2)
-  IF M1 == C
-    # needs to be sent out
-    # assign for push control
-    IF knob10Push == 0
-      ASS L19 = M2
-    END
-    # if drumParams are 'select'
-    IF drumParams == $14 $15 $16
-      SEND F0 11 EE channelCC $15 M2 F7 +F
-      ASS select2 = M2
-    END
-    # if drumParams are 'level'
-    IF drumParams == $17 $18 $19
-      SEND F0 11 EE channelCC $18 M2 F7 +F
-      ASS level2 = M2
-    END
-    # if drumParams are 'attack'
-    IF drumParams == $20 $21 $22
-      SEND F0 11 EE channelCC $21 M2 F7 +F
-      ASS attack2 = M2
-    END
-    # if drumParams are 'release'
-    IF drumParams == $23 $24 $25
-      SEND F0 11 EE channelCC $24 M2 F7 +F
-      ASS release2 = M2
-    END
-    # if drumParams are 'pitch'
-    IF drumParams == $26 $27 $28
-      SEND F0 11 EE channelCC $27 M2 F7 +F
-      ASS pitch2 = M2
-    END
-    # if drumParams are 'modAmount'
-    IF drumParams == $29 $30 $31
-      SEND F0 11 EE channelCC $30 M2 F7 +F
-      ASS modAmount2 = M2
-    END
-    # if drumParams are 'modRate'
-    IF drumParams == $46 $47 $48
-      SEND F0 11 EE channelCC $47 M2 F7 +F
-      ASS modRate2 = M2
-    END
-    # if drumParams are 'waveguide'
-    IF drumParams == $117 $118 $119
-      SEND F0 11 EE channelCC $118 M2 F7 +F
-      ASS waveguideBody = M2
-    END
-  END
-  # if knob is D (drumParam 3)
-  IF M1 == D
-    # needs to be sent out
-    # assign for push control
-    IF knob11Push == 0
-      ASS L1A = M2
-    END
-    # if drumParams are 'select'
-    IF drumParams == $14 $15 $16
-      SEND F0 11 EE channelCC $16 M2 F7 +F
-      ASS selectBoth = M2
-    END
-    # if drumParams are 'level'
-    IF drumParams == $17 $18 $19
-      SEND F0 11 EE channelCC $19 M2 F7 +F
-      ASS levelBoth = M2
-    END
-    # if drumParams are 'attack'
-    IF drumParams == $20 $21 $22
-      SEND F0 11 EE channelCC $22 M2 F7 +F
-      ASS attackBoth = M2
-    END
-    # if drumParams are 'release'
-    IF drumParams == $23 $24 $25
-      SEND F0 11 EE channelCC $25 M2 F7 +F
-      ASS releaseBoth = M2
-    END
-    # if drumParams are 'pitch'
-    IF drumParams == $26 $27 $28
-      SEND F0 11 EE channelCC $28 M2 F7 +F
-      ASS pitchBoth = M2
-    END
-    # if drumParams are 'modAmount'
-    IF drumParams == $29 $30 $31
-      SEND F0 11 EE channelCC $31 M2 F7 +F
-      ASS modAmountBoth = M2
-    END
-    # if drumParams are 'modRate'
-    IF drumParams == $46 $47 $48
-      SEND F0 11 EE channelCC $48 M2 F7 +F
-      ASS modRateBoth = M2
-    END
-    # if drumParams are 'waveguide'
-    IF drumParams == $117 $118 $119
-      SEND F0 11 EE channelCC $119 M2 F7 +F
-      ASS waveguideTune = M2
-    END
-  END
-
-  # if knob is E (waveguide send)
-  IF M1 == E
-    # needs to be sent out
-    # assign for push control
-    IF knob12Push == 0
-      ASS L1B = M2
-    END
-    ASS knob12CurrentVal = M2
-
-    # send channel specific val
-    SEND F0 11 EE channelCC knob12Val M2 F7 +F
-  END
-  # if knob is F (bit reduction)
-  IF M1 == F
-    # needs to be sent out
-    # assign for push control
-    IF knob13Push == 0
-      ASS L1C = M2
-    END
-    ASS knob13CurrentVal = M2
-
-    # send channel specific val
-    SEND F0 11 EE channelCC knob13Val M2 F7 +F
-  END
-  # if knob is 10 (fold)
-  IF M1 == 10
-    # needs to be sent out
-    # assign for push control
-    IF knob14Push == 0
-      ASS L1D = M2
-    END
-    ASS knob14CurrentVal = M2
-
-    # send channel specific val
-    # SEND F0 11 EE channelCC knob14Val M2 F7 +F
-  END
-  # if knob is 11 (unspecified)
-  IF M1 == 11
-    # needs to be sent out
-    # assign for push control
-    IF knob15Push == 0
-      ASS L1E = M2
-    END
-    ASS knob15CurrentVal = M2
-
-    # send channel specific val
-    # SEND F0 11 EE channelCC knob15Val M2 F7 +F
-  END
-  # if knob is 12 (unspecified)
-  IF M1 == 12
-    # needs to be sent out
-    # assign for push control
-    IF knob16Push == 0
-      ASS L1F = M2
-    END
-    ASS knob16CurrentVal = M2
-
-    # send channel specific val
-    # SEND F0 11 EE channelCC knob16Val M2 F7 +F
-  END
-
-  # end channel specific
-
-END
-
-BX = XX +B
-NX = XX +B
+// xtouch mini
+
+@OnLoad
+
+  // timer interval is .025 second
+
+  SetTimerInterval 25
+
+  // minimal layout
+
+  ShowLayout 4
+
+  // constant
+
+  // 1, 2, 3, 4, 6, 9, 18, 24, 36, 54, 72, 114, 150
+  tempoMode0Vals = [0x48, 0x36, 0x24, 0x18, 0x12, 0x09, 0x06, 0x04, 0x03, 0x02, 0x01]
+  tempoMode1Vals = [0x24, 0x12, 0x09, 0x06, 0x04, 0x03]
+  tempoMode2Vals = [0x96, 0x48, 0x24, 0x12, 0x06, 0x03]
+  tempoMode3Vals = [0x72, 0x36, 0x18, 0x09, 0x04, 0x02]
+
+  gateFactorArr = [1, 2, 5, 16, 32, 64]
+
+  // channel specific constant
+
+  channel = 4
+  channelCC = channel + 176 
+
+  drumButtons = [0, 1, 2, 3, 8, 9, 10, 11]
+
+  drumParam1 = [14, 17, 20, 23, 26, 29, 46, 117]
+  drumParam2 = [15, 18, 21, 24, 27, 30, 47, 118]
+  drumParam3 = [16, 19, 22, 25, 28, 31, 48, 119]
+
+  // assign local
+
+  Call @InitVariables
+
+@End
+
+@InitVariables
+
+  tempoMode = 0
+
+  gateMode = 0
+
+  setLfo = 0
+
+  lfoType = [0, 0, 0, 0]
+  lfoNum = 0
+
+  gateFactor = 1
+  programChange = 0
+
+  transposeMute = 0
+
+  knobPush = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  knobTurn = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  groupKnobPush = 0
+
+  FillArray sendKnobTemp, -1, 16
+  FillArray sendPushReset, -1, 16
+
+  // assign channel specific variables
+
+  // NOTE pushReset array is used for lighting storage for push control - these are init values
+  // channel specific
+  pushReset = [0x0E, 0x00, 0x64, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+
+  // 0x40 and drumParams are channel specific
+  // lfoRate and lfoDepth are not used (in addition to drumParams)
+  // could be changed easily in the future if desired - might be cleaner, more scaleable - but have no usage for them at this point
+  knobCurrentVal = [0x24, 0x00, 0x64, 0xFFFF, 0xFFFF, 0x40, 0x00, 0x00, 0xFFFF, 0xFFFF, 0xFFFF, 0x00, 0x00, 0x00, 0x00, 0x00]
+
+  // first set of 0xFFFF are not sent, second set are drumParams (init drumParamCurrent at 0), third set are unspecified
+  // technically most of these are constants, but putting this here due to drumParams
+  knobSendVals = [0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0x0A, 0x34, 0x33, 0x0E, 0x0F, 0x10, 0x67, 0x31, 0x32, 0xFFFF, 0xFFFF]
+
+  pitchQuantize = 0
+  waveguideToggle = 0
+  previousDrumVal = 0
+  previousTrackingMode = 5
+  drumParamCurrent = 0
+
+  drumParam1CurrentVal = [0, 0, 0, 0, 0, 0, 0, 0]
+  drumParam2CurrentVal = [0, 0, 0, 0, 0, 0, 0, 0]
+  drumParam3CurrentVal = [0, 0, 0, 0, 0, 0, 0, 0]
+
+@End
+
+// timer necessary because of the way Mozaic prioritizes sysex over other sent values
+// timerVal is 1-4 (inclusive) - init:
+// change program to b, init b, change program to a, init a
+// timerVal is 5-8 (inclusive) - channelChange:
+// change program to b, clear and add new channel for b, change program to a, clear and add new channel for a
+// timerVal is 9-12 (inclusive) - setLfo off, if knob is 'B' mode:
+// change program to a, turn buttonFlash off, change program to a, init lighting
+// timerVal is 13-16 (inclusive) - groupKnobPush off:
+// change program to b, set knob values, change program to a, init lighting
+// NOTE could technically remove the need for a filter if we timed ResetCurrentModeLighting with its own conditional
+@OnTimer
+  if timerVal = 1 or timerVal = 5 or timerVal = 13 or timerVal = 11 // 1-4 for init
+    // reset lights for mode 'B'
+    SendMIDIOut 0xC0, 0x01
+    timerVal = timerVal + 1
+
+  elseif timerVal = 2
+    // loop until this is done for all sixteen buttons
+    resetKnobs = 1
+    knobLightingCCOffset = 11
+    Call @ResetCurrentModeLighting
+
+    // send init drum lighting
+    sendData = [0x0F, 0xEE, 0x90, 0x00, 0x01]
+    SendSysex sendData, 5
+
+    // send init trackingMode lighting
+    sendData = [0x0F, 0xEE, 0x90, 0x05, 0x01]
+    SendSysex sendData, 5
+
+    timerVal = timerVal + 1
+
+  elseif timerVal = 3 or timerVal = 7 or timerVal = 15 or timerVal = 9
+    // change program back to 'A'
+    SendMIDIOut 0xC0, 0x00
+
+    timerVal = timerVal + 1
+
+  elseif timerVal = 4
+    // loop until this is done for all sixteen buttons
+    resetKnobs = 1
+    knobLightingCCOffset = 1
+    Call @ResetCurrentModeLighting
+
+    // (re)set sysex variables
+    // NOTE could move this also into the init load for completeness (or remove local from init load?)
+
+    arpPhraseToggle = 0
+    arpPhraseOnOffToggle = 0
+    tempoPulse = 0x24
+    arpValueMode = 0
+    setPhrase = 0
+    latch = 0
+    padMode = 0
+    lfoNumMod = 0
+    trackingMode = 0 // channel specific
+    lfoTypeMod = 0
+    lfoRate = [0, 0, 0, 0]
+    lfoDepth = [0, 0, 0, 0]
+    lfoOnOffToggle = [0, 0, 0, 0]
+    lfoSync = [0, 0, 0, 0]
+    lfoBase = [0, 0, 0, 0]
+    lfoInvert = [0, 0, 0, 0]
+    lfoKnob = [0x26, 0x26, 0x26, 0x26] // NOTE set not to modulate anything initially
+    lfoMuteAll = 0
+
+    // reset necessary local variables
+
+    Call @InitVariables
+
+    // send init tempo lighting
+    sendData = [0x0F, 0xEE, 0xBA, 0x01, 26]
+    SendSysex sendData, 5
+    // send init velocity lighting
+    sendData = [0x0F, 0xEE, 0xBA, 0x03, 100]
+    SendSysex sendData, 5
+
+    // channel specific
+
+    // NOTE could likely just use a for loop with knobCurrent
+    // send init pan lighting
+    sendData = [0x0F, 0xEE, 0xBA, 0x06, 0x40]
+    SendSysex sendData, 5
+
+    // end channel specific
+
+    StopTimer
+    ResetTimer
+    timerVal = 0
+
+  elseif timerVal = 6 // 5 handled above (channel change)
+    // need to reset lights from other channel
+    // loop until this is done for all sixteen buttons
+    resetKnobs = 0
+    knobLightingCCOffset = 0 // not used here
+    Call @ResetCurrentModeLighting
+
+    // channel specific
+
+    // send trackingMode lighting
+    sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x01]
+    SendSysex sendData, 5
+
+    // send drum lighting
+    sendData = [0x0F, 0xEE, 0x90, drumButtons[previousDrumVal], 0x01]
+    SendSysex sendData, 5
+
+    sendData = [0x0F, 0xEE, 0xBA, drumParam1[drumParamCurrent], drumParam1CurrentVal[drumParamCurrent]]
+    SendSysex sendData, 5
+    sendData = [0x0F, 0xEE, 0xBA, drumParam2[drumParamCurrent], drumParam2CurrentVal[drumParamCurrent]]
+    SendSysex sendData, 5
+    sendData = [0x0F, 0xEE, 0xBA, drumParam3[drumParamCurrent], drumParam3CurrentVal[drumParamCurrent]]
+    SendSysex sendData, 5
+
+    // end channel specific
+
+    // send rest of 'B' mode knob data
+    for i = 11 to 15
+      knobTemp = i + 3
+      sendData = [0x0F, 0xEE, 0xBA, knobTemp, knobCurrentVal[i]]
+      SendSysex sendData, 5
+    endfor
+
+    timerVal = timerVal + 1
+
+  elseif timerval = 8 // 7 handled above as well
+    // need to reset lights from other channel
+    // loop until this is done for all sixteen buttons
+    resetKnobs = 1
+    knobLightingCCOffset = 1
+    Call @ResetCurrentModeLighting
+
+    // NOTE could send the variables themselves rather than using conditionals in most instances
+    // could even save these variables as an array and iterate through
+    if arpPhraseToggle = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x01, 0x01]
+      SendSysex sendData, 5
+      if setPhrase = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x00, 0x01]
+        SendSysex sendData, 5
+      endif
+    endif
+    if arpPhraseOnOffToggle = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x09, 0x01]
+      SendSysex sendData, 5
+    endif
+    if latch = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x02, 0x01]
+      SendSysex sendData, 5
+    endif
+    // NOTE because setLfo is a temporary and restrictive state, it should reset on channel switching
+    if setLfo = 1
+      setLfo = 0
+    endif
+    // NOTE knobPush in general is complicated - pushing knobs while switching channel will almost certainly break something (esp with setLfo on), since knobPush will not be reset on switch. Should resolve itself on the next knobPush for that number and channel, but might be confusing to see
+    // because switching channel is designed to use two hands, hoping this won't come up
+    // would be fairly simple to resolve, just possibly a little convoluted (see conditionals when groupPushKnob is turned off; these would likely just be copied and pasted here)
+    if groupKnobPush = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x0A, 0x01]
+      SendSysex sendData, 5
+    endif
+    if padMode = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x03, 0x01]
+      SendSysex sendData, 5
+    endif
+
+    // NOTE other lfo specific button lighting sent later, with flashing knob lighting
+    // NOTE can't be done via pushReset array due to groupKnobPush being possibly on
+    // send tempo, gate, velocity, 6, 7, 8 lighting
+    for i = 0 to 5
+      if i > 2
+        i = i + 2
+      endif
+      j = i + 1
+      sendData = [0x0F, 0xEE, 0xBA, j, knobCurrentVal[i]]
+      SendSysex sendData, 5
+    endfor
+
+    // send lfoRate
+    sendData = [0x0F, 0xEE, 0xBA, 0x04, lfoRate[lfoNumMod]]
+    SendSysex sendData, 5
+    // send lfoDepth
+    sendData = [0x0F, 0xEE, 0xBA, 0x05, lfoDepth[lfoNumMod]]
+    SendSysex sendData, 5
+
+    if lfoMuteAll = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x0C, 0x01]
+      SendSysex sendData, 5
+    else
+      for i = 0 to 3
+        if lfoOnOffToggle[i] = 1
+          if (lfoKnob[i] < 8 and lfoKnob[i] <> 3 and lfoKnob[i] <> 4) or ((lfoKnob[i] = 3 or lfoKnob[i] = 4) and lfoNumMod = i - 1)
+            knobTemp = lfoKnob[i] + 9
+            sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+            SendSysex sendData, 5
+          endif
+        endif
+      endfor
+    endif
+
+    if lfoOnOffToggle[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x04, 0x01]
+      SendSysex sendData, 5
+    endif
+    if lfoSync[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x06, 0x01]
+      SendSysex sendData, 5
+    endif
+    if lfoBase[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x0E, 0x01]
+      SendSysex sendData, 5
+    endif
+    if lfoInvert[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x07, 0x01]
+      SendSysex sendData, 5
+    endif
+
+    StopTimer
+    ResetTimer
+    timerVal = 0
+
+  elseif timerVal = 10 // 9 and 11 handled above (setLfo reset)
+    sendData = [0x0F, 0xEE, 0x90, 0x0B, 0x00]
+    SendSysex sendData, 5
+
+    timerVal = timerVal + 1
+
+  elseif timerVal = 14 // 13 handled above (set reset)
+    // send groupKnobPush to 'B' mode
+    for l = 8 to 15
+      if sendKnobTemp[l] <> -1 and sendPushReset[l] <> -1
+        sendData = [0x0F, 0xEE, 0xBA, sendKnobTemp[l], sendPushReset[l]]
+        SendSysex sendData, 5
+      endif
+    endfor
+
+    timerVal = timerVal + 1
+
+  elseif timerVal = 12
+
+    // resend lighting for mode 'B'
+    Call @ResetModeBTempLighting
+
+    StopTimer
+    ResetTimer
+    timerVal = 0
+
+  elseif timerVal = 16
+    // send groupKnobPush to 'A' mode
+    for l = 1 to 7
+      if sendKnobTemp[l] <> -1 and sendPushReset[l] <> -1
+        sendData = [0x0F, 0xEE, 0xBA, sendKnobTemp[l], sendPushReset[l]]
+        SendSysex sendData, 5
+      endif
+    endfor
+
+    Call @ResetModeATempLighting
+
+    StopTimer
+    ResetTimer
+    timerVal = 0
+
+  endif
+
+@End
+
+// sysex reception
+
+@OnSysex
+
+  ReceiveSysex sysexData
+
+  // ALLOW FF
+  // BLOCK 11 CC 0F 01 3F 9F (+ xtouch program change, key presses, key releases, and CC's)
+  if sysexData[0] <> 0xFC and sysexData[0] <> 0xFF
+    Exit
+
+  // clock message triggered by host clock starting
+  elseif sysexData[0] = 0x7D and sysexData[1] = 0x01
+    Exit
+
+  elseif sysexData[1] = 0x07
+    setPhrase = sysexData[2]
+    // Turn off setPhrase light when sysex received
+    if setPhrase = 0
+      sendData = [0x0F, 0xEE, 0x90, 0x00, 0x00]
+      SendSysex sendData, 5
+    endif
+    Exit
+
+  // Turn off lights when init sysex received
+  elseif sysexData[1] = 0x1B
+
+    // reset lfo
+    sendData = [0x01, 0x1D, 0x00]
+    SendSysex sendData, 3
+
+    timerVal = 1
+    StartTimer // see @OnTimer for more details here
+    // necessary because sysex typically sends about .005 faster than program change regardless of the order in the code
+
+    Exit
+
+  // Send lights when channel change sysex received
+  elseif sysexData[1] = 0x1E
+
+    timerVal = 5
+    StartTimer // see @OnTimer for more details here
+    // necessary because sysex typically sends about .005 faster than program change regardless of the order in the code
+
+  endif
+
+@End
+
+// end sysex reception
+
+@ResetCurrentModeLighting
+  for i = 0 to 15
+    knobTemp = i + knobLightingCCOffset
+    // these should only go up to eight
+    if resetKnobs = 1 and i < 8
+      // reset lighting on knobs
+      sendData = [0x0F, 0xEE, 0xBA, knobTemp, 0x00]
+      SendSysex sendData, 5
+      if knobLightingCCOffset = 1
+        // set lighting to 'pan'
+        sendData = [0x0F, 0xEE, 0xB0, knobTemp, 0x02]
+        SendSysex sendData, 5
+      endif
+    endif
+    // reset button lighting
+    sendData = [0x0F, 0xEE, 0x90, i, 0x00]
+    SendSysex sendData, 5
+  endfor
+@End
+
+// this handles all CC and note MIDI, since notes are converted to CC to enable recording in modstep
+@OnMIDICC
+
+  if MIDIChannel <> channel
+    Exit
+
+  elseif MIDIByte2 = 0x7C // converted from note on
+    Call @HandleNoteOn
+
+  elseif MIDIByte2 = 0x7D // converted from note off
+    Call @HandleNoteOff
+
+  // transpose
+  elseif MIDIByte2 = 0x09
+    if transposeMute = 0
+      sendData = [0x11, 0xEE, channelCC, 0x7A, MIDIByte3]
+      SendSysex sendData, 5
+    endif
+
+  // transpose
+  elseif MIDIByte2 = 0x0A
+    if transposeMute = 0
+      sendData = [0x11, 0xEE, channelCC, 0x7B, MIDIByte3]
+      SendSysex sendData, 5
+    endif
+
+  else
+    MIDIByte2Temp = MIDIByte2
+    MIDIByte3Temp = MIDIByte3
+    Call @HandleKnobTurn
+
+  endif
+
+@End
+
+// if it is a button push
+@HandleNoteOn
+
+  MIDINoteVal = MIDIByte3 - 19 // adjust from offset
+
+  Call @HandlePushControl
+
+  // if it is a button 1 push
+  if MIDINoteVal = 0x08 and MIDIByte2 = 0x7C
+    // if arp then increase variable
+    if arpPhraseToggle = 0
+      // set value mode to variable modulo 12
+      arpValueMode = (arpValueMode + 1) % 12
+      sendData = [0xC1, 0x06, arpValueMode]
+      SendSysex sendData, 3
+    // if phrase then toggle setPhrase
+    else
+      if setPhrase = 0
+        setPhrase = 1
+        sendData = [0x11, 0x07, setPhrase]
+        SendSysex sendData, 3
+      else
+        setPhrase = 0
+        sendData = [0x11, 0x07, setPhrase]
+        SendSysex sendData, 3 
+      endif
+    endif
+    Exit
+
+  // if it is a button 9 push
+  elseif MIDINoteVal = 0x10 and MIDIByte2 = 0x7C
+    // if arp then decrease variable
+    if arpPhraseToggle = 0
+      // set value mode to variable modulo 12
+      arpValueMode = ((arpValueMode - 1) % 12)
+      // NOTE for some reason negative modulos are negative numbers in mozaic, so need to add 12 to offset this
+      if arpValueMode < 0
+        arpValueMode = arpValueMode + 12
+      endif
+      sendData = [0xC1, 0x06, arpValueMode]
+      SendSysex sendData, 3
+    // if phrase then add rest to phrase sequence
+    else
+      if setPhrase = 1
+        sendData = [0x11, 0x1A, 0x2E]
+        SendSysex sendData, 3
+        // NOTE not currently planning on handling this, but there may is likely a race condition between rest and note that could cause issues
+      endif
+    endif
+    Exit
+
+  // if it is a button 2 push toggle arp / phrase
+  elseif MIDINoteVal = 0x09 and MIDIByte2 = 0x7C
+    if arpPhraseToggle = 0
+      arpPhraseToggle = 1
+      sendData = [0xC1, 0x01, arpPhraseToggle]
+      SendSysex sendData, 3
+    else
+      arpPhraseToggle = 0
+      sendData = [0xC1, 0x01, arpPhraseToggle]
+      SendSysex sendData, 3
+      if setPhrase = 1
+        setPhrase = 0
+        sendData = [0x11, 0x07, setPhrase]
+        SendSysex sendData, 3
+      endif
+    endif
+    Exit
+
+  // if it is a button 10 push toggle button 2 selection on / off
+  elseif MIDINoteVal = 0x11 and MIDIByte2 = 0x7C
+    if arpPhraseOnOffToggle = 0
+      arpPhraseOnOffToggle = 1
+      sendData = [0xC1, 0x02, arpPhraseOnOffToggle]
+      SendSysex sendData, 3
+    else
+      arpPhraseOnOffToggle = 0
+      sendData = [0xC1, 0x02, arpPhraseOnOffToggle]
+      SendSysex sendData, 3
+    endif
+    Exit
+
+  // if it is a button 3 push toggle latch
+  elseif MIDINoteVal = 0x0A and MIDIByte2 = 0x7C
+    if latch = 0
+      latch = 1
+      sendData = [0xC1, 0x0B, latch]
+      SendSysex sendData, 3
+    else
+      latch = 0
+      sendData = [0xC1, 0x0B, latch]
+      SendSysex sendData, 3
+    endif
+    Exit
+
+  // if it is a button 11 push toggle groupKnobPush
+  elseif MIDINoteVal = 0x12 and MIDIByte2 = 0x7C
+    if groupKnobPush = 0
+      groupKnobPush = 1
+    else
+      groupKnobPush = 0
+    endif
+    Exit
+
+  // if it is a button 4 push toggle padMode
+  elseif MIDINoteVal = 0x0B and MIDIByte2 = 0x7C
+    // isBeats
+    if padMode = 0
+      padMode = 1
+      sendData = [0x3F, 0x0C, padMode]
+      SendSysex sendData, 3
+    // isSample
+    else
+      padMode = 0
+      sendData = [0x3F, 0x0C, padMode]
+      SendSysex sendData, 3
+    endif
+    Exit
+
+  // if it is a button 12 set lfo
+  elseif MIDINoteVal = 0x13 and MIDIByte2 = 0x7C
+    // knobPush prevents setLfo when on - this is in place to ensure knobPush and Turn can't set lfoKnob and not reset push control
+    // see blocks for handling of setLfo on release below - no handling for push control
+    for i = 0 to 15
+      if knobPush[i] = 1
+        Exit
+      endif
+    endfor
+    if setLfo = 0
+      setLfo = 1
+    else
+      setLfo = 0
+    endif
+    Exit
+
+  // if it is a button 5 push toggle current lfo
+  elseif MIDINoteVal = 0x0C and MIDIByte2 = 0x7C
+    if lfoOnOffToggle[lfoNumMod] = 0
+      lfoOnOffToggle[lfoNumMod] = 1
+    else
+      lfoOnOffToggle[lfoNumMod] = 0
+    endif
+    sendData = [0x01, 0x11, lfoNumMod, lfoOnOffToggle[lfoNumMod]]
+    SendSysex sendData, 4
+    Exit
+
+  // if it is a button 13 push toggle mute of all lfos
+  elseif MIDINoteVal = 0x14 and MIDIByte2 = 0x7C
+    if lfoMuteAll = 0
+      lfoMuteAll = 1
+    else
+      lfoMuteAll = 0
+    endif
+    sendData = [0x01, 0x12, lfoMuteAll]
+    SendSysex sendData, 3
+    Exit
+
+  // if it is a button 6 push restart lfo
+  elseif MIDINoteVal = 0x0D and MIDIByte2 = 0x7C
+    sendData = [0x01, 0x14, lfoNumMod]
+    SendSysex sendData, 3
+    Exit
+
+  // if it is a button 14 push restart all lfos
+  elseif MIDINoteVal = 0x15 and MIDIByte2 = 0x7C
+    sendData = [0x01, 0x15, 0x00]
+    SendSysex sendData, 3
+    Exit
+
+  // if it is a button 7 push sync lfo to tempo
+  elseif MIDINoteVal = 0x0E and MIDIByte2 = 0x7C
+    if lfoSync[lfoNumMod] = 0
+      lfoSync[lfoNumMod] = 1
+    else
+      lfoSync[lfoNumMod] = 0
+    endif
+    sendData = [0x01, 0x0E, lfoNumMod, lfoSync[lfoNumMod]]
+    SendSysex sendData, 4
+    Exit
+
+  // if it is a button 15 push toggle lfo base (1: middle or 0: bottom)
+  elseif MIDINoteVal = 0x16 and MIDIByte2 = 0x7C
+    if lfoBase[lfoNumMod] = 0
+      lfoBase[lfoNumMod] = 1
+    else
+      lfoBase[lfoNumMod] = 0
+    endif
+    sendData = [0x01, 0x0F, lfoNumMod, lfoBase[lfoNumMod]]
+    SendSysex sendData, 4
+    Exit
+
+  // if it is a button 8 push toggle lfo inversion
+  elseif MIDINoteVal = 0x0F and MIDIByte2 = 0x7C
+    if lfoInvert[lfoNumMod] = 0
+      lfoInvert[lfoNumMod] = 1
+    else
+      lfoInvert[lfoNumMod] = 0
+    endif
+    sendData = [0x01, 0x10, lfoNumMod, lfoInvert[lfoNumMod]]
+    SendSysex sendData, 4
+    Exit
+
+  // if it is a button 16 send 'pan' lighting (reset after mode change)
+  elseif MIDINoteVal = 0x17 and MIDIByte2 = 0x7C
+    Call @ResetModeATempLighting
+    Exit
+
+  // if it is a button 32 reset lfo modulation lighting
+  elseif MIDINoteVal = 0x2F and MIDIByte2 = 0x7C
+    Call @ResetModeBTempLighting
+    Exit
+
+  // channel specific
+
+  // tracking off
+  elseif MIDINoteVal = 0x25 and MIDIByte2 = 0x7C
+    trackingMode = 0
+    if previousTrackingMode <> 5
+      sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
+      SendSysex sendData, 5
+    endif
+    sendData = [0x11, 0x1F, trackingMode]
+    SendSysex sendData, 3
+    Exit
+
+  // tracking mode double
+  elseif MIDINoteVal = 0x24 and MIDIByte2 = 0x7C
+    trackingMode = 2
+    if previousTrackingMode <> 4
+      sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
+      SendSysex sendData, 5
+    endif
+    sendData = [0x11, 0x1F, trackingMode]
+    SendSysex sendData, 3
+    Exit
+
+  // tracking mode single
+  elseif MIDINoteVal = 0x2C and MIDIByte2 = 0x7C
+    trackingMode = 1
+    if previousTrackingMode <> 0x0C
+      sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
+      SendSysex sendData, 5
+    endif
+    sendData = [0x11, 0x1F, trackingMode]
+    SendSysex sendData, 3
+    Exit
+
+  // if knob is pressed and a drumParam is changed, the value in the L array will not match up correctly - exit before
+  elseif groupKnobPush = 1 or knobPush[8] = 1 or knobPush[9] = 1 or knobPush[10] = 1
+    Exit
+
+  elseif MIDINoteVal >= 32 and MIDINoteVal <= 35 and MIDIByte2 = 0x7C
+    drumParamCurrent = MIDINoteVal - 32
+    Call @HandleDrumParamChange
+    Exit
+
+  elseif MIDINoteVal >= 40 and MIDINoteVal <= 43 and MIDIByte2 = 0x7C
+    drumParamCurrent = MIDINoteVal - 36
+    Call @HandleDrumParamChange
+    Exit
+  endif
+
+  // end channel specific
+
+@End
+
+@HandlePushControl
+  // don't assign if setting lfo - this prevents push control issues when setting lfo
+  if setLfo = 1
+    Exit
+  endif
+
+  if MIDINoteVal <= 7
+    MIDINoteOffset = MIDINoteVal
+  elseif MIDINoteVal >= 24 and MIDINoteVal <= 31
+    MIDINoteOffset = MIDINoteVal - 16
+  else
+    Exit
+  endif
+
+  // chain modulating lfos should not be impacted by the conditionals below, since push control should work with them when they are being modulated
+  // the reason push control caused issues for the other knobs was because the lfo information was getting sent directly back here for processing and turning on knobTurn inadvertently - with these two the processing all occurs in the lfo file
+
+  // if there is an lfo currently modulating that is on
+  if lfoMuteAll = 0 and MIDINoteVal <> 3 and MIDINoteVal <> 4
+    for i = 0 to 3
+      if lfoKnob[i] = MIDINoteVal and lfoOnOffToggle[i] = 1
+        Exit
+      endif
+    endfor
+  endif
+
+  knobPush[MIDINoteOffset] = 1
+
+@End
+
+@HandleDrumParamChange
+  if drumParamCurrent <> drumButtons[previousDrumVal]
+    sendData = [0x0F, 0xEE, 0x90, drumButtons[previousDrumVal], 0x00]
+    SendSysex sendData, 5
+  endif
+  sendData = [0x0F, 0xEE, 0xBA, 0x0B, drumParam1CurrentVal[drumParamCurrent]]
+  SendSysex sendData, 5
+  pushReset[8] = drumParam1CurrentVal[drumParamCurrent]
+  sendData = [0x0F, 0xEE, 0xBA, 0x0C, drumParam2CurrentVal[drumParamCurrent]]
+  SendSysex sendData, 5
+  pushReset[9] = drumParam2CurrentVal[drumParamCurrent]
+  sendData = [0x0F, 0xEE, 0xBA, 0x0D, drumParam3CurrentVal[drumParamCurrent]]
+  SendSysex sendData, 5
+  pushReset[10] = drumParam3CurrentVal[drumParamCurrent]
+@End
+
+@ResetModeATempLighting
+  // loop until this is done for all eight knobs
+  for i = 1 to 8
+    // set lighting to 'pan'
+    sendData = [0x0F, 0xEE, 0xB0, i, 0x02]
+    SendSysex sendData, 5
+  endfor
+
+  if lfoMuteAll = 0 
+    for i = 0 to 3
+      if lfoOnOffToggle[i] = 1 and lfoKnob[i] < 8
+        if ((lfoKnob[i] = 3 or lfoKnob[i] = 4) and i - 1 = lfoNumMod) or (lfoKnob[i] <> 3 and lfoKnob[i] <> 4)
+          lfoTemp = lfoKnob[i] + 9
+        endif
+        sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+        SendSysex sendData, 5
+      endif
+    endfor
+  endif
+@End
+
+@ResetModeBTempLighting
+  if lfoMuteAll = 0 
+    for i = 0 to 3
+      if lfoOnOffToggle[i] = 1 and lfoKnob[i] >= 24 and lfoKnob[i] <= 31
+        lfoTemp = lfoKnob[i] - 15
+        sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+        SendSysex sendData, 5
+      endif
+    endfor
+  endif
+@End
+
+// if it is a button note-off (important for lighting)
+@HandleNoteOff
+
+  MIDINoteVal = MIDIByte3 - 19 // adjust from offset
+
+  // if it's a knobPush (and / or knobTurn) and we're trying to set lfo we need to ignore other associated functionality
+  if setLfo = 1 and (MIDINoteVal < 8 or (MIDINoteVal > 23 and MIDINoteVal < 32))
+    // chained modulation will automatically default to lfo modulating lfo immediately below it
+    // need to prevent chained modulation from looping infinitely, so lfo 1 (0) will not be able to modulate another lfo
+    // NOTE could attempt to make the chain more flexible (i.e. 0, 3, 2, 1; 1, 0, 3, 2) but don't feel that's necessary at this point
+    if lfoNumMod = 0 and (MIDINoteVal = 03 or MIDINoteVal = 04)
+      Exit
+    endif
+
+    // lfo knobs (3 and 4) can modulate each other, but others can't
+    if MIDINoteVal <> 3 and MIDINoteVal <> 4
+      for i = 0 to 3
+        if lfoKnob[i] = MIDINoteVal
+          Exit
+        endfor
+      endfor
+    endif
+
+    // check if values are in same mode - should not send if knobs are not in the same mode ('A' or 'B')
+    if lfoKnob[lfoNumMod] < 8 and MIDINoteVal < 8
+      sameMode = 1
+      knobLightingCCOffset = 1
+    elseif lfoKnob[lfoNumMod] > 23 and MIDINoteVal > 23
+      sameMode = 1
+      knobLightingCCOffset = -15
+    else
+      sameMode = 0
+    endif
+
+    // send pushReset value to old knob
+    if lfoMuteAll = 0 and lfoOnOffToggle[lfoNumMod] = 1 and lfoKnob[lfoNumMod] <> 3 and lfoKnob[lfoNumMod] <> 4 and sameMode = 1
+      knobTemp = lfoKnob[lfoNumMod] + knobLightingCCOffset
+      sendData = [0x0F, 0xEE, 0xBA, knobTemp, pushReset[lfoNumMod]]
+      SendSysex sendData, 5
+    endif
+
+    // NOTE at what point should the offset be added - because offset is inconsistent, might not be worth too much thought
+    lfoKnob[lfoNumMod] = MIDINoteVal
+    sendData = [0x01, 0x0D, lfoNumMod, lfoKnob[lfoNumMod]]
+    SendSysex sendData, 4
+
+    setLfo = 0
+
+    // send flash to new knob
+    if lfoMuteAll = 0 and lfoOnOffToggle[lfoNumMod] = 1
+
+      if lfoKnob[lfoNumMod] < 8 and lfoKnob[lfoNumMod] <> 3 and lfoKnob[lfoNumMod] <> 4
+        lfoTemp = lfoKnob[lfoNumMod] + 9
+        sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+        SendSysex sendData, 5
+      endif
+
+    endif
+
+    // reset flashing setLfo button
+    if lfoKnob[lfoNumMod] < 8
+      sendData = [0x0F, 0xEE, 0x90, 0x0B, 0x00]
+      SendSysex sendData, 5
+    elseif lfoKnob[lfoNumMod] > 23
+      timerVal = 9
+      StartTimer // see @OnTimer for more details here
+      // necessary because sysex typically sends about .005 faster than program change regardless of the order in the code
+    endif
+
+    Exit
+  endif
+
+  // push control
+  // NOTE these conditionals are separate from other knob push conditionals below - likely better to consolidate at some point
+  // NOTE currently pushing a knob, then pressing groupKnobPush, then releasing the knob will not reset, which is expected at this point
+  // NOTE if groupKnobPush is active, any knob push will result in the standard functionality, even if the knob is turned
+
+  // ignore knobPush changes if groupKnobPush is on
+  if groupKnobPush = 0
+
+    knobPushResetConst = 1
+    for i = 0 to 15
+        if i > 7
+          j = i + 16
+          knobPushResetConst = -13
+        else
+          j = i
+        endif
+      if MIDINoteVal = j and MIDIByte2 = 0x7D
+        if knobTurn[i] = 1
+          knobTemp = MIDINoteVal + knobPushResetConst
+          // HandleKnobTurn makes sure the parameters are changed correctly
+          MIDIByte2Temp = knobTemp
+          MIDIByte3Temp = pushReset[i]
+          Call @HandleKnobTurn
+          // tempo sends its own lighting, so this is not necessary
+          if j <> 0
+            sendData = [0x0F, 0xEE, 0xBA, knobTemp, pushReset[i]]
+            SendSysex sendData, 5
+          endif
+          knobPush[i] = 0
+          knobTurn[i] = 0
+
+          // if using push control, releasing the knob button should not have any effect
+          Exit
+        else
+          knobPush[i] = 0
+        endif
+      endif
+    endfor
+
+  endif
+
+  // end push control
+
+  // if it is a knob 1 button release, increase tempo mode
+  if MIDINoteVal = 0x00 and MIDIByte2 = 0x7D
+    // set tempo mode to variable modulo 4
+    tempoMode = (tempoMode + 1) % 4
+    sendData = [0x01, 0x18, tempoMode]
+    SendSysex sendData, 3
+
+    // set each tempoPulse to default value on switching
+    // also send data to xtouch to reflect this
+    if tempoMode = 0
+      tempoPulse = 0x24
+      pushReset[0] = 26
+    elseif tempoMode = 1
+      tempoPulse = 0x24
+      pushReset[0] = 00
+    elseif tempoMode = 2
+      tempoPulse = 0x24
+      pushReset[0] = 50
+    elseif tempoMode = 3
+      tempoPulse = 0x18
+      pushReset[0] = 50
+    endif
+    sendData = [0xCC, 0x03, tempoPulse]
+    SendSysex sendData, 3
+
+    // don't send lighting / pushReset val if knob is actively being modulated
+    // NOTE this isn't completely necessary but helps keep the lfo more closely synced as it moves
+    for i = 0 to 3
+      if lfoKnob[i] = 0 and lfoOnOffToggle[i] = 1 and lfoMuteAll = 0
+        Exit
+      endif
+    endfor
+
+    sendData = [0x0F, 0xEE, 0xBA, 0x01, pushReset[0]]
+    SendSysex sendData, 5
+    Exit
+
+  // if it is a knob 2 button release, increase gate mode
+  elseif MIDINoteVal = 0x01 and MIDIByte2 = 0x7D
+    // set gate mode to variable modulo 6
+    // NOTE preventing the light from sending will change the length more quickly, more easily
+    // NOTE will be testing with live to see best setup here
+    gateMode = (gateMode + 1) % 6
+
+    gateFactor = gateFactorArr[gateMode]
+
+    // don't send lighting / pushReset val if knob is actively being modulated
+    // NOTE this isn't completely necessary but helps keep the lfo more closely synced as it moves
+    for i = 0 to 3
+      if lfoKnob[i] = 1 and lfoOnOffToggle[i] = 1 and lfoMuteAll = 0
+        Exit
+      endif
+    endfor
+
+    sendData = [0x0F, 0xEE, 0xBA, 0x02, 0x00]
+    SendSysex sendData, 5
+    pushReset[1] = 00 // NOTE with knob 1, this is only set prior to avoid adding the conditionals again after the lfoKnobs check
+    Exit
+
+  // if it is a knob 4 button release, change lfo type
+  elseif MIDINoteVal = 0x03 and MIDIByte2 = 0x7D
+
+    lfoType[lfoNumMod] = lfoType[lfoNumMod] + 1
+    // set tempo mode to variable modulo 7
+    lfoTypeMod = lfoType[lfoNumMod] % 7
+    sendData = [0x01, 0x13, lfoNumMod, lfoTypeMod]
+    SendSysex sendData, 4
+    Exit
+
+  // if it is a knob 5 button release, change lfo num (the lfo that's being edited)
+  elseif MIDINoteVal = 0x04 and MIDIByte2 = 0x7D
+    // this will cause issues if groupKnobPush or knob4Push is on due to the values in pushReset array
+    if groupKnobPush = 1 or knobPush[3] = 1
+      Exit
+    endif
+    lfoNum = lfoNum + 1
+    // set tempo mode to variable modulo 4
+    lfoNumMod = lfoNum % 4
+
+    // send lighting for lfo1Rate and depth
+    sendData = [0x0F, 0xEE, 0xBA, 0x04, lfoRate[lfoNumMod]]
+    SendSysex sendData, 5
+    sendData = [0x0F, 0xEE, 0xBA, 0x05, lfoDepth[lfoNumMod]]
+    SendSysex sendData, 5
+    pushReset[3] = lfoRate[lfoNumMod]
+    pushReset[4] = lfoDepth[lfoNumMod]
+    // send lighting for lfoOnOff, lfoSync, lfoBase, and lfoInvert
+    if lfoOnOffToggle[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x04, 0x01]
+      SendSysex sendData, 5
+    else
+      sendData = [0x0F, 0xEE, 0x90, 0x04, 0x00]
+      SendSysex sendData, 5
+    endif
+    if lfoSync[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x06, 0x01]
+      SendSysex sendData, 5
+    else
+      sendData = [0x0F, 0xEE, 0x90, 0x06, 0x00]
+      SendSysex sendData, 5
+    endif
+    if lfoBase[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x0E, 0x01]
+      SendSysex sendData, 5
+    else
+      sendData = [0x0F, 0xEE, 0x90, 0x0E, 0x00]
+      SendSysex sendData, 5
+    endif
+    if lfoInvert[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x07, 0x01]
+      SendSysex sendData, 5
+    else
+      sendData = [0x0F, 0xEE, 0x90, 0x07, 0x00]
+      SendSysex sendData, 5
+    endif
+    // send flashing lights if chain modulating
+    if lfoNumMod < 3 and lfoOnOffToggle[lfoNumMod + 1] = 1 and lfoMuteAll = 0
+      if lfoKnob[lfoNumMod + 1] = 3
+        sendData = [0x0F, 0xEE, 0xB0, 0x0C, 0x1C]
+        SendSysex sendData, 5
+      endif
+      if lfoKnob[lfoNumMod + 1] = 4
+        sendData = [0x0F, 0xEE, 0xB0, 0x0D, 0x1C]
+        SendSysex sendData, 5
+      endif
+    endif
+    Exit
+
+  // if it is a knob 8 button release, mute transpose
+  elseif MIDINoteVal = 0x07 and MIDIByte2 = 0x7D
+    transposeMute = (transposeMute + 1) % 2
+    Exit
+
+  // if it is a knob 16 button release, mute transpose
+  elseif MIDINoteVal = 0x1F and MIDIByte2 = 0x7D
+    transposeMute = (transposeMute + 1) % 2
+    Exit
+
+  elseif MIDINoteVal = 0x08 and MIDIByte2 = 0x7D
+    if arpPhraseToggle = 1
+      if setPhrase = 1
+        sendData = [0x0F, 0xEE, 0x90, 0x00, 0x01]
+        SendSysex sendData, 5
+      endif
+    endif
+    Exit
+
+  elseif MIDINoteVal = 0x09 and MIDIByte2 = 0x7D
+    if arpPhraseToggle = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x01, 0x01]
+      SendSysex sendData, 5
+    else
+      // NOTE this sends even when light is off
+      if setPhrase = 0
+        sendData = [0x0F, 0xEE, 0x90, 0x00, 0x00]
+        SendSysex sendData, 5
+      endif
+    endif
+    Exit
+
+  elseif MIDINoteVal = 0x0A and MIDIByte2 = 0x7D
+    if latch = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x02, 0x01]
+      SendSysex sendData, 5
+    endif
+    Exit
+
+  elseif MIDINoteVal = 0x0B and MIDIByte2 = 0x7D
+    if padMode = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x03, 0x01]
+      SendSysex sendData, 5
+    endif
+    Exit
+
+  elseif MIDINoteVal = 0x11 and MIDIByte2 = 0x7D
+    if arpPhraseOnOffToggle = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x09, 0x01]
+      SendSysex sendData, 5
+    endif
+    Exit
+
+  elseif MIDINoteVal = 0x12 and MIDIByte2 = 0x7D
+    if groupKnobPush = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x0A, 0x01]
+      SendSysex sendData, 5
+
+      // turn on knobPush for all knobs that aren't currently being modulated
+      for i = 0 to 15
+        if i > 7
+          j = i + 16
+        else
+          j = i
+        endif
+        if lfoKnob[0] <> j or lfoKnob[1] <> j or lfoKnob[2] <> j or lfoKnob[3] <> j
+          knobPush[i] = 1
+        endif
+      endfor
+
+    // reset all knobs to pushReset values if turning off
+    else
+
+      knobPushResetConst = 1
+      for i = 0 to 15
+        if i > 7
+          j = i + 16
+          knobPushResetConst = -13
+        else
+          j = i
+        endif
+        if knobTurn[i] = 1
+
+          // send program change to ensure lighting correctly sends - necessary for 'B' knobs
+          if knobPushResetConst = -13 and programChange = 0
+            programChange = 1
+
+            timerVal = 13
+            StartTimer // see @OnTimer for more details here
+            // necessary because sysex typically sends about .005 faster than program change regardless of the order in the code
+
+          endif
+          knobTemp = j + knobPushResetConst
+          // HandleKnobTurn makes sure the parameters are changed correctly
+          MIDIByte2Temp = knobTemp
+          MIDIByte3Temp = pushReset[i]
+          Call @HandleKnobTurn
+          // tempo sends its own lighting, so this is not necessary
+          if j <> 0
+            // need these to be arrays for timing - would send immediately but program change must occur first
+            sendKnobTemp[i] = knobTemp
+            sendPushReset[i]= pushReset[i]
+          endif
+          knobPush[i] = 0
+          knobTurn[i] = 0
+        else
+          knobPush[i] = 0
+          if j <> 0
+            sendKnobTemp[i] = -1
+            sendPushReset[i]= -1
+          endif
+        endif
+      endfor
+
+      // send program change to ensure lighting correctly appears after change - necessary for 'B' knobs
+      if programChange = 1
+        programChange = 0
+      else
+        timerVal = 16
+        StartTimer
+      endif
+
+      Exit
+    endif
+    Exit
+
+  elseif MIDINoteVal = 0x13 and MIDIByte2 = 0x7D
+    if setLfo = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x0B, 0x02]
+      SendSysex sendData, 5
+    endif
+    Exit
+
+  elseif MIDINoteVal = 0x0C and MIDIByte2 = 0x7D
+    if lfoOnOffToggle[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x04, 0x01]
+      SendSysex sendData, 5
+      if lfoMuteAll = 0 and lfoKnob[lfoNumMod] < 8 and lfoKnob[lfoNumMod] <> 3 and lfoKnob[lfoNumMod] <> 4
+        lfoTemp = lfoKnob[lfoNumMod] + 9
+        sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+        SendSysex sendData, 5
+      endif
+    else
+      // don't want to send pushReset values twice if we don't have to
+      if lfoMuteAll = 0 and lfoKnob[lfoNumMod] < 8 and lfoKnob[lfoNumMod] <> 3 and lfoKnob[lfoNumMod] <> 4
+        knobTemp = lfoKnob[lfoNumMod] + 1
+        sendData = [0x0F, 0xEE, 0xBA, knobTemp, pushReset[lfoKnob[lfoNumMod]]]
+        SendSysex sendData, 5
+      endif
+    endif
+    Exit
+
+  elseif MIDINoteVal = 0x14 and MIDIByte2 = 0x7D
+    if lfoMuteAll = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x0C, 0x01]
+      SendSysex sendData, 5
+      for i = 0 to 3
+        if lfoOnOffToggle[i] = 1
+          if (lfoKnob[i] < 8 and lfoKnob[i] <> 3 and lfoKnob[i] <> 4) or ((lfoKnob[i] = 3 or lfoKnob[i] = 4) and lfoNumMod = i - 1)
+            knobTemp = lfoKnob[i] + 1
+            sendData = [0x0F, 0xEE, 0xBA, knobTemp, pushReset[lfoKnob[i]]]
+            SendSysex sendData, 5
+          endif
+        endif
+      endfor
+    else
+      for i = 0 to 3
+        if lfoOnOffToggle[i] = 1
+          if (lfoKnob[i] < 8 and lfoKnob[i] <> 3 and lfoKnob[i] <> 4) or ((lfoKnob[i] = 3 or lfoKnob[i] = 4) and lfoNumMod = i - 1)
+            lfoTemp = lfoKnob[i] + 9
+            sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+            SendSysex sendData, 5
+          endif
+        endif
+      endfor
+    endif
+    Exit
+
+  elseif MIDINoteVal = 0x0E and MIDIByte2 = 0x7D
+    if lfoSync[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x06, 0x01]
+      SendSysex sendData, 5
+    endif
+    Exit
+
+  elseif MIDINoteVal = 0x16 and MIDIByte2 = 0x7D
+    if lfoBase[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x0E, 0x01]
+      SendSysex sendData, 5
+    endif
+    Exit
+
+  // if it is a button 15 push toggle lfo inversion
+  elseif MIDINoteVal = 0x0F and MIDIByte2 = 0x7D
+    if lfoInvert[lfoNumMod] = 1
+      sendData = [0x0F, 0xEE, 0x90, 0x07, 0x01]
+      SendSysex sendData, 5
+    endif
+    Exit
+
+  // channel specific
+
+  // if it is a knob 9 button release, toggle waveguide
+  elseif MIDINoteVal = 0x18 and MIDIByte2 = 0x7D
+    if waveguideToggle = 0
+      waveguideToggle = 1
+      // NOTE this is a little janky - waveguide doesn't seem to reset visually and requires a press on the machine itself
+      sendData = [0x11, 0xEE, channelCC, 116, 0x7F]
+    else
+      waveguideToggle = 0
+      // NOTE this is a little janky - waveguide doesn't seem to reset visually and requires a press on the machine itself
+      sendData = [0x11, 0xEE, channelCC, 116, 0x00]
+    endif
+    SendSysex sendData, 5
+    Exit
+
+  // if it is a knob 10 button release, toggle pitch quantize
+  elseif MIDINoteVal = 0x19 and MIDIByte2 = 0x7D
+    if pitchQuantize = 0
+      pitchQuantize = 1
+      sendData = [0x11, 0xEE, channelCC, 53, 0x7F]
+    else
+      pitchQuantize = 0
+      sendData = [0x11, 0xEE, channelCC, 53, 0x00]
+    endif
+    SendSysex sendData, 5
+    Exit
+
+  elseif MIDINoteVal = 0x25 and MIDIByte2 = 0x7D
+    sendData = [0x0F, 0xEE, 0x90, 0x05, 0x01]
+    SendSysex sendData, 5
+    previousTrackingMode = 0x05
+    Exit
+  elseif MIDINoteVal = 0x24 and MIDIByte2 = 0x7D
+    sendData = [0x0F, 0xEE, 0x90, 0x04, 0x01]
+    SendSysex sendData, 5
+    previousTrackingMode = 0x04
+    Exit
+  elseif MIDINoteVal = 0x2C and MIDIByte2 = 0x7D
+    sendData = [0x0F, 0xEE, 0x90, 0x0C, 0x01]
+    SendSysex sendData, 5
+    previousTrackingMode = 0x0C
+    Exit
+
+  // if knob is pressed and a drumParam is changed, the value in the pushReset array will not match up correctly
+  // send lighting if drumParam is the same so that the light doesn't just turn off
+  elseif (knobPush[8] = 1 or knobPush[9] = 1 or knobPush[10] = 1)
+    if (MIDINoteVal >= 32 and MIDINoteVal <= 35) or (MIDINoteVal >= 40 and MIDINoteVal <= 43)
+      knobTemp = MIDINoteVal - drumButtons[previousDrumVal]
+      // send lighting to keep knob lit if same knob pressed
+      if knobTemp = 32
+        sendData = [0x0F, 0xEE, 0x90, drumButtons[previousDrumVal], 0x01]
+        SendSysex sendData, 5
+      endif
+      Exit
+    endif
+  endif
+
+  // drumParams
+  for i = 0 to 7
+    if MIDINoteVal - 32 = drumButtons[i] and MIDIByte2 = 0x7D
+      sendData = [0x0F, 0xEE, 0x90, drumButtons[i], 0x01]
+      SendSysex sendData, 5
+      for j = 0 to 3
+        if lfoKnob[j] >= 24 and lfoKnob[j] <= 26
+          lfoTemp = lfoKnob[i] - 15
+          sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+          SendSysex sendData, 5
+        endif
+      endfor
+      previousDrumVal = i
+      Exit
+    endif
+  endfor
+
+  // end channel specific
+
+@End
+
+@HandleKnobTurn
+
+  // Need to handle as if being called both in knobTurn and on button release for knobPush
+  if MIDIByte2Temp <> 0 and MIDIByte2Temp <= 8
+    MIDIByte2Offset = MIDIByte2Temp - 1
+  elseif MIDIByte2Temp >= 11 and MIDIByte2Temp <= 18
+    MIDIByte2Offset = MIDIByte2Temp - 3
+  endif
+
+  // set knob turn to true if using push control
+  // knob turn vals are + 1 from knob push vals
+  if knobPush[MIDIByte2Offset] = 1
+    knobTurn[MIDIByte2Offset] = 1
+  endif
+
+  // if knob is 1 (tempo)
+  // knob is sensitive down to one notch
+  if MIDIByte2Temp = 1
+    Call @HandleTempo
+
+  elseif MIDIByte2Temp > 1 and MIDIByte2Temp <= 18
+    // needs to be sent out
+    // assign for push control
+    if knobPush[MIDIByte2Offset] = 0
+      pushReset[MIDIByte2Offset] = MIDIByte3Temp
+    endif
+
+    // gate
+    if MIDIByte2Temp = 2
+      // starting points: max will be ~5 seconds (5000), min will be .1 seconds (100)
+      // 2.5 seconds should be enough to handle 96 pulses at 120 bpm,  but slower bpm's can move up to 5 seconds
+      // overall: 0-127 (*2) (*5) (*16) (*32) (*64)
+      // NOTE none of the values here end up sending an F7, but if changed it's possible they could, which would cause issues
+      knobCurrentVal[MIDIByte2Offset] = MIDIByte3Temp * gateFactor
+      gateTemp = RoundDown (knobCurrentVal[MIDIByte2Offset] / 256)
+      sendData = [0xCC, 0x04, gateTemp, knobCurrentVal[MIDIByte2Offset]] // NOTE final index value uses only last two digits
+      SendSysex sendData, 4
+
+    // velocity
+    elseif MIDIByte2Temp = 3
+      knobCurrentVal[MIDIByte2Offset] = MIDIByte3Temp
+      sendData = [0xC1, 0x05, knobCurrentVal[MIDIByte2Offset]]
+      SendSysex sendData, 3
+
+    // lfo rate
+    elseif MIDIByte2Temp = 4
+      lfoRate[lfoNumMod] = MIDIByte3Temp
+      sendData = [0x01, 0x16, lfoNumMod, lfoRate[lfoNumMod]]
+      SendSysex sendData, 4
+
+    // lfo depth
+    elseif MIDIByte2Temp = 5
+      lfoDepth[lfoNumMod] = MIDIByte3Temp
+      sendData = [0x01, 0x17, lfoNumMod, lfoDepth[lfoNumMod]]
+      SendSysex sendData, 4
+
+    // channel specific
+    elseif MIDIByte2Temp > 5
+
+      // drumParams
+      if MIDIByte2Temp = 11
+        knobSendVals[MIDIByte2Offset] = drumParam1[drumParamCurrent]
+        drumParam1CurrentVal[drumParamCurrent] = MIDIByte3Temp
+      elseif MIDIByte2Temp = 12
+        knobSendVals[MIDIByte2Offset] = drumParam2[drumParamCurrent]
+        drumParam2CurrentVal[drumParamCurrent] = MIDIByte3Temp
+      elseif MIDIByte2Temp = 13
+        knobSendVals[MIDIByte2Offset] = drumParam3[drumParamCurrent]
+        drumParam3CurrentVal[drumParamCurrent] = MIDIByte3Temp
+      else
+        knobCurrentVal[MIDIByte2Offset] = MIDIByte3Temp
+      endif
+
+      // send channel specific val
+      sendData = [0x11, 0xEE, channelCC, knobSendVals[MIDIByte2Offset], MIDIByte3Temp]
+      SendSysex sendData, 5
+    endif
+
+  endif
+
+  // end channel specific
+
+@End
+
+@HandleTempo
+  // NOTE because lighting does actually change the CC value, we need to handle this based on lighting
+  // (MIDIByte3 >= -12 and MIDIByte3 <= -7) or (MIDIByte3 >= 7 and MIDIByte3 <= 12)
+  // (MIDIByte3 >= 1 and MIDIByte3 <= 6) or (MIDIByte3 >= 20 and MIDIByte3 <= 25)
+  // (MIDIByte3 >= 14 and MIDIByte3 <= 19) or (MIDIByte3 >= 33 and MIDIByte3 <= 38)
+  // (MIDIByte3 >= 27 and MIDIByte3 <= 32) or (MIDIByte3 >= 46 and MIDIByte3 <= 51)
+  // (MIDIByte3 >= 40 and MIDIByte3 <= 45) or (MIDIByte3 >= 59 and MIDIByte3 <= 64)
+  // (MIDIByte3 >= 53 and MIDIByte3 <= 58) or (MIDIByte3 >= 72 and MIDIByte3 <= 77)
+  // (MIDIByte3 >= 66 and MIDIByte3 <= 71) or (MIDIByte3 >= 85 and MIDIByte3 <= 90)
+  // (MIDIByte3 >= 79 and MIDIByte3 <= 84) or (MIDIByte3 >= 98 and MIDIByte3 <= 103)
+  // (MIDIByte3 >= 92 and MIDIByte3 <= 97) or (MIDIByte3 >= 111 and MIDIByte3 <= 116)
+  // (MIDIByte3 >= 105 and MIDIByte3 <= 110) or (MIDIByte3 >= 123 and MIDIByte3 <= 126) // edge
+  // (MIDIByte3 >= 118 and MIDIByte3 <= 122) or (MIDIByte3 >= 136 and MIDIByte3 <= 139) // edge
+
+  // (MIDIByte3 >= -24 and MIDIByte3 <= -13) or (MIDIByte3 >= 13 and MIDIByte3 <= 24)
+  // (MIDIByte3 >= 1 and MIDIByte3 <= 12) or (MIDIByte3 >= 38 and MIDIByte3 <= 49)
+  // (MIDIByte3 >= 26 and MIDIByte3 <= 37) or (MIDIByte3 >= 63 and MIDIByte3 <= 74)
+  // (MIDIByte3 >= 51 and MIDIByte3 <= 62) or (MIDIByte3 >= 88 and MIDIByte3 <= 99)
+  // (MIDIByte3 >= 76 and MIDIByte3 <= 87) or (MIDIByte3 >= 113 and MIDIByte3 <= 126) // edge
+  // (MIDIByte3 >= 101 and MIDIByte3 <= 112) or (MIDIByte3 >= 138 and MIDIByte3 <= 151)
+
+  if tempoMode = 0
+    CopyArray tempoMode0Vals, tempoModeVals, 11
+    length = 10
+    compUpConst = 5
+    compDownConst = 5
+    lightingConst = 13
+  else
+    if tempoMode = 1
+      CopyArray tempoMode1Vals, tempoModeVals, 6
+    elseif tempoMode = 2
+      CopyArray tempoMode2Vals, tempoModeVals, 6
+    elseif tempoMode = 3
+      CopyArray tempoMode3Vals, tempoModeVals, 6
+    endif
+    length = 5
+    compUpConst = 11
+    compDownConst = 11
+    lightingConst = 25
+  endif
+
+  for k = 0 to length // k used because this handler is used in a for loop with i and j as iterators
+
+    lightingVal = k * lightingConst
+    compUp = lightingVal + -1 * (lightingConst - 1)
+    compDown = lightingVal + ((lightingConst + 1) / 2)
+
+    // edge cases - hard coded since 127 is not a very convenient number to end on
+    if tempoMode = 0
+      if k = length - 1
+        compDown = compDown - 1 // 123
+        compDownConst = 3 // 126, later 139 since this won't be reset
+      elseif k = length
+        compUpConst = 4 // 122
+      endif
+    elseif k = length - 1
+      compDownConst = 13 // 126, later 151 since this won't be reset
+    endif
+
+    if k = length
+      lightingVal = 127
+    endif
+
+    if (MIDIByte3Temp >= compUp and MIDIByte3Temp <= compUp + compUpConst) or (MIDIByte3Temp >= compDown and MIDIByte3Temp <= compDown + compDownConst) or (MIDIByte3Temp = lightingVal)
+      // NOTE last conditional above probably unnecessary, since we shouldn't be getting lighting input for processing
+      tempoPulse = tempoModeVals[k]
+      sendData = [0xCC, 0x03, tempoPulse]
+      SendSysex sendData, 3
+      sendData = [0x0F, 0xEE, 0xBA, 0x01, lightingVal]
+      SendSysex sendData, 5
+      if knobPush[MIDIByte2Offset] = 0
+        pushReset[MIDIByte2Offset] = lightingVal
+      endif
+      knobCurrentVal[0] = lightingVal
+    endif
+  endfor
+@End

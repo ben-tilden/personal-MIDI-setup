@@ -1,0 +1,227 @@
+//order of modulation doesn't matter for bottom
+//BOTTOM: 31.75 * (1 + sin(rx)) * (1 + sin(rx))
+//ORIGINAL: (63.5 * sin(rx) + 63.5) * (.5 * sin(rx) + .5)
+
+//middle is r2 modulating r1
+//MIDDLE: 31.75 * sin(r1x) * (1 + sin(r2x)) + 63.5
+//ORIGINAL: 63.5 * sin(r1x) * (.5 * sin(r2x) + .5) + 63.5
+
+// NOTE tip: when using chain modulation, often the best results come from alternating inversion among the lfos
+
+@Onload
+  // SetMetroPPQN 20 is the metric we're going off here
+  SetTimerInterval 25 // set for 120bpm ((60000 / bpm) / 20)
+  StartTimer
+
+  // constant
+
+  channel = 6 // channel specific
+  syncVal = [0, 14, 28, 42, 56, 70, 84, 98, 112, 128]
+  modeTempo = [24, 1, 26, 51, 76, 101] // 5
+  modeZeroTempo = [12, 1, 14, 27, 40, 53, 66, 79, 92, 105, 118] // 10
+
+  // variable
+  
+  lfoTargetKnob = [0, 0, 0, 0]
+  lfoSync = [0, 0, 0, 0]
+  lfoBase = [0, 0, 0, 0]
+  lfoInvert = [0, 0, 0, 0]
+  lfoOnOff = [0, 0, 0, 0]
+  lfoMuteAll = 0
+  lfoRate = [0, 0, 0, 0]
+  lfoDepth = [0, 0, 0, 0]
+  lfoVal = [0, 0, 0, 0]
+  SetupLFO 0, 0, 0, no, 0
+  SetupLFO 1, 0, 0, no, 0
+  SetupLFO 2, 0, 0, no, 0
+  SetupLFO 3, 0, 0, no, 0
+  tempoMode = 0
+  tempoIndex = 0
+  tempoZeroIndex = 0
+  visualizeLfos = 0
+  lfoView = 0
+
+@End
+
+@OnSysex
+  ReceiveSysex data
+
+  if data[0] <> 0x01
+    Exit
+
+  // set target knob for lfo
+  elseif data[1] = 13
+
+    // NOTE could add multiple sources of modulation for lfos in the future if desired
+    // NOTE chain modulating data will not be sent for lfo 1
+    if data[3] < 8
+      lfoTargetKnob[data[2]] = data[3] + 1 // need to add one since knob turn input is +1 from knob push input
+    else
+      lfoTargetKnob[data[2]] = data[3] - 13 // need to subtract 13 since knob turn input is -13 (18 - B) from knob push input
+    endif
+
+  // set lfo to sync with tempo / not
+  elseif data[1] = 14
+    lfoSync[data[2]] = data[3]
+
+  // set lfo to bottom / middle
+  elseif data[1] = 15
+    lfoBase[data[2]] = data[3]
+
+  // set lfo to invert output values
+  elseif data[1] = 16
+    lfoInvert[data[2]] = data[3]
+
+  // turn off or on lfo
+  elseif data[1] = 17
+    lfoOnOff[data[2]] = data[3]
+    // uncomment to restart on turning lfo on
+    //if data[3] = 1
+    //  ResetLfo data[2]
+    //endif
+
+  // mute all lfos
+  elseif data[1] = 18
+    lfoMuteAll = data[2]
+
+  // setting lfo type
+  elseif data[1] = 19
+
+    if data[3] = 0
+      setLFOType data[2], {Sine}
+    elseif data[3] = 1
+      setLFOType data[2], {Cosine}
+    elseif data[3] = 2
+      setLFOType data[2], {Square}
+    elseif data[3] = 3
+      setLFOType data[2], {Triangle}
+    elseif data[3] = 4
+      setLFOType data[2], {RampUp}
+    elseif data[3] = 5
+      setLFOType data[2], {RampDown}
+    elseif data[3] = 6
+      setLFOType data[2], {SH}
+    endif
+
+  // restarting lfo
+  elseif data[1] = 20
+    ResetLfo data[2]
+
+  // restarting all lfos
+  elseif data[1] = 21
+    for lfo = 0 to 3
+      ResetLfo lfo
+    endfor
+
+  // update lfo rate
+  elseif data[1] = 22
+
+    if lfoSync[lfo] = 1 and HostRunning = 1
+      // +/- 16th notes = 9 total options
+      for x = 0 to 8
+        if data[3] >= syncVal[x] and data[3] < syncVal[x + 1]
+          // hz for sync = hosttempo / 60 (times multiples of 2)
+          lfoRate[data[2]] = (HostTempo / 60) * (Pow 2, -4 + x)
+          SetupLFO data[2], 0, 127, no, lfoRate[data[2]]
+        endif
+      endfor
+    else
+      lfoRate[data[2]] = data[3] / 31.75
+      SetupLFO data[2], 0, 127, no, lfoRate[data[2]]
+    endif
+
+  // update lfo depth
+  elseif data[1] = 23
+    lfoDepth[data[2]] = data[3] / 127
+
+  // update tempoMode
+  elseif data[1] = 24
+    tempoMode = data[2]
+
+  // init
+  elseif data[1] = 29
+    // SetMetroPPQN 20 is the metric we're going off here
+    SetTimerInterval 25 // set for 120bpm ((60000 / bpm) / 20)
+    StartTimer
+    // init variables
+    lfoTargetKnob = [0, 0, 0, 0]
+    lfoSync = [0, 0, 0, 0]
+    lfoBase = [0, 0, 0, 0]
+    lfoInvert = [0, 0, 0, 0]
+    lfoOnOff = [0, 0, 0, 0]
+    lfoMuteAll = 0
+    lfoRate = [0, 0, 0, 0]
+    lfoDepth = [0, 0, 0, 0]
+    lfoVal = [0, 0, 0, 0]
+    SetupLFO 0, 0, 0, no, 0
+    SetupLFO 1, 0, 0, no, 0
+    SetupLFO 2, 0, 0, no, 0
+    SetupLFO 3, 0, 0, no, 0
+    tempoMode = 0
+    tempoIndex = 0
+    tempoZeroIndex = 0
+    lfoView = 0
+    // init constants
+    syncVal = [0, 14, 28, 42, 56, 70, 84, 98, 112, 128]
+    modeTempo = [24, 1, 26, 51, 76, 101] // 5
+    modeZeroTempo = [12, 1, 14, 27, 40, 53, 66, 79, 92, 105, 118] // 10
+
+  endif
+@End
+
+@OnTimer
+  if lfoMuteAll = 0
+    for lfo = 3 to 0
+      if lfoOnOff[lfo] = 1
+
+        lfoVal[lfo] = GetLFOValue lfo
+
+        // handle chain modulating both rate (3) and depth (4)
+        if lfoTargetKnob[lfo + 1] = 4 and lfoOnOff[lfo + 1] = 1
+          // NOTE still unsure if this is the exact equation - seems to be extremely slightly lagging, but don't know why
+          // overall arbitrary anyway
+          SetupLFO lfo, 0, 127, no, (lfoVal[lfo + 1] / 127) * lfoRate[lfo] * 2
+        elseif lfoTargetKnob[lfo + 1] = 5 and lfoOnOff[lfo + 1] = 1
+          // NOTE for both of these, there is a conversion of the values to a sin wave that goes from -1 to 1
+          // see equation at top
+          if lfoBase[lfo] = 0
+            // lfoVal[lfo] = 31.75 * (1 + ((lfoVal[lfo] / 63.5) - 1)) * (1 + ((lfoVal[lfo + 1] / 63.5) - 1))
+            lfoVal[lfo] = 31.75 * (lfoVal[lfo] / 63.5) * (lfoVal[lfo + 1] / 63.5)
+          else
+            // lfoVal[lfo] = 31.75 * ((lfoVal[lfo] / 63.5) - 1) * (1 + ((lfoVal[lfo + 1] / 63.5) - 1)) + 63.5
+            lfoVal[lfo] = 31.75 * ((lfoVal[lfo] / 63.5) - 1) * (lfoVal[lfo + 1] / 63.5) + 63.5
+          endif
+        endif
+
+        lfoVal[lfo] = lfoVal[lfo] * lfoDepth[lfo]
+
+        if lfoInvert[lfo]
+          lfoVal[lfo] = lfoVal[lfo] * -1 + 127
+        endif
+
+        if lfoTargetKnob[lfo] = 1
+          if tempoMode = 0
+            tempoZeroIndex = Round (lfoVal[lfo] / 12.7)
+            lfoVal[lfo] = modeZeroTempo[tempoZeroIndex]
+          else
+            tempoIndex = Round (lfoVal[lfo] / 25.4)
+            lfoVal[lfo] = modeTempo[tempoIndex]
+          endif
+        endif
+
+        if lfoTargetKnob[lfo] <> 4 and lfoTargetKnob[lfo] <> 5
+          SendMIDICC channel, lfoTargetKnob[lfo], lfoVal[lfo]
+        endif
+
+        if visualizeLfos = 1
+          SetXYValues 64, lfoVal[lfoView]
+        endif
+      endif
+    endfor
+  endif
+@End
+
+@OnPadDown
+  visualizeLfos = (visualizeLfos + 1) % 2
+  lfoView = LastPad
+@End

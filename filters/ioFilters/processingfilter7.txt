@@ -9,7 +9,7 @@
   // NOTE could make number of voices on a synth a constant here for possible future usage
   // currently just using 3 for three voices across the board
 
-  channel = 0
+  channel = 6
 
   intervalCCValues = [0, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 67, 72, 77, 82, 87, 92, 97, 102, 107, 112, 117, 122, 127]
 
@@ -57,11 +57,6 @@
     endif
     Exit
 
-  // trackingMode
-  elseif sysexData[1] = 0x1F
-    trackingMode = sysexData[2]
-    Exit
-
   endif
 
 @End
@@ -75,10 +70,6 @@
   keysSentIndex = 0
   keysSentArr = [-1, -1, -1]
   infiniteGate = 0
-  midiCCStandard = 0
-  midiCCInterval = 0
-  intervalDepth = 64
-  trackingMode = 0
 @End
 
 @KeyReset
@@ -120,44 +111,8 @@
     keysSentIndex = (keysSentIndex + 1) % 3
   endif
 
-  // channel specific
-  // chromaticize keys volca drum if tracking is on
-  if MIDIChannel < 6 and trackingMode <> 0 and MIDINoteVal >= 0 and MIDINoteVal < 126
-    // send the channel, pitch control, and note number
-    midiCCStandard = MIDINoteVal + 1 // 1 is the offset here to align properly - this means the highest possible note is F# (126)
-    if trackingMode = 1
-      SendMIDICC MIDIChannel, 0x1C, midiCCStandard
-    elseif trackingMode = 2
-      // intervalDepth is divided into 25 separate groups, ranging 5 values from -12 to +12 semitones (with quantized pitch)
-      // midiCCInterval has the potential to send messages which will cause issues if it goes below zero / above 126
-      // including conditionals to prevent this
-      for i = 0 to 24
-        intervalValue = (i - 12) * 2 // -24 to 24
-
-        if intervalDepth < intervalCCValues[i + 1] and intervalDepth >= intervalCCValues[i]
-          midiCCInterval = midiCCStandard + intervalValue
-
-          if midiCCInterval >= -26 and midiCCInterval < 127
-            SendMIDICC MIDIChannel, 0x1A, midiCCStandard
-            SendMIDICC MIDIChannel, 0x1B, midiCCInterval
-
-          elseif midiCCInterval >= 127
-            SendMIDICC MIDIChannel, 0x1A, midiCCStandard
-            SendMIDICC MIDIChannel, 0x1B, 126
-
-          elseif midiCCInterval < -26
-            SendMIDICC MIDIChannel, 0x1A, midiCCStandard
-            SendMIDICC MIDIChannel, 0x1B, 1
-
-          endif         
-        endif
-      endfor
-
-    endif
-  endif
-  // end channel specific
-
-  SendMIDINoteOn MIDIchannel, MIDINoteVal, MIDIByte3
+  SendMIDICC MIDIChannel, 0x41, MIDIByte3 // channel specific - send fm velocity
+  SendMIDINoteOn MIDIChannel, MIDINoteVal, MIDIByte3
 
 @End
 
@@ -188,12 +143,7 @@
 
 // xtouch sliders have been assigned to 0x7A and 0x7B
 @OnMIDICC
-  // channel specific interval setter - handle remote control of interval level
-  // knob 7 has already been deassigned to 0x7E to allow for interval level
-  if MIDIChannel < 6 and MIDIByte2 = 0x7E
-    intervalDepth = MIDIByte3
-
-  elseif MIDIByte2 = 0x7A
+  if MIDIByte2 = 0x7A
     for i = 0 to 13
       if MIDIByte3 >= transposeCCValues[i] and MIDIByte3 < transposeCCValues[i + 1]
         if keysSent = 0 or infiniteGate = 1 // this handles latch instance without arp/Phrase on
