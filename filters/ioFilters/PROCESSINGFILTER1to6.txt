@@ -9,7 +9,7 @@
   // NOTE could make number of voices on a synth a constant here for possible future usage
   // currently just using 3 for three voices across the board
 
-  channel = 0
+  channel = 0 // NOTE this needs to be changed to the correct channel when entered
 
   intervalCCValues = [0, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 67, 72, 77, 82, 87, 92, 97, 102, 107, 112, 117, 122, 127]
 
