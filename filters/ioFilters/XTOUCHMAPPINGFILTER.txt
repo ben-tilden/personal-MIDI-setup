@@ -13,7 +13,9 @@
   ReceiveSysex sysexData
 
   // block all sysex except channel and init
-  if sysexData[0] = 0xCC and sysexData[1] = 0x1C
+  if sysexData[0] <> 0x3F // will receive padMode as well - not currently blocked
+    Exit
+  elseif sysexData[1] = 0x4D
     channel = 0
   elseif sysexData[1] = 0x4B
     channel = sysexData[2]

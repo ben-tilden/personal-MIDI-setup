@@ -31,6 +31,10 @@
   drumParam2 = [15, 18, 21, 24, 27, 30, 47, 118]
   drumParam3 = [16, 19, 22, 25, 28, 31, 48, 119]
 
+  // first three and last removed, since processed differently - last was 7F (velocity), first three had CC < 19
+  // [40, 49, 50, 51, 52, 103, 126]
+  launchkeyKnobVals = [0x28, 0x31, 0x32, 0x33, 0x34, 0x67, 0x7E]
+
   // assign local
 
   Call @InitVariables
@@ -368,6 +372,12 @@
   elseif sysexData[0] = 0x7D and sysexData[1] = 0x01
     Exit
 
+  elseif sysexData[1] = 0x4B
+    // send channel sysex - xtouch used here as an intermediary, since it only sends sysex
+    sendData = [0xFF, 0x4B, sysexData[2]]
+    SendSysex sendData, 3
+    Exit
+
   elseif sysexData[1] = 0x07
     setPhrase = sysexData[2]
     // Turn off setPhrase light when sysex received
@@ -379,6 +389,10 @@
 
   // Turn off lights when init sysex received
   elseif sysexData[1] = 0x1B
+
+    // reset mapping filters
+    sendData = [0x3F, 0x4D, 0x00]
+    SendSysex sendData, 3
 
     // reset lfo
     sendData = [0x01, 0x1D, 0x00]
@@ -429,6 +443,10 @@
   if MIDIChannel <> channel
     Exit
 
+  // add CC's which are separately interpreted by launchkey to the denylist
+  elseif MIDIByte2 = 0x7F or MIDIByte2 = 0x68 or MIDIByte2 = 0x69 or MIDIByte2 = 0x6A or MIDIByte2 = 0x6B or MIDIByte2 = 0x6C or MIDIByte2 = 0x6D
+    Exit
+
   elseif MIDIByte2 = 0x7C // converted from note on
     Call @HandleNoteOn
 
@@ -438,23 +456,42 @@
   // transpose
   elseif MIDIByte2 = 0x09
     if transposeMute = 0
-      sendData = [0x11, 0xEE, channelCC, 0x7A, MIDIByte3]
+      sendData = [0x9F, 0xEE, channelCC, 0x7A, MIDIByte3]
       SendSysex sendData, 5
     endif
+    Exit
 
   // transpose
   elseif MIDIByte2 = 0x0A
     if transposeMute = 0
-      sendData = [0x11, 0xEE, channelCC, 0x7B, MIDIByte3]
+      sendData = [0x9F, 0xEE, channelCC, 0x7B, MIDIByte3]
       SendSysex sendData, 5
     endif
+    Exit
 
-  else
+  // if less than 19 and hasn't been handled yet, handle
+  elseif MIDIByte2 < 0x13
     MIDIByte2Temp = MIDIByte2
     MIDIByte3Temp = MIDIByte3
     Call @HandleKnobTurn
 
-  endif
+  // remove offset for those where necessary
+  elseif MIDIByte2 = 0x18 or MIDIByte2 = 0x1D or MIDIByte2 = 0x1E
+    MIDIByte2Temp = MIDIByte2 - 19
+    sendData = [0x9F, 0xEE, channelCC, MIDIByte2Temp, MIDIByte3]
+    SendSysex sendData, 5
+    Exit
+
+  end
+
+  // this handles other CC's that have been input by the launchkey hardware, preventing any necessary CC handling from launchkey
+  for i = 0 to 6
+    if launchkeyKnobVals[i] = MIDIByte2
+      sendData = [0x9F, 0xEE, channelCC, MIDIByte2, MIDIByte3]
+      SendSysex sendData, 5
+      Exit
+    endif
+  endfor
 
 @End
 
@@ -679,7 +716,7 @@
       sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
       SendSysex sendData, 5
     endif
-    sendData = [0x11, 0x1F, trackingMode]
+    sendData = [0x9F, 0x1F, trackingMode]
     SendSysex sendData, 3
     Exit
 
@@ -690,7 +727,7 @@
       sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
       SendSysex sendData, 5
     endif
-    sendData = [0x11, 0x1F, trackingMode]
+    sendData = [0x9F, 0x1F, trackingMode]
     SendSysex sendData, 3
     Exit
 
@@ -701,7 +738,7 @@
       sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
       SendSysex sendData, 5
     endif
-    sendData = [0x11, 0x1F, trackingMode]
+    sendData = [0x9F, 0x1F, trackingMode]
     SendSysex sendData, 3
     Exit
 
@@ -1253,11 +1290,11 @@
     if waveguideToggle = 0
       waveguideToggle = 1
       // NOTE this is a little janky - waveguide doesn't seem to reset visually and requires a press on the machine itself
-      sendData = [0x11, 0xEE, channelCC, 116, 0x7F]
+      sendData = [0x9F, 0xEE, channelCC, 116, 0x7F]
     else
       waveguideToggle = 0
       // NOTE this is a little janky - waveguide doesn't seem to reset visually and requires a press on the machine itself
-      sendData = [0x11, 0xEE, channelCC, 116, 0x00]
+      sendData = [0x9F, 0xEE, channelCC, 116, 0x00]
     endif
     SendSysex sendData, 5
     Exit
@@ -1266,10 +1303,10 @@
   elseif MIDINoteVal = 0x19 and MIDIByte2 = 0x7D
     if pitchQuantize = 0
       pitchQuantize = 1
-      sendData = [0x11, 0xEE, channelCC, 53, 0x7F]
+      sendData = [0x9F, 0xEE, channelCC, 53, 0x7F]
     else
       pitchQuantize = 0
-      sendData = [0x11, 0xEE, channelCC, 53, 0x00]
+      sendData = [0x9F, 0xEE, channelCC, 53, 0x00]
     endif
     SendSysex sendData, 5
     Exit
@@ -1399,7 +1436,7 @@
       endif
 
       // send channel specific val
-      sendData = [0x11, 0xEE, channelCC, knobSendVals[MIDIByte2Offset], MIDIByte3Temp]
+      sendData = [0x9F, 0xEE, channelCC, knobSendVals[MIDIByte2Offset], MIDIByte3Temp]
       SendSysex sendData, 5
     endif
 

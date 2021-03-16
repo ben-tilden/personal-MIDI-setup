@@ -30,8 +30,47 @@
   ReceiveSysex sysexData
 
   // init
-  if sysexData[1] = 0x1C
+  if sysexData[0] <> 0x9F and sysexData[0] <> 0xC9 and sysexData[0] <> 0xC1 // adding for latch and arpPhraseOnOffToggle
+    Exit
+
+  elseif sysexData[1] = 0x4E
     Call @InitVariables
+    Exit
+
+  elseif sysexData[1] = 0xEE
+    // sliders have already been deassigned to 0x7A and 0x7B
+    // channel specific interval setter - handle remote control of interval level
+    // knob 7 has already been deassigned to 0x7E to allow for interval level
+    if sysexData[2] < 182 and sysexData[3] = 0x7E // channel < 6
+      intervalDepth = sysexData[4]
+
+    elseif sysexData[3] = 0x7A
+      for i = 0 to 13
+        if sysexData[4] >= transposeCCValues[i] and sysexData[4] < transposeCCValues[i + 1]
+          if keysSent = 0 or infiniteGate = 1 // this handles latch instance without arp/Phrase on
+            transposeOffset = transposeAValues[i]
+            transposeStore = transposeOffset
+          else
+            transposeStore = transposeAValues[i]
+          endif
+        endif
+      endfor
+
+    elseif sysexData[3] = 0x7B
+      for i = 0 to 13
+        if sysexData[4] >= transposeCCValues[i] and sysexData[4] < transposeCCValues[i + 1]
+          if keysSent = 0 or infiniteGate = 1 // this handles latch instance without arp/Phrase on
+            transposeOffset = transposeBValues[i]
+            transposeStore = transposeOffset
+          else
+            transposeStore = transposeBValues[i]
+          endif
+        endif
+      endfor
+
+    else
+      SendMIDIOut sysexData[2], sysexData[3], sysexData[4]
+    endif
     Exit
 
   elseif sysexData[1] = 0x0B
@@ -184,40 +223,4 @@
   endif
 
   SendMIDINoteOff MIDIchannel, MIDINoteVal, MIDIByte3
-@End
-
-// xtouch sliders have been assigned to 0x7A and 0x7B
-@OnMIDICC
-  // channel specific interval setter - handle remote control of interval level
-  // knob 7 has already been deassigned to 0x7E to allow for interval level
-  if MIDIChannel < 6 and MIDIByte2 = 0x7E
-    intervalDepth = MIDIByte3
-
-  elseif MIDIByte2 = 0x7A
-    for i = 0 to 13
-      if MIDIByte3 >= transposeCCValues[i] and MIDIByte3 < transposeCCValues[i + 1]
-        if keysSent = 0 or infiniteGate = 1 // this handles latch instance without arp/Phrase on
-          transposeOffset = transposeAValues[i]
-          transposeStore = transposeOffset
-        else
-          transposeStore = transposeAValues[i]
-        endif
-      endif
-    endfor
-
-  elseif MIDIByte2 = 0x7B
-    for i = 0 to 13
-      if MIDIByte3 >= transposeCCValues[i] and MIDIByte3 < transposeCCValues[i + 1]
-        if keysSent = 0 or infiniteGate = 1 // this handles latch instance without arp/Phrase on
-          transposeOffset = transposeBValues[i]
-          transposeStore = transposeOffset
-        else
-          transposeStore = transposeBValues[i]
-        endif
-      endif
-    endfor
-
-  else
-    SendMIDIThru
-  endif
 @End

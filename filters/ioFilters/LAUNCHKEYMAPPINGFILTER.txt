@@ -13,9 +13,12 @@
   MIDIBeatsVals = [0x2A, 0x2E, 0x4B, 0x43, 0x24, 0x26, 0x2B, 0x32, 0x31, 0x27]
   MIDISampleVals = [0x41, 0x42, 0x43, 0x44, 0x3C, 0x3D, 0x3E, 0x3F, 0x45, 0x40]
 
-  MIDILaunchkeyKnobVals = [0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B]
-  MIDIDrumKnobVals = [0x31, 0x32, 0x33, 0x34, 0x0A, 0x67, 0x7E, 0x7F] // NOTE these last two vals are dummy vals to prevent inadvertent overloading
-  MIDIBassKnobVals = [0x0B, 0x31, 0x05, 0x28]
+  MIDILaunchkeyKnobVals = [0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C] // does not iterate over this last index
+  // 05, 0A, and 0B need to be offset so as not to get inadvertently interpreted by xtouch
+  // offsetting by 19, same as in xtouch mapping filter
+  // 05, 0A, 0B -> 18, 1D, 1E
+  MIDIDrumKnobVals = [0x31, 0x32, 0x33, 0x34, 0x1D, 0x67, 0x7E, 0x7F] // NOTE these last two vals are dummy vals to prevent inadvertent overloading
+  MIDIBassKnobVals = [0x1E, 0x31, 0x18, 0x28]
 
   // variable
 
@@ -32,12 +35,13 @@
 
   // block all sysex except padMode and init
 
-  if sysexData[0] = 0x01 and sysexData[1] = 0x1D
+  // block all sysex except channel and init
+  if sysexData[0] <> 0x3F // will receive channel as well - not currently blocked
+    Exit
+  elseif sysexData[1] = 0x4D
     padMode = 0
     // previous vals for drum
     FillArray drumVals, 60, 6
-  elseif sysexData[0] <> 0x3F // will receive channel as well
-    Exit
   elseif sysexData[1] = 0x0C
     padMode = sysexData[2]
     Exit
@@ -92,7 +96,7 @@
 
 @OnMIDICC
 
-  // map launchkey knobs for drum and bass
+  // velocity
   if MIDIByte2 = 0x1C
     SendMIDIOut MIDIByte1, MIDIDrumKnobVals[7], MIDIByte3
     Exit
@@ -102,6 +106,7 @@
     SendMIDIThru
     Exit
 
+  // map launchkey knobs for drum and bass
   elseif MIDIChannel < 0x06
     for i = 0 to 6
       if MIDIByte2 = MIDILaunchkeyKnobVals[i]
