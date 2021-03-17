@@ -30,7 +30,7 @@
   ReceiveSysex sysexData
 
   // init
-  if sysexData[0] <> 0x9F and sysexData[0] <> 0xC9 and sysexData[0] <> 0xC1 // adding for latch and arpPhraseOnOffToggle
+  if sysexData[0] <> 0x9F and sysexData[0] <> 0xC9
     Exit
 
   elseif sysexData[1] = 0x4E

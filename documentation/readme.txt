@@ -1,6 +1,7 @@
 # MIDI Setup
 
 # TODO formatting
+# https://docs.google.com/spreadsheets/d/1m3_4BjN57dsS56sorsvP24aNKYUUQdjAftF5MF5CxXU/edit?usp=sharing
 
 This is a personal filtering program written using Bram Bos' Mozaic (TODO), Audeonic's StreamByter (TODO), and Audeonic's MIDIFire (TODO).
 
