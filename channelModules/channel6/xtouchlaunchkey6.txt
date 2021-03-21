@@ -1,16 +1,24 @@
-// xtouch mini
+// xtouch mini and launchkey mini (mk2)
 
 @OnLoad
 
   // timer interval is .025 second
 
   SetTimerInterval 25
+  //SetTimerInterval 200 TODO
+
 
   // minimal layout
 
   ShowLayout 4
 
-  // constant
+  // launchkey constant
+
+  phraseSysexOffsetConstant = 42 // NOTE artifact of initial SB setup - could be cleaned up
+
+  // channel was previously included here
+
+  // xtouch constant
 
   // 1, 2, 3, 4, 6, 9, 18, 24, 36, 54, 72, 114, 150
   tempoMode0Vals = [0x48, 0x36, 0x24, 0x18, 0x12, 0x09, 0x06, 0x04, 0x03, 0x02, 0x01]
@@ -22,8 +30,18 @@
 
   // channel specific constant
 
-  channel = 6
-  channelCC = channel + 176
+  channel = 5
+  channelCC = channel + 176 
+
+  drumButtons = [0, 1, 2, 3, 8, 9, 10, 11]
+
+  drumParam1 = [14, 17, 20, 23, 26, 29, 46, 117]
+  drumParam2 = [15, 18, 21, 24, 27, 30, 47, 118]
+  drumParam3 = [16, 19, 22, 25, 28, 31, 48, 119]
+
+  // first three and last removed, since processed differently - last was 7F (velocity), first three had CC < 19
+  // [40, 49, 50, 51, 52, 103, 126]
+  launchkeyKnobVals = [0x28, 0x31, 0x32, 0x33, 0x34, 0x67, 0x7E]
 
   // assign local
 
@@ -32,6 +50,67 @@
 @End
 
 @InitVariables
+
+  // launchkey init
+
+  // reset sysex variables
+
+  arpPhraseToggle = 0
+  arpPhraseOnOffToggle = 0
+  arpValueModeMod = 0
+  arpMute = 0
+  velocity = 100
+  keyPressVelocity = 100
+  latch = 0
+
+  for i = 0 to 9
+    keyValuesPressed[i] = 0
+  endfor
+  keysPressed = 0
+
+  for i = 0 to 31
+    phraseValues[i] = 0
+  endfor
+  setPhrase = 0
+  phraseVal = 60
+  phraseIndex = 0
+
+  // reset local
+
+  for i = 0 to 9
+    keyOrderPressed[i] = 0
+  endfor
+  keysPressedTotal = 0
+
+  tempPhraseVal = 43690 // fka AAAA; needs to be set to a value too far for both negatives and positives to reach
+  overload = 0
+
+  latchTiming = 8
+  latchKeysPressed = 0
+
+  // xtouch init
+  timerVal = 1
+  StartTimer // see @OnTimer for more details here
+  // necessary because sysex typically sends about .005 faster than program change regardless of the order in the code
+
+  // reset channel information
+  sendData = [0xCC, 0x1C, 0x00]
+  SendSysex sendData, 3
+
+  // reset mapping filters
+  sendData = [0x3F, 0x4D, 0x00]
+  SendSysex sendData, 3
+
+  // reset lfo
+  sendData = [0x01, 0x1D, 0x00]
+  SendSysex sendData, 3
+
+  // reset processing filter
+  sendData = [0x9F, 0x4E, 0x00]
+  SendSysex sendData, 3
+
+
+  // xtouch init
 
   tempoMode = 0
 
@@ -58,19 +137,30 @@
 
   // NOTE pushReset array is used for lighting storage for push control - these are init values
   // channel specific
-  pushReset = [0x0E, 0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+  pushReset = [0x0E, 0x00, 0x64, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
 
+  // 0x40 and drumParams are channel specific
   // lfoRate and lfoDepth are not used (in addition to drumParams)
   // could be changed easily in the future if desired - might be cleaner, more scaleable - but have no usage for them at this point
-  knobCurrentVal = [0x24, 0x00, 0x64, 0xFFFF, 0xFFFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+  knobCurrentVal = [0x24, 0x00, 0x64, 0xFFFF, 0xFFFF, 0x40, 0x00, 0x00, 0xFFFF, 0xFFFF, 0xFFFF, 0x00, 0x00, 0x00, 0x00, 0x00]
 
-  // first set of 0xFFFF are not sent
-  // technically most of these are constants, but putting this here due to drumParams and consistency across files
-  knobSendVals = [0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0x2E, 0x2F, 0x30, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x31, 0x32]
+  // first set of 0xFFFF are not sent, second set are drumParams (init drumParamCurrent at 0), third set are unspecified
+  // technically most of these are constants, but putting this here due to drumParams
+  knobSendVals = [0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0x0A, 0x34, 0x33, 0x0E, 0x0F, 0x10, 0x67, 0x31, 0x32, 0xFFFF, 0xFFFF]
+
+  pitchQuantize = 0
+  waveguideToggle = 0
+  previousDrumVal = 0
+  previousTrackingMode = 5
+  drumParamCurrent = 0
+
+  drumParam1CurrentVal = [0, 0, 0, 0, 0, 0, 0, 0]
+  drumParam2CurrentVal = [0, 0, 0, 0, 0, 0, 0, 0]
+  drumParam3CurrentVal = [0, 0, 0, 0, 0, 0, 0, 0]
 
 @End
 
-// timer necessary because of the way mozaic prioritizes sysex over other sent values
+// timer necessary because of the way Mozaic prioritizes sysex over other sent values
 // timerVal is 1-4 (inclusive) - init:
 // change program to b, init b, change program to a, init a
 // timerVal is 5-8 (inclusive) - channelChange:
@@ -81,6 +171,21 @@
 // change program to b, set knob values, change program to a, init lighting
 // NOTE could technically remove the need for a filter if we timed ResetCurrentModeLighting with its own conditional
 @OnTimer
+  
+  // launchkey
+
+  if latchTiming = 8
+    // only stop timer if xtouch timer not in use 
+    if timerVal = 0
+      StopTimer
+      ResetTimer
+    endif
+  else
+    latchTiming = latchTiming + 1
+  endif
+
+  // xtouch
+
   if timerVal = 1 or timerVal = 5 or timerVal = 13 or timerVal = 11 // 1-4 for init
     // reset lights for mode 'B'
     SendMIDIOut 0xC0, 0x01
@@ -92,6 +197,8 @@
     knobLightingCCOffset = 11
     Call @ResetCurrentModeLighting
 
+    // channel specific
+
     // send init drum lighting
     sendData = [0x0F, 0xEE, 0x90, 0x00, 0x01]
     SendSysex sendData, 5
@@ -99,6 +206,8 @@
     // send init trackingMode lighting
     sendData = [0x0F, 0xEE, 0x90, 0x05, 0x01]
     SendSysex sendData, 5
+
+    // channel specific
 
     timerVal = timerVal + 1
 
@@ -125,6 +234,7 @@
     latch = 0
     padMode = 0
     lfoNumMod = 0
+    trackingMode = 0 // channel specific
     lfoTypeMod = 0
     lfoRate = [0, 0, 0, 0]
     lfoDepth = [0, 0, 0, 0]
@@ -149,12 +259,18 @@
     // channel specific
 
     // NOTE could likely just use a for loop with knobCurrent
-    // send channel specific init mode 'A' lighting here
+    // send init pan lighting
+    sendData = [0x0F, 0xEE, 0xBA, 0x06, 0x40]
+    SendSysex sendData, 5
 
     // end channel specific
 
-    StopTimer
-    ResetTimer
+    // only stop timer if launchkey timer not in use
+    if latchTiming = 8
+      StopTimer
+      ResetTimer
+    endif
+
     timerVal = 0
 
   elseif timerVal = 6 // 5 handled above (channel change)
@@ -166,7 +282,20 @@
 
     // channel specific
 
-    // send channel specific init mode 'B' lighting here
+    // send trackingMode lighting
+    sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x01]
+    SendSysex sendData, 5
+
+    // send drum lighting
+    sendData = [0x0F, 0xEE, 0x90, drumButtons[previousDrumVal], 0x01]
+    SendSysex sendData, 5
+
+    sendData = [0x0F, 0xEE, 0xBA, drumParam1[drumParamCurrent], drumParam1CurrentVal[drumParamCurrent]]
+    SendSysex sendData, 5
+    sendData = [0x0F, 0xEE, 0xBA, drumParam2[drumParamCurrent], drumParam2CurrentVal[drumParamCurrent]]
+    SendSysex sendData, 5
+    sendData = [0x0F, 0xEE, 0xBA, drumParam3[drumParamCurrent], drumParam3CurrentVal[drumParamCurrent]]
+    SendSysex sendData, 5
 
     // end channel specific
 
@@ -271,8 +400,12 @@
       SendSysex sendData, 5
     endif
 
-    StopTimer
-    ResetTimer
+    // only stop timer if launchkey timer not in use
+    if latchTiming = 8
+      StopTimer
+      ResetTimer
+    endif
+
     timerVal = 0
 
   elseif timerVal = 10 // 9 and 11 handled above (setLfo reset)
@@ -297,8 +430,12 @@
     // resend lighting for mode 'B'
     Call @ResetModeBTempLighting
 
-    StopTimer
-    ResetTimer
+    // only stop timer if launchkey timer not in use
+    if latchTiming = 8
+      StopTimer
+      ResetTimer
+    endif
+
     timerVal = 0
 
   elseif timerVal = 16
@@ -312,63 +449,17 @@
 
     Call @ResetModeATempLighting
 
-    StopTimer
-    ResetTimer
+    // only stop timer if launchkey timer not in use
+    if latchTiming = 8
+      StopTimer
+      ResetTimer
+    endif
+
     timerVal = 0
 
   endif
 
 @End
-
-// sysex reception
-
-@OnSysex
-
-  ReceiveSysex sysexData
-
-  // ALLOW FF
-  // BLOCK 11 CC 0F 01 3F 9F (+ xtouch program change, key presses, key releases, and CC's)
-  if sysexData[0] <> 0xFC and sysexData[0] <> 0xFF
-    Exit
-
-  // clock message triggered by host clock starting
-  elseif sysexData[0] = 0x7D and sysexData[1] = 0x01
-    Exit
-
-  elseif sysexData[1] = 0x07
-    setPhrase = sysexData[2]
-    // Turn off setPhrase light when sysex received
-    if setPhrase = 0
-      sendData = [0x0F, 0xEE, 0x90, 0x00, 0x00]
-      SendSysex sendData, 5
-    endif
-    Exit
-
-  // Turn off lights when init sysex received
-  elseif sysexData[1] = 0x1B
-
-    // reset lfo
-    sendData = [0x01, 0x1D, 0x00]
-    SendSysex sendData, 3
-
-    timerVal = 1
-    StartTimer // see @OnTimer for more details here
-    // necessary because sysex typically sends about .005 faster than program change regardless of the order in the code
-
-    Exit
-
-  // Send lights when channel change sysex received
-  elseif sysexData[1] = 0x1E
-
-    timerVal = 5
-    StartTimer // see @OnTimer for more details here
-    // necessary because sysex typically sends about .005 faster than program change regardless of the order in the code
-
-  endif
-
-@End
-
-// end sysex reception
 
 @ResetCurrentModeLighting
   for i = 0 to 15
@@ -393,7 +484,72 @@
 // this handles all CC and note MIDI, since notes are converted to CC to enable recording in modstep
 @OnMIDICC
 
-  if MIDIChannel <> channel
+  // channel changed on release - should be released when hold released on launchkey
+  // NOTE pressing a button / key and changing the channel before note off is not supported
+  // channel change should use two hands, so hoping this will not come up
+
+  // NOTE currently there is no overlap between launchkey's CC buttons and other CC out we're going for
+  // if a situation arises where this is the case, we'll need to remap launchkey initially
+
+  // launchkey
+
+  // full reset - channel irrelevant
+  if MIDIByte2 = 0x68 and MIDIByte3 = 0x7F
+    Call @InitVariables
+    Exit
+
+  elseif MIDIChannel <> channel
+    Exit
+
+  elseif MIDIByte2 = 0x7F
+    // this causes issues with launchkey if velocity is zero, since it registers as a note off
+    if MIDIByte3 = 0
+      keyPressVelocity = 1
+    else
+      keyPressVelocity = MIDIByte3
+    endif
+
+  elseif MIDIByte2 = 0x6B and MIDIByte3 = 0x00
+
+    // xtouch channel change
+    timerVal = 5
+    StartTimer // see @OnTimer for more details here
+    // necessary because sysex typically sends about .005 faster than program change regardless of the order in the code
+
+    // send channel sysex
+    sendData = [0x3F, 0x4B, channel]
+    SendSysex sendData, 3
+
+    Exit
+
+  // arp mute
+  elseif MIDIByte2 = 0x6C and MIDIByte3 = 0x7F
+    arpMute = 1
+    sendData = [0xCC, 0x4A, arpMute]
+    SendSysex sendData, 3
+    Exit
+
+  elseif MIDIByte2 = 0x6C and MIDIByte3 = 0x00
+    arpMute = 0
+    sendData = [0xCC, 0x4A, arpMute]
+    SendSysex sendData, 3
+    Exit
+
+  // infinite gate
+  elseif MIDIByte2 = 0x6D and MIDIByte3 = 0x7F
+    infiniteGate = (infiniteGate + 1) % 2
+    sendData = [0xCC, 0x4C, infiniteGate] // currently inconsistent notation, since this also is used by processing filter
+    SendSysex sendData, 3
+    Exit
+
+  // channel reset
+  elseif MIDIByte2 = 0x6A and MIDIByte3 = 0x7F
+    Call @InitVariables
+
+  // xtouch
+
+  // add CC's which are separately interpreted by launchkey to the denylist
+  elseif MIDIByte2 = 0x7F or MIDIByte2 = 0x68 or MIDIByte2 = 0x69 or MIDIByte2 = 0x6A or MIDIByte2 = 0x6B or MIDIByte2 = 0x6C or MIDIByte2 = 0x6D
     Exit
 
   elseif MIDIByte2 = 0x7C // converted from note on
@@ -405,25 +561,48 @@
   // transpose
   elseif MIDIByte2 = 0x09
     if transposeMute = 0
-      sendData = [0x11, 0xEE, channelCC, 0x7A, MIDIByte3]
+      sendData = [0x9F, 0xEE, channelCC, 0x7A, MIDIByte3]
       SendSysex sendData, 5
     endif
+    Exit
 
   // transpose
   elseif MIDIByte2 = 0x0A
     if transposeMute = 0
-      sendData = [0x11, 0xEE, channelCC, 0x7B, MIDIByte3]
+      sendData = [0x9F, 0xEE, channelCC, 0x7B, MIDIByte3]
       SendSysex sendData, 5
     endif
+    Exit
 
-  else
+  // if less than 19 and hasn't been handled yet, handle
+  elseif MIDIByte2 < 0x13
     MIDIByte2Temp = MIDIByte2
     MIDIByte3Temp = MIDIByte3
     Call @HandleKnobTurn
 
-  endif
+  // remove offset for those where necessary
+  elseif MIDIByte2 = 0x18 or MIDIByte2 = 0x1D or MIDIByte2 = 0x1E
+    MIDIByte2Temp = MIDIByte2 - 19
+    sendData = [0x9F, 0xEE, channelCC, MIDIByte2Temp, MIDIByte3]
+    SendSysex sendData, 5
+    Exit
+
+  end
+
+  // this handles other CC's that have been input by the launchkey hardware, preventing any necessary CC handling from launchkey
+  for i = 0 to 6
+    if launchkeyKnobVals[i] = MIDIByte2
+      sendData = [0x9F, 0xEE, channelCC, MIDIByte2, MIDIByte3]
+      SendSysex sendData, 5
+      Exit
+    endif
+  endfor
 
 @End
+
+
+// xtouch
+
 
 // if it is a button push
 @HandleNoteOn
@@ -438,18 +617,18 @@
     if arpPhraseToggle = 0
       // set value mode to variable modulo 12
       arpValueMode = (arpValueMode + 1) % 12
-      sendData = [0xC1, 0x06, arpValueMode]
+      sendData = [0xCC, 0x06, arpValueMode]
       SendSysex sendData, 3
     // if phrase then toggle setPhrase
     else
       if setPhrase = 0
         setPhrase = 1
-        sendData = [0x11, 0x07, setPhrase]
-        SendSysex sendData, 3
       else
+        // NOTE should setPhrase turn latch off? Not currently the case
         setPhrase = 0
-        sendData = [0x11, 0x07, setPhrase]
-        SendSysex sendData, 3 
+        // launchkey
+        phraseIndex = 0
+        tempPhraseVal = 43690
       endif
     endif
     Exit
@@ -464,14 +643,33 @@
       if arpValueMode < 0
         arpValueMode = arpValueMode + 12
       endif
-      sendData = [0xC1, 0x06, arpValueMode]
+      sendData = [0xCC, 0x06, arpValueMode]
       SendSysex sendData, 3
     // if phrase then add rest to phrase sequence
     else
       if setPhrase = 1
-        sendData = [0x11, 0x1A, 0x2E]
+        // launchkey
+        // NOTE could add this code to a handler and use here and below - doesn't change that much
+        // assign value to 128, indicating a rest
+        phraseValues[phraseIndex] = 128 // 2E57
+
+        phraseTemp = phraseIndex + phraseSysexOffsetConstant // artifact of initial SB setup - could be changed
+        sendData = [0xCC, phraseTemp, phraseValues[phraseIndex]]
         SendSysex sendData, 3
-        // NOTE not currently planning on handling this, but there may is likely a race condition between rest and note that could cause issues
+
+        sendData = [0xCC, 0x0A, phraseIndex] // phraseLength - 1, or last index of phrase
+        SendSysex sendData, 3
+
+        phraseIndex = phraseIndex + 1
+        // if phrase is at max limit, end setPhrase
+        if phraseIndex > 31
+          setPhrase = 0
+          // xtouch
+          sendData = [0x0F, 0xEE, 0x90, 0x00, 0x00]
+          SendSysex sendData, 5
+          phraseIndex = 0
+          tempPhraseVal = 43690
+        endif
       endif
     endif
     Exit
@@ -480,16 +678,21 @@
   elseif MIDINoteVal = 0x09 and MIDIByte2 = 0x7C
     if arpPhraseToggle = 0
       arpPhraseToggle = 1
-      sendData = [0xC1, 0x01, arpPhraseToggle]
+      sendData = [0xCC, 0x01, arpPhraseToggle]
+      SendSysex sendData, 3
+      // launchkey
+      // need to open gate so that there's a smooth transition here
+      sendData = [0xCC, 0x19, 0x60]
       SendSysex sendData, 3
     else
       arpPhraseToggle = 0
-      sendData = [0xC1, 0x01, arpPhraseToggle]
+      sendData = [0xCC, 0x01, arpPhraseToggle]
       SendSysex sendData, 3
       if setPhrase = 1
         setPhrase = 0
-        sendData = [0x11, 0x07, setPhrase]
-        SendSysex sendData, 3
+        // launchkey
+        phraseIndex = 0
+        tempPhraseVal = 43690
       endif
     endif
     Exit
@@ -498,12 +701,28 @@
   elseif MIDINoteVal = 0x11 and MIDIByte2 = 0x7C
     if arpPhraseOnOffToggle = 0
       arpPhraseOnOffToggle = 1
-      sendData = [0xC1, 0x02, arpPhraseOnOffToggle]
+      sendData = [0xC9, 0x02, arpPhraseOnOffToggle]
       SendSysex sendData, 3
+      // launchkey
+      if keysPressed > 0
+        // need to open gate so that there's a smooth transition here
+        sendData = [0xCC, 0x19, 0x60]
+        SendSysex sendData, 3
+      endif
     else
       arpPhraseOnOffToggle = 0
-      sendData = [0xC1, 0x02, arpPhraseOnOffToggle]
+      sendData = [0xC9, 0x02, arpPhraseOnOffToggle]
       SendSysex sendData, 3
+      // launchkey
+      if keysPressed > 0 and latch = 1
+        for i = 0 to keysPressed - 1
+          SendMIDINoteOn channel, keyValuesPressed[i], velocity
+          // NOTE bad timing here can prevent latch from picking up the value - can be avoided fairly consistently with arpMute
+          // the delayed noteOff can come at just the wrong time
+          // this mostly occurs when gate is longer and is mostly noticeable when there are fewer notes
+          // this can be avoided by using infiniteGate when transitioning to latch
+        endfor
+      endif
     endif
     Exit
 
@@ -511,12 +730,42 @@
   elseif MIDINoteVal = 0x0A and MIDIByte2 = 0x7C
     if latch = 0
       latch = 1
-      sendData = [0xC1, 0x0B, latch]
+      sendData = [0x9F, 0x0B, latch]
       SendSysex sendData, 3
+      // launchkey
+      if keysPressed > 0
+        // handle if latch turned on after notes have been pressed
+        // NOTE at this point, this is more of an edge case
+        StartTimer
+        latchTiming = 0
+        for i = 0 to keysPressed - 1
+          latchkeysPressed = latchKeysPressed + 1
+        endfor
+      endif
     else
       latch = 0
-      sendData = [0xC1, 0x0B, latch]
+      sendData = [0x9F, 0x0B, latch]
       SendSysex sendData, 3
+      // launchkey
+      if keysPressed > 0
+        for i = 0 to keysPressed - 1
+          keyValuesPressed[i] = 0
+          keyOrderPressed[i] = 0
+        endfor
+
+        keysPressed = 0
+        keysPressedTotal = 0
+
+        sendData = [0xCC, 0x20]
+        for i = 2 to 11
+          sendData[i] = keyValuesPressed[i - 2]
+        endfor
+        SendSysex sendData, 12
+
+        sendData = [0xCC, 0x00, keysPressed]
+        SendSysex sendData, 3
+
+      endif
     endif
     Exit
 
@@ -637,7 +886,57 @@
     Call @ResetModeBTempLighting
     Exit
 
+  // channel specific
+
+  // tracking off
+  elseif MIDINoteVal = 0x25 and MIDIByte2 = 0x7C
+    trackingMode = 0
+    if previousTrackingMode <> 5
+      sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
+      SendSysex sendData, 5
+    endif
+    sendData = [0x9F, 0x1F, trackingMode]
+    SendSysex sendData, 3
+    Exit
+
+  // tracking mode double
+  elseif MIDINoteVal = 0x24 and MIDIByte2 = 0x7C
+    trackingMode = 2
+    if previousTrackingMode <> 4
+      sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
+      SendSysex sendData, 5
+    endif
+    sendData = [0x9F, 0x1F, trackingMode]
+    SendSysex sendData, 3
+    Exit
+
+  // tracking mode single
+  elseif MIDINoteVal = 0x2C and MIDIByte2 = 0x7C
+    trackingMode = 1
+    if previousTrackingMode <> 0x0C
+      sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
+      SendSysex sendData, 5
+    endif
+    sendData = [0x9F, 0x1F, trackingMode]
+    SendSysex sendData, 3
+    Exit
+
+  // if knob is pressed and a drumParam is changed, the value in the L array will not match up correctly - exit before
+  elseif groupKnobPush = 1 or knobPush[8] = 1 or knobPush[9] = 1 or knobPush[10] = 1
+    Exit
+
+  elseif MIDINoteVal >= 32 and MIDINoteVal <= 35 and MIDIByte2 = 0x7C
+    drumParamCurrent = MIDINoteVal - 32
+    Call @HandleDrumParamChange
+    Exit
+
+  elseif MIDINoteVal >= 40 and MIDINoteVal <= 43 and MIDIByte2 = 0x7C
+    drumParamCurrent = MIDINoteVal - 36
+    Call @HandleDrumParamChange
+    Exit
   endif
+
+  // end channel specific
 
 @End
 
@@ -1163,7 +1462,82 @@
     endif
     Exit
 
+  // channel specific
+
+  // if it is a knob 9 button release, toggle waveguide
+  elseif MIDINoteVal = 0x18 and MIDIByte2 = 0x7D
+    if waveguideToggle = 0
+      waveguideToggle = 1
+      // NOTE this is a little janky - waveguide doesn't seem to reset visually and requires a press on the machine itself
+      sendData = [0x9F, 0xEE, channelCC, 116, 0x7F]
+    else
+      waveguideToggle = 0
+      // NOTE this is a little janky - waveguide doesn't seem to reset visually and requires a press on the machine itself
+      sendData = [0x9F, 0xEE, channelCC, 116, 0x00]
+    endif
+    SendSysex sendData, 5
+    Exit
+
+  // if it is a knob 10 button release, toggle pitch quantize
+  elseif MIDINoteVal = 0x19 and MIDIByte2 = 0x7D
+    if pitchQuantize = 0
+      pitchQuantize = 1
+      sendData = [0x9F, 0xEE, channelCC, 53, 0x7F]
+    else
+      pitchQuantize = 0
+      sendData = [0x9F, 0xEE, channelCC, 53, 0x00]
+    endif
+    SendSysex sendData, 5
+    Exit
+
+  elseif MIDINoteVal = 0x25 and MIDIByte2 = 0x7D
+    sendData = [0x0F, 0xEE, 0x90, 0x05, 0x01]
+    SendSysex sendData, 5
+    previousTrackingMode = 0x05
+    Exit
+  elseif MIDINoteVal = 0x24 and MIDIByte2 = 0x7D
+    sendData = [0x0F, 0xEE, 0x90, 0x04, 0x01]
+    SendSysex sendData, 5
+    previousTrackingMode = 0x04
+    Exit
+  elseif MIDINoteVal = 0x2C and MIDIByte2 = 0x7D
+    sendData = [0x0F, 0xEE, 0x90, 0x0C, 0x01]
+    SendSysex sendData, 5
+    previousTrackingMode = 0x0C
+    Exit
+
+  // if knob is pressed and a drumParam is changed, the value in the pushReset array will not match up correctly
+  // send lighting if drumParam is the same so that the light doesn't just turn off
+  elseif (knobPush[8] = 1 or knobPush[9] = 1 or knobPush[10] = 1)
+    if (MIDINoteVal >= 32 and MIDINoteVal <= 35) or (MIDINoteVal >= 40 and MIDINoteVal <= 43)
+      knobTemp = MIDINoteVal - drumButtons[previousDrumVal]
+      // send lighting to keep knob lit if same knob pressed
+      if knobTemp = 32
+        sendData = [0x0F, 0xEE, 0x90, drumButtons[previousDrumVal], 0x01]
+        SendSysex sendData, 5
+      endif
+      Exit
+    endif
   endif
+
+  // drumParams
+  for i = 0 to 7
+    if MIDINoteVal - 32 = drumButtons[i] and MIDIByte2 = 0x7D
+      sendData = [0x0F, 0xEE, 0x90, drumButtons[i], 0x01]
+      SendSysex sendData, 5
+      for j = 0 to 3
+        if lfoKnob[j] >= 24 and lfoKnob[j] <= 26
+          lfoTemp = lfoKnob[i] - 15
+          sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
+          SendSysex sendData, 5
+        endif
+      endfor
+      previousDrumVal = i
+      Exit
+    endif
+  endfor
+
+  // end channel specific
 
 @End
 
@@ -1208,7 +1582,7 @@
     // velocity
     elseif MIDIByte2Temp = 3
       knobCurrentVal[MIDIByte2Offset] = MIDIByte3Temp
-      sendData = [0xC1, 0x05, knobCurrentVal[MIDIByte2Offset]]
+      sendData = [0xCC, 0x05, knobCurrentVal[MIDIByte2Offset]]
       SendSysex sendData, 3
 
     // lfo rate
@@ -1224,12 +1598,24 @@
       SendSysex sendData, 4
 
     // channel specific
-    elseif MIDIByte2Temp > 5 // doesn't account for sliders, but shouldn't need to
+    elseif MIDIByte2Temp > 5
 
-      knobCurrentVal[MIDIByte2Offset] = MIDIByte3Temp
+      // drumParams
+      if MIDIByte2Temp = 11
+        knobSendVals[MIDIByte2Offset] = drumParam1[drumParamCurrent]
+        drumParam1CurrentVal[drumParamCurrent] = MIDIByte3Temp
+      elseif MIDIByte2Temp = 12
+        knobSendVals[MIDIByte2Offset] = drumParam2[drumParamCurrent]
+        drumParam2CurrentVal[drumParamCurrent] = MIDIByte3Temp
+      elseif MIDIByte2Temp = 13
+        knobSendVals[MIDIByte2Offset] = drumParam3[drumParamCurrent]
+        drumParam3CurrentVal[drumParamCurrent] = MIDIByte3Temp
+      else
+        knobCurrentVal[MIDIByte2Offset] = MIDIByte3Temp
+      endif
 
       // send channel specific val
-      sendData = [0x11, 0xEE, channelCC, knobSendVals[MIDIByte2Offset], MIDIByte3Temp]
+      sendData = [0x9F, 0xEE, channelCC, knobSendVals[MIDIByte2Offset], MIDIByte3Temp]
       SendSysex sendData, 5
     endif
 
@@ -1315,4 +1701,335 @@
       knobCurrentVal[0] = lightingVal
     endif
   endfor
+@End
+
+
+// launchkey
+
+
+@OnMIDINoteOn
+
+  // don't process any non-channel data
+  if MIDIChannel <> channel
+    Exit
+  endif
+
+  // RESET
+
+  // if reset (keys pressed limit exceeded), handle differently
+  if overload = 1
+    keysPressed = keysPressed + 1
+    if latch = 1
+      latchKeysPressed = latchKeysPressed + 1
+    endif
+    sendData = [0xCC, 0x00, keysPressed]
+    SendSysex sendData, 3
+    Exit
+  endif
+
+  // setting arbitrary limit on number of keys pressed at a time to 10 (using 10 as comparator here because keysPressed has not yet been increased)
+  if keysPressed = 10
+    Call @gateReset
+    overload = 1
+    arpMute = 1
+    sendData = [0xCC, 0x4A, arpMute]
+    SendSysex sendData, 3
+    // necessary so that keysPressed does not go past zero by mistake, as we have not yet incremented for this key press
+    keysPressed = keysPressed + 1
+    if latch = 1
+      latchKeysPressed = latchKeysPressed + 1
+    endif
+    sendData = [0xCC, 0x00, keysPressed]
+    SendSysex sendData, 3
+
+    Exit
+  endif
+
+  // LATCH
+
+  if latch = 1
+    if latchTiming = 8 // no need to send notes / reset arrays if no keys are currently recognized as pressed
+      StartTimer
+      latchTiming = 0
+      // reset arrays and send note releases
+      if keysPressed > 0 // necessary because for loops include 0 on 'for i = 0 to 0'
+        for i = 0 to keysPressed - 1
+          // NOTE ideally would not have to send MIDINoteOff from launchkey, due to possible issues it can create in processing
+          // this is currently handled, however
+          SendMIDINoteOff channel, keyValuesPressed[i], 0x00
+          keyValuesPressed[i] = 0
+          keyOrderPressed[i] = 0
+        endfor
+        keysPressed = 0
+        keysPressedTotal = 0
+      endif
+    endif
+    latchKeysPressed = latchKeysPressed + 1
+  endif
+
+  // PHRASE
+
+  // set initial note to calculate offset
+  phraseVal = MIDINote
+  sendData = [0xCC, 0x08, phraseVal]
+  SendSysex sendData, 3
+
+  // ALL
+
+  // add one to notes overall pressed
+  keysPressedTotal = keysPressedTotal + 1
+
+  // store note value in first open spot in array
+  // NOTE this uses keysPressed, which should be set to 0 before first key is pressed
+  keyValuesPressed[keysPressed] = MIDINote
+  keyOrderPressed[keysPressed] = keysPressedTotal
+
+  // add one to current notes pressed
+  // NOTE this is done before sorting to make sure proper length is parsed
+  // this is done after array assignment so that the alignment with keysPressed is accurate in setting
+  keysPressed = keysPressed + 1
+  sendData = [0xCC, 0x00, keysPressed]
+  SendSysex sendData, 3
+
+  // ARP
+
+  // sort array / hashmap according to ascending, descending, order pressed
+  Call @InsertionSort
+  sendData = [0xCC, 0x20]
+  for i = 2 to 11
+    sendData[i] = keyValuesPressed[i - 2]
+  endfor
+  SendSysex sendData, 12
+
+  // ALL
+
+  if keysPressed >= 1
+    // gateOpened
+    sendData = [0xCC, 0x19, 0x60]
+    SendSysex sendData, 3
+  endif
+
+  if setPhrase = 1
+    // because we're taking offset here, we need to record each step as the difference between it and the last step
+    // if tempPhraseVal has a previous value (i.e. is not the first key pressed in the phrase)
+    // NOTE max phrase length at this point is 32
+    if tempPhraseVal = 43690 // AAAA
+      tempPhraseVal = MIDINote
+    endif
+
+    phraseValues[phraseIndex] = MIDINote - tempPhraseVal
+
+    phraseTemp = phraseIndex + phraseSysexOffsetConstant // artifact of initial SB setup - could be changed
+    sendData = [0xCC, phraseTemp, phraseValues[phraseIndex]]
+    SendSysex sendData, 3
+
+    sendData = [0xCC, 0x0A, phraseIndex] // phraseLength - 1, or last index of phrase
+    SendSysex sendData, 3
+
+    phraseIndex = phraseIndex + 1
+    // if phrase is at max limit, end setPhrase 
+    if phraseIndex > 31
+      setPhrase = 0
+      // xtouch
+      sendData = [0x0F, 0xEE, 0x90, 0x00, 0x00]
+      SendSysex sendData, 5
+      phraseIndex = 0
+      tempPhraseVal = 43690
+    endif
+    // NOTE could block whatever is inputted here, to prevent notes from passing through while the phrase is running
+    // this would make sense if phrase was toggled and on, but not if this was not the case
+  endif
+
+  if arpPhraseOnOffToggle <> 1
+    SendMIDIOut MIDIByte1, MIDIByte2, keyPressVelocity
+  endif
+
+@End
+
+
+@OnMIDINoteOff
+
+  // don't process any non-channel data
+  if MIDIChannel <> channel
+    Exit
+  endif
+
+  // if reset (key pressed limit exceeded), handle differently
+  if overload = 1
+    keysPressed = keysPressed - 1
+    if latch = 1
+      latchKeysPressed = latchKeysPressed - 1
+    endif
+    sendData = [0xCC, 0x00, keysPressed]
+    SendSysex sendData, 3
+    if keysPressed = 0
+      overload = 0
+      arpMute = 0
+      sendData = [0xCC, 0x4A, arpMute]
+      SendSysex sendData, 3
+    endif
+    SendMIDIThru
+    Exit
+  endif
+
+  // LATCH
+
+  if latch = 1 or latchKeysPressed <> 0
+    latchKeysPressed = latchKeysPressed - 1
+    Exit
+  endif
+
+  // ALL (max for PHRASE)
+
+  // find the max order value, or the most recent key pressed
+  // if the note value of that max is M1, we need to change the phrase offset
+  // while we are iterating, we need to set the order value of whichever key is released to zero so we can reuse that index
+  max = 0
+  valOfMax = 0
+  secondMax = 0
+  valOfSecondMax = 0
+  for i = 0 to keysPressed - 1
+    if keyOrderPressed[i] > max
+      secondMax = max
+      valOfSecondMax = valOfMax
+      max = keyOrderPressed[i]
+      valOfMax = keyValuesPressed[i]
+    ELSE
+      if keyOrderPressed[i] > secondMax
+        secondMax = keyOrderPressed[i]
+        valOfSecondMax = keyValuesPressed[i]
+      endif
+    endif
+    if keyValuesPressed[i] = MIDINote
+      keyValuesPressed[i] = 0
+      keyOrderPressed[i] = 0
+    endif
+  endfor
+
+  // PHRASE
+
+  if valOfMax = MIDINote
+    // set value equal to second most recent key pressed
+    // gateOpened = 1 // NOTE uncommenting this and sending sysex would restart phrase whenever key lifted
+    phraseVal = valOfSecondMax
+    sendData = [0xCC, 0x08, phraseVal]
+    SendSysex sendData, 3
+  endif
+
+  // ARP
+
+  // sort array / hashmap according to ascending, descending, order pressed
+  Call @InsertionSort
+  sendData = [0xCC, 0x20]
+  for i = 2 to 11
+    sendData[i] = keyValuesPressed[i - 2]
+  endfor
+  SendSysex sendData, 12
+
+  // ALL
+
+  // subtract one from current notes pressed
+  // NOTE this is done after sorting to make sure any removed values are pushed out
+  keysPressed = keysPressed - 1
+  sendData = [0xCC, 0x00, keysPressed]
+  SendSysex sendData, 3
+
+  if keysPressed = 0
+    Call @gateReset
+  elseif keysPressed > 0 and arpPhraseToggle = 1
+    // gateOpened - only send if phrase
+    sendData = [0xCC, 0x19, 0x60]
+    SendSysex sendData, 3
+  endif
+
+  if arpPhraseOnOffToggle <> 1
+    SendMIDIThru
+  endif
+
+@End
+
+@gateReset
+  for i = 0 to 9
+    keyValuesPressed[i] = 0
+  endfor
+  sendData = [0xCC, 0x20]
+  for i = 2 to 11
+    sendData[i] = keyValuesPressed[i - 2]
+  endfor
+  SendSysex sendData, 12
+  for i = 0 to 9
+    keyOrderPressed[i] = 0
+  endfor
+  keysPressedTotal = 0
+  phraseVal = 60
+  sendData = [0xCC, 0x08, phraseVal]
+  SendSysex sendData, 3
+@End
+
+@InsertionSort
+
+  // sort by value
+  if arpValueModeMod < 6 and keysPressed > 1
+    for i = 1 to keysPressed - 1
+
+      keyVal = keyValuesPressed[i]
+      keyOrder = keyOrderPressed[i]
+
+      j = i - 1
+      // NOTE stopLoop necessary because conditionals for loops check simultaneously and not sequentially
+      // can do this here because j will never be less than zero at this point
+      if j > -1 and keyValuesPressed[j] < keyVal
+        stopLoop = 0
+      else
+        stopLoop = 1
+      endif
+
+      while stopLoop = 0
+        keyValuesPressed[j + 1] = keyValuesPressed[j]
+        keyOrderPressed[j + 1] = keyOrderPressed[j]
+        j = j - 1
+        if j < 0
+          stopLoop = 1
+        elseif keyValuesPressed[j] >= keyVal
+          stopLoop = 1
+        endif
+      endwhile
+
+      keyValuesPressed[j + 1] = keyVal
+      keyOrderPressed[j + 1] = keyOrder
+    endfor
+
+  // sort by keys pressed
+  elseif arpValueModeMod > 8 and keysPressed > 1
+    for i = 1 to keysPressed - 1
+
+      keyVal = keyValuesPressed[i]
+      keyOrder = keyOrderPressed[i]
+
+      j = i - 1
+      // NOTE stopLoop necessary because conditionals for loops check simultaneously and not sequentially
+      // can do this here because j will never be less than zero at this point
+      if j > -1 and keyOrderPressed[j] < keyOrder
+        stopLoop = 0
+      else
+        stopLoop = 1
+      endif
+
+      while stopLoop = 0
+        keyOrderPressed[j + 1] = keyOrderPressed[j]
+        keyValuesPressed[j + 1] = keyValuesPressed[j]
+        j = j - 1
+        if j < 0
+          stopLoop = 1
+        elseif keyOrderPressed[j] >= keyOrder
+          stopLoop = 1
+        endif
+      endwhile
+
+      keyValuesPressed[j + 1] = keyVal
+      keyOrderPressed[j + 1] = keyOrder
+    endfor
+
+  endif
+
 @End

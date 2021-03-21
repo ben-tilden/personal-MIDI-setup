@@ -26,9 +26,9 @@
 
   ReceiveSysex sysexData
 
-  // ALLOW FC CC C1
+  // ALLOW CC
   // BLOCK 11 0F 01 FF 3F 9F (+ xtouch program change, key presses, key releases, and CC's)
-  if sysexData[0] <> 0xCC and sysexData[0] <> 0xC1 and and sysexData[0] <> 0xFC
+  if sysexData[0] <> 0xCC and sysexData[0] <> 0xC9
     Exit
 
   // clock message triggered by host clock starting

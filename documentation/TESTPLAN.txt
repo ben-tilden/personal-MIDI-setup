@@ -20,8 +20,6 @@
 # ensure xtouch lighting changes properly when channel changed
   # ensure setPhrase, arpPhraseToggle, arpPhraseToggleOnOff, latch, lfo, padMode, groupKnobPush, lfo (4 vars) lighting resets
   # ensure knob lighting resets
-# ensure xtouch receives setPhrase
-# ensure xtouch receives gateOpened # optional implementation not exercised yet
 
 # button push
 
@@ -192,13 +190,6 @@
 ###
 # launchkey mini
 ###
-
-# ensure launchkey receives arpPhraseToggle
-# ensure launchkey receives arpPhraseOnOffToggle
-# ensure launchkey receives velocity
-# ensure launchkey receives arpValueModeMod
-# ensure launchkey receives setPhrase
-# ensure launchkey receives latch
 
 # ensure global array reset (with locals)
 # ensure xtouch reset (with locals)

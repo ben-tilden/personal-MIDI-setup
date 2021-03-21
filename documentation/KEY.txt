@@ -68,15 +68,13 @@ channel specific contents:
 channel:
 change channel
 
-launchkey:
-change channel
-
-xtouch:
+xtouch / launchkey:
 change channel
 remove drum parameter constants
 *change pushReset variables (e.g. pan)
 *update knobCurrentVal so that drum knobs are not 0xFFFF and update defaults for specific CC's (e.g. pan)
 remove channel specific variables from InitVariables
+remove channel specific lighting from init and channel change
 *update knobSendVals to channel specific CC's
 
 drum:

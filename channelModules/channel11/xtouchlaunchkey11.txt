@@ -16,7 +16,7 @@
 
   phraseSysexOffsetConstant = 42 // NOTE artifact of initial SB setup - could be cleaned up
 
-  channel = 0 // channel specific
+  // channel was previously included here
 
   // xtouch constant
 
@@ -30,18 +30,8 @@
 
   // channel specific constant
 
-  channel = 0
-  channelCC = channel + 176 
-
-  drumButtons = [0, 1, 2, 3, 8, 9, 10, 11]
-
-  drumParam1 = [14, 17, 20, 23, 26, 29, 46, 117]
-  drumParam2 = [15, 18, 21, 24, 27, 30, 47, 118]
-  drumParam3 = [16, 19, 22, 25, 28, 31, 48, 119]
-
-  // first three and last removed, since processed differently - last was 7F (velocity), first three had CC < 19
-  // [40, 49, 50, 51, 52, 103, 126]
-  launchkeyKnobVals = [0x28, 0x31, 0x32, 0x33, 0x34, 0x67, 0x7E]
+  channel = 10
+  channelCC = channel + 176
 
   // assign local
 
@@ -137,26 +127,15 @@
 
   // NOTE pushReset array is used for lighting storage for push control - these are init values
   // channel specific
-  pushReset = [0x0E, 0x00, 0x64, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+  pushReset = [0x0E, 0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40]
 
-  // 0x40 and drumParams are channel specific
-  // lfoRate and lfoDepth are not used (in addition to drumParams)
+  // lfoRate and lfoDepth are not used
   // could be changed easily in the future if desired - might be cleaner, more scaleable - but have no usage for them at this point
-  knobCurrentVal = [0x24, 0x00, 0x64, 0xFFFF, 0xFFFF, 0x40, 0x00, 0x00, 0xFFFF, 0xFFFF, 0xFFFF, 0x00, 0x00, 0x00, 0x00, 0x00]
+  knobCurrentVal = [0x24, 0x00, 0x64, 0xFFFF, 0xFFFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40]
 
-  // first set of 0xFFFF are not sent, second set are drumParams (init drumParamCurrent at 0), third set are unspecified
-  // technically most of these are constants, but putting this here due to drumParams
-  knobSendVals = [0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0x0A, 0x34, 0x33, 0x0E, 0x0F, 0x10, 0x67, 0x31, 0x32, 0xFFFF, 0xFFFF]
-
-  pitchQuantize = 0
-  waveguideToggle = 0
-  previousDrumVal = 0
-  previousTrackingMode = 5
-  drumParamCurrent = 0
-
-  drumParam1CurrentVal = [0, 0, 0, 0, 0, 0, 0, 0]
-  drumParam2CurrentVal = [0, 0, 0, 0, 0, 0, 0, 0]
-  drumParam3CurrentVal = [0, 0, 0, 0, 0, 0, 0, 0]
+  // first set of 0xFFFF are not sent
+  // technically most of these are constants, but putting this here due to drumParams and consistency across files
+  knobSendVals = [0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0x2F, 0x30, 0x07, 0x2A, 0x28, 0x29, 0x2B, 0x2C, 0x2D, 0x2E, 0x0A]
 
 @End
 
@@ -197,14 +176,6 @@
     knobLightingCCOffset = 11
     Call @ResetCurrentModeLighting
 
-    // send init drum lighting
-    sendData = [0x0F, 0xEE, 0x90, 0x00, 0x01]
-    SendSysex sendData, 5
-
-    // send init trackingMode lighting
-    sendData = [0x0F, 0xEE, 0x90, 0x05, 0x01]
-    SendSysex sendData, 5
-
     timerVal = timerVal + 1
 
   elseif timerVal = 3 or timerVal = 7 or timerVal = 15 or timerVal = 9
@@ -230,7 +201,6 @@
     latch = 0
     padMode = 0
     lfoNumMod = 0
-    trackingMode = 0 // channel specific
     lfoTypeMod = 0
     lfoRate = [0, 0, 0, 0]
     lfoDepth = [0, 0, 0, 0]
@@ -255,9 +225,7 @@
     // channel specific
 
     // NOTE could likely just use a for loop with knobCurrent
-    // send init pan lighting
-    sendData = [0x0F, 0xEE, 0xBA, 0x06, 0x40]
-    SendSysex sendData, 5
+    // send channel specific init mode 'A' lighting here
 
     // end channel specific
 
@@ -278,19 +246,9 @@
 
     // channel specific
 
-    // send trackingMode lighting
-    sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x01]
-    SendSysex sendData, 5
-
-    // send drum lighting
-    sendData = [0x0F, 0xEE, 0x90, drumButtons[previousDrumVal], 0x01]
-    SendSysex sendData, 5
-
-    sendData = [0x0F, 0xEE, 0xBA, drumParam1[drumParamCurrent], drumParam1CurrentVal[drumParamCurrent]]
-    SendSysex sendData, 5
-    sendData = [0x0F, 0xEE, 0xBA, drumParam2[drumParamCurrent], drumParam2CurrentVal[drumParamCurrent]]
-    SendSysex sendData, 5
-    sendData = [0x0F, 0xEE, 0xBA, drumParam3[drumParamCurrent], drumParam3CurrentVal[drumParamCurrent]]
+    // send channel specific init mode 'B' lighting here
+    // send init pan lighting
+    sendData = [0x0F, 0xEE, 0xBA, 0x12, 0x40]
     SendSysex sendData, 5
 
     // end channel specific
@@ -882,57 +840,7 @@
     Call @ResetModeBTempLighting
     Exit
 
-  // channel specific
-
-  // tracking off
-  elseif MIDINoteVal = 0x25 and MIDIByte2 = 0x7C
-    trackingMode = 0
-    if previousTrackingMode <> 5
-      sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
-      SendSysex sendData, 5
-    endif
-    sendData = [0x9F, 0x1F, trackingMode]
-    SendSysex sendData, 3
-    Exit
-
-  // tracking mode double
-  elseif MIDINoteVal = 0x24 and MIDIByte2 = 0x7C
-    trackingMode = 2
-    if previousTrackingMode <> 4
-      sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
-      SendSysex sendData, 5
-    endif
-    sendData = [0x9F, 0x1F, trackingMode]
-    SendSysex sendData, 3
-    Exit
-
-  // tracking mode single
-  elseif MIDINoteVal = 0x2C and MIDIByte2 = 0x7C
-    trackingMode = 1
-    if previousTrackingMode <> 0x0C
-      sendData = [0x0F, 0xEE, 0x90, previousTrackingMode, 0x00]
-      SendSysex sendData, 5
-    endif
-    sendData = [0x9F, 0x1F, trackingMode]
-    SendSysex sendData, 3
-    Exit
-
-  // if knob is pressed and a drumParam is changed, the value in the L array will not match up correctly - exit before
-  elseif groupKnobPush = 1 or knobPush[8] = 1 or knobPush[9] = 1 or knobPush[10] = 1
-    Exit
-
-  elseif MIDINoteVal >= 32 and MIDINoteVal <= 35 and MIDIByte2 = 0x7C
-    drumParamCurrent = MIDINoteVal - 32
-    Call @HandleDrumParamChange
-    Exit
-
-  elseif MIDINoteVal >= 40 and MIDINoteVal <= 43 and MIDIByte2 = 0x7C
-    drumParamCurrent = MIDINoteVal - 36
-    Call @HandleDrumParamChange
-    Exit
   endif
-
-  // end channel specific
 
 @End
 
@@ -964,22 +872,6 @@
 
   knobPush[MIDINoteOffset] = 1
 
-@End
-
-@HandleDrumParamChange
-  if drumParamCurrent <> drumButtons[previousDrumVal]
-    sendData = [0x0F, 0xEE, 0x90, drumButtons[previousDrumVal], 0x00]
-    SendSysex sendData, 5
-  endif
-  sendData = [0x0F, 0xEE, 0xBA, 0x0B, drumParam1CurrentVal[drumParamCurrent]]
-  SendSysex sendData, 5
-  pushReset[8] = drumParam1CurrentVal[drumParamCurrent]
-  sendData = [0x0F, 0xEE, 0xBA, 0x0C, drumParam2CurrentVal[drumParamCurrent]]
-  SendSysex sendData, 5
-  pushReset[9] = drumParam2CurrentVal[drumParamCurrent]
-  sendData = [0x0F, 0xEE, 0xBA, 0x0D, drumParam3CurrentVal[drumParamCurrent]]
-  SendSysex sendData, 5
-  pushReset[10] = drumParam3CurrentVal[drumParamCurrent]
 @End
 
 @ResetModeATempLighting
@@ -1458,82 +1350,7 @@
     endif
     Exit
 
-  // channel specific
-
-  // if it is a knob 9 button release, toggle waveguide
-  elseif MIDINoteVal = 0x18 and MIDIByte2 = 0x7D
-    if waveguideToggle = 0
-      waveguideToggle = 1
-      // NOTE this is a little janky - waveguide doesn't seem to reset visually and requires a press on the machine itself
-      sendData = [0x9F, 0xEE, channelCC, 116, 0x7F]
-    else
-      waveguideToggle = 0
-      // NOTE this is a little janky - waveguide doesn't seem to reset visually and requires a press on the machine itself
-      sendData = [0x9F, 0xEE, channelCC, 116, 0x00]
-    endif
-    SendSysex sendData, 5
-    Exit
-
-  // if it is a knob 10 button release, toggle pitch quantize
-  elseif MIDINoteVal = 0x19 and MIDIByte2 = 0x7D
-    if pitchQuantize = 0
-      pitchQuantize = 1
-      sendData = [0x9F, 0xEE, channelCC, 53, 0x7F]
-    else
-      pitchQuantize = 0
-      sendData = [0x9F, 0xEE, channelCC, 53, 0x00]
-    endif
-    SendSysex sendData, 5
-    Exit
-
-  elseif MIDINoteVal = 0x25 and MIDIByte2 = 0x7D
-    sendData = [0x0F, 0xEE, 0x90, 0x05, 0x01]
-    SendSysex sendData, 5
-    previousTrackingMode = 0x05
-    Exit
-  elseif MIDINoteVal = 0x24 and MIDIByte2 = 0x7D
-    sendData = [0x0F, 0xEE, 0x90, 0x04, 0x01]
-    SendSysex sendData, 5
-    previousTrackingMode = 0x04
-    Exit
-  elseif MIDINoteVal = 0x2C and MIDIByte2 = 0x7D
-    sendData = [0x0F, 0xEE, 0x90, 0x0C, 0x01]
-    SendSysex sendData, 5
-    previousTrackingMode = 0x0C
-    Exit
-
-  // if knob is pressed and a drumParam is changed, the value in the pushReset array will not match up correctly
-  // send lighting if drumParam is the same so that the light doesn't just turn off
-  elseif (knobPush[8] = 1 or knobPush[9] = 1 or knobPush[10] = 1)
-    if (MIDINoteVal >= 32 and MIDINoteVal <= 35) or (MIDINoteVal >= 40 and MIDINoteVal <= 43)
-      knobTemp = MIDINoteVal - drumButtons[previousDrumVal]
-      // send lighting to keep knob lit if same knob pressed
-      if knobTemp = 32
-        sendData = [0x0F, 0xEE, 0x90, drumButtons[previousDrumVal], 0x01]
-        SendSysex sendData, 5
-      endif
-      Exit
-    endif
   endif
-
-  // drumParams
-  for i = 0 to 7
-    if MIDINoteVal - 32 = drumButtons[i] and MIDIByte2 = 0x7D
-      sendData = [0x0F, 0xEE, 0x90, drumButtons[i], 0x01]
-      SendSysex sendData, 5
-      for j = 0 to 3
-        if lfoKnob[j] >= 24 and lfoKnob[j] <= 26
-          lfoTemp = lfoKnob[i] - 15
-          sendData = [0x0F, 0xEE, 0xB0, lfoTemp, 0x1C]
-          SendSysex sendData, 5
-        endif
-      endfor
-      previousDrumVal = i
-      Exit
-    endif
-  endfor
-
-  // end channel specific
 
 @End
 
@@ -1594,21 +1411,9 @@
       SendSysex sendData, 4
 
     // channel specific
-    elseif MIDIByte2Temp > 5
+    elseif MIDIByte2Temp > 5 // doesn't account for sliders, but shouldn't need to
 
-      // drumParams
-      if MIDIByte2Temp = 11
-        knobSendVals[MIDIByte2Offset] = drumParam1[drumParamCurrent]
-        drumParam1CurrentVal[drumParamCurrent] = MIDIByte3Temp
-      elseif MIDIByte2Temp = 12
-        knobSendVals[MIDIByte2Offset] = drumParam2[drumParamCurrent]
-        drumParam2CurrentVal[drumParamCurrent] = MIDIByte3Temp
-      elseif MIDIByte2Temp = 13
-        knobSendVals[MIDIByte2Offset] = drumParam3[drumParamCurrent]
-        drumParam3CurrentVal[drumParamCurrent] = MIDIByte3Temp
-      else
-        knobCurrentVal[MIDIByte2Offset] = MIDIByte3Temp
-      endif
+      knobCurrentVal[MIDIByte2Offset] = MIDIByte3Temp
 
       // send channel specific val
       sendData = [0x9F, 0xEE, channelCC, knobSendVals[MIDIByte2Offset], MIDIByte3Temp]
