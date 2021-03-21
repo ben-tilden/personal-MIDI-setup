@@ -30,7 +30,7 @@
 
   // channel specific constant
 
-  channel = 0
+  channel = 4
   channelCC = channel + 176
   channelNoteOn = channel + 144
   channelNoteOff = channel + 128

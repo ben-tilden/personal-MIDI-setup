@@ -9,7 +9,7 @@
   // NOTE could make number of voices on a synth a constant here for possible future usage
   // currently just using 3 for three voices across the board
 
-  channel = 0
+  channel = 3
   channelCC = channel + 176
   channelNoteOn = channel + 144
   channelNoteOff = channel + 128
