@@ -5,6 +5,7 @@
 possible future updates:
 * addings 'reverse' and 'bounce' for phrase (stochastic etc. whatever)
 * lfo restart on key press
+* consolidate channels 10, 11, and 12 into one processing file, since neither gate nor trackingMode are necessary for them (would require removal of infiniteGate from channel as well)
 
 ---
 

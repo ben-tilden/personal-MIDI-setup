@@ -10,6 +10,9 @@
   // currently just using 3 for three voices across the board
 
   channel = 11
+  channelCC = channel + 176
+  channelNoteOn = channel + 144
+  channelNoteOff = channel + 128
 
   intervalCCValues = [0, 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 67, 72, 77, 82, 87, 92, 97, 102, 107, 112, 117, 122, 127]
 
@@ -41,7 +44,21 @@
     // sliders have already been deassigned to 0x7A and 0x7B
     // channel specific interval setter - handle remote control of interval level
     // knob 7 has already been deassigned to 0x7E to allow for interval level
-    if sysexData[2] < 182 and sysexData[3] = 0x7E // channel < 6
+    if sysexData[2] = channelNoteOn
+
+      MIDIByte2Temp = sysexData[3]
+      MIDIByte3Temp = sysexData[4]
+
+      Call @HandleNoteOn
+
+    elseif sysexData[2] = channelNoteOff
+
+      MIDIByte2Temp = sysexData[3]
+      MIDIByte3Temp = sysexData[4]
+
+      Call @HandleNoteOff
+
+    elseif channelCC < 182 and sysexData[3] = 0x7E // channel < 6
       intervalDepth = sysexData[4]
 
     elseif sysexData[3] = 0x7A
@@ -124,7 +141,25 @@
 
 @OnMIDINoteOn
 
-  MIDINoteVal = MIDINote + transposeOffset
+  MIDIByte2Temp = MIDIByte2
+  MIDIByte3Temp = MIDIByte3
+
+  Call @HandleNoteOn
+
+@End
+
+@OnMIDINoteOff
+
+  MIDIByte2Temp = MIDIByte2
+  MIDIByte3Temp = MIDIByte3
+
+  Call @HandleNoteOff
+
+@End
+
+@HandleNoteOn
+
+  MIDINoteVal = MIDIByte2Temp + transposeOffset
   if MIDINoteVal < 0
     MIDINoteVal = 0
   elseif MIDINoteVal > 127
@@ -140,7 +175,7 @@
 
   if sameKeySent = 0
     if infiniteGate = 1 and keysSent = 3
-      SendMIDINoteOff MIDIchannel, keysSentArr[keysSentIndex], 0x00
+      SendMIDINoteOff channel, keysSentArr[keysSentIndex], 0x00
       keysSent = keysSent - 1
     endif
 
@@ -150,13 +185,13 @@
     keysSentIndex = (keysSentIndex + 1) % 3
   endif
 
-  SendMIDINoteOn MIDIChannel, MIDINoteVal, MIDIByte3
+  SendMIDINoteOn channel, MIDINoteVal, MIDIByte3Temp
 
 @End
 
-@OnMIDINoteOff
+@HandleNoteOff
 
-  MIDINoteVal = MIDINote + transposeOffset
+  MIDINoteVal = MIDIByte2Temp + transposeOffset
   if MIDINoteVal < 0
     MIDINoteVal = 0
   elseif MIDINoteVal > 127
@@ -176,5 +211,5 @@
     transposeOffset = transposeStore
   endif
 
-  SendMIDINoteOff MIDIchannel, MIDINoteVal, MIDIByte3
+  SendMIDINoteOff channel, MIDINoteVal, MIDIByte3Temp
 @End

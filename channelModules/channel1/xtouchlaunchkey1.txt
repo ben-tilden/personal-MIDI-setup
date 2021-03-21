@@ -5,7 +5,7 @@
   // timer interval is .025 second
 
   SetTimerInterval 25
-  //SetTimerInterval 200 TODO
+  //SetTimerInterval 200
 
 
   // minimal layout

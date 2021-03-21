@@ -5,7 +5,7 @@
   // timer interval is .025 second
 
   SetTimerInterval 25
-  //SetTimerInterval 200 TODO
+  //SetTimerInterval 200
 
 
   // minimal layout
@@ -31,7 +31,9 @@
   // channel specific constant
 
   channel = 1
-  channelCC = channel + 176 
+  channelCC = channel + 176
+  channelNoteOn = channel + 144
+  channelNoteOff = channel + 128
 
   drumButtons = [0, 1, 2, 3, 8, 9, 10, 11]
 
@@ -39,7 +41,7 @@
   drumParam2 = [15, 18, 21, 24, 27, 30, 47, 118]
   drumParam3 = [16, 19, 22, 25, 28, 31, 48, 119]
 
-  // first three and last removed, since processed differently - last was 7F (velocity), first three had CC < 19
+  // first three and last removed, since processed differently - last was 7F (velocity), first three had CC < 19
   // [40, 49, 50, 51, 52, 103, 126]
   launchkeyKnobVals = [0x28, 0x31, 0x32, 0x33, 0x34, 0x67, 0x7E]
 
@@ -587,7 +589,7 @@
     SendSysex sendData, 5
     Exit
 
-  end
+  endif
 
   // this handles other CC's that have been input by the launchkey hardware, preventing any necessary CC handling from launchkey
   for i = 0 to 6
@@ -716,7 +718,9 @@
       // launchkey
       if keysPressed > 0 and latch = 1
         for i = 0 to keysPressed - 1
-          SendMIDINoteOn channel, keyValuesPressed[i], velocity
+          // SendMIDINoteOn channel, keyValuesPressed[i], velocity
+          sendData = [0x9F, 0xEE, channelNoteOn, keyValuesPressed[i], velocity]
+          SendSysex sendData, 5
           // NOTE bad timing here can prevent latch from picking up the value - can be avoided fairly consistently with arpMute
           // the delayed noteOff can come at just the wrong time
           // this mostly occurs when gate is longer and is mostly noticeable when there are fewer notes
@@ -1756,7 +1760,10 @@
         for i = 0 to keysPressed - 1
           // NOTE ideally would not have to send MIDINoteOff from launchkey, due to possible issues it can create in processing
           // this is currently handled, however
-          SendMIDINoteOff channel, keyValuesPressed[i], 0x00
+          // SendMIDINoteOff channel, keyValuesPressed[i], 0x00
+          sendData = [0x9F, 0xEE, channelNoteOff, keyValuesPressed[i], 0x00]
+          SendSysex sendData, 5
+
           keyValuesPressed[i] = 0
           keyOrderPressed[i] = 0
         endfor
@@ -1841,7 +1848,9 @@
   endif
 
   if arpPhraseOnOffToggle <> 1
-    SendMIDIOut MIDIByte1, MIDIByte2, keyPressVelocity
+    // SendMIDIOut MIDIByte1, MIDIByte2, keyPressVelocity
+    sendData = [0x9F, 0xEE, MIDIByte1, MIDIByte2, keyPressVelocity]
+    SendSysex sendData, 5
   endif
 
 @End
@@ -1868,7 +1877,9 @@
       sendData = [0xCC, 0x4A, arpMute]
       SendSysex sendData, 3
     endif
-    SendMIDIThru
+    // SendMIDIThru
+    sendData = [0x9F, 0xEE, MIDIByte1, MIDIByte2, MIDIByte3]
+    SendSysex sendData, 5
     Exit
   endif
 
@@ -1943,7 +1954,9 @@
   endif
 
   if arpPhraseOnOffToggle <> 1
-    SendMIDIThru
+    // SendMIDIThru
+    sendData = [0x9F, 0xEE, MIDIByte1, MIDIByte2, MIDIByte3]
+    SendSysex sendData, 5
   endif
 
 @End

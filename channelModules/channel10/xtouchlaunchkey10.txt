@@ -5,7 +5,7 @@
   // timer interval is .025 second
 
   SetTimerInterval 25
-  //SetTimerInterval 200 TODO
+  //SetTimerInterval 200
 
 
   // minimal layout
@@ -32,6 +32,8 @@
 
   channel = 9
   channelCC = channel + 176
+  channelNoteOn = channel + 144
+  channelNoteOff = channel + 128
 
   // assign local
 
@@ -538,7 +540,7 @@
     SendSysex sendData, 5
     Exit
 
-  end
+  endif
 
   // this handles other CC's that have been input by the launchkey hardware, preventing any necessary CC handling from launchkey
   for i = 0 to 6
@@ -667,7 +669,9 @@
       // launchkey
       if keysPressed > 0 and latch = 1
         for i = 0 to keysPressed - 1
-          SendMIDINoteOn channel, keyValuesPressed[i], velocity
+          // SendMIDINoteOn channel, keyValuesPressed[i], velocity
+          sendData = [0x9F, 0xEE, channelNoteOn, keyValuesPressed[i], velocity]
+          SendSysex sendData, 5
           // NOTE bad timing here can prevent latch from picking up the value - can be avoided fairly consistently with arpMute
           // the delayed noteOff can come at just the wrong time
           // this mostly occurs when gate is longer and is mostly noticeable when there are fewer notes
@@ -1554,7 +1558,10 @@
         for i = 0 to keysPressed - 1
           // NOTE ideally would not have to send MIDINoteOff from launchkey, due to possible issues it can create in processing
           // this is currently handled, however
-          SendMIDINoteOff channel, keyValuesPressed[i], 0x00
+          // SendMIDINoteOff channel, keyValuesPressed\[i\], 0x00
+          sendData = [0x9F, 0xEE, channelNoteOff, keyValuesPressed[i], 0x00]
+          SendSysex sendData, 5
+          
           keyValuesPressed[i] = 0
           keyOrderPressed[i] = 0
         endfor
@@ -1639,7 +1646,9 @@
   endif
 
   if arpPhraseOnOffToggle <> 1
-    SendMIDIOut MIDIByte1, MIDIByte2, keyPressVelocity
+    // SendMIDIOut MIDIByte1, MIDIByte2, keyPressVelocity
+    sendData = [0x9F, 0xEE, MIDIByte1, MIDIByte2, keyPressVelocity]
+    SendSysex sendData, 5
   endif
 
 @End
@@ -1666,7 +1675,9 @@
       sendData = [0xCC, 0x4A, arpMute]
       SendSysex sendData, 3
     endif
-    SendMIDIThru
+    // SendMIDIThru
+    sendData = [0x9F, 0xEE, MIDIByte1, MIDIByte2, MIDIByte3]
+    SendSysex sendData, 5
     Exit
   endif
 
@@ -1741,7 +1752,9 @@
   endif
 
   if arpPhraseOnOffToggle <> 1
-    SendMIDIThru
+    // SendMIDIThru
+    sendData = [0x9F, 0xEE, MIDIByte1, MIDIByte2, MIDIByte3]
+    SendSysex sendData, 5
   endif
 
 @End
