@@ -16,7 +16,9 @@ This MIDI is sent through a MIDIFire Scene (see screenshot - the .mfr file) whic
 
 In the middle of this is the application Modstep, which can act as a MIDI DAW for input. In order to keep things dynamic, Modstep only takes the immediate input, not the processed input (i.e. arpeggiated notes or notes sent from the programmed phrase)
 
-The program provides the following functionality, documented further by the document here:
+## Functionality
+
+The program provides the following functionality, documented further by the document [here](https://docs.google.com/spreadsheets/d/1m3_4BjN57dsS56sorsvP24aNKYUUQdjAftF5MF5CxXU/edit?usp=sharing):
 
 * a built in 12 mode (asc, desc, rand, order - all with octaves) arpeggiator which sends notes out based on bpm, or frequency of clock input
 * a phrase feature, which allows the user to program in phrases (with rests) using the specified hardware
@@ -41,7 +43,9 @@ In addition to these core features, there are a handful of side features as well
 * the ability to clear a single channel, or all channels at once
 * for the Volca Drum, the program offers the option to quantize pitch for either one or both of the current patch's parts
 
-At this point, I wouldn't expect this to be used by anyone else (hence the 'Personal' in the title) but if so, hopefully the full documentation in the linked worksheet [here](https://docs.google.com/spreadsheets/d/1m3_4BjN57dsS56sorsvP24aNKYUUQdjAftF5MF5CxXU/edit?usp=sharing) would be enough to grasp which buttons do what, at least.
+At this point, I wouldn't expect this to be used by anyone else (hence the 'Personal' in the title) but if so, hopefully the full documentation in the linked worksheet above would be enough to grasp which buttons do what, at least.
+
+## Other Notes and Thoughts
 
 Please note - at the moment the program currently takes up a large amount of processing power, and can be inconsistent in loading.
 Usually loading the scene a couple of times will eventually lead to a successful load, however it may be best and most reliable to remove a channel or two from the mix, which is fairly arbitrary.
