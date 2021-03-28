@@ -1,5 +1,0 @@
-# xtouch to sample output filter
-# stream byter used here to lower loading overhead
-
-X0-9 = XX +B
-XC-F = XX +B

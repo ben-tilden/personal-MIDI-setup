@@ -121,6 +121,16 @@ add velocity modification for channel 7
 
 ---
 
+scene connections when adding all channels:
+1. MIDIFire 1 to xl
+2. xl to xmapping
+3. xl to lmapping
+4. xl to xtoxfilter
+5. clock to channel
+6. processing filter to out
+
+---
+
 // xtouch mini tempo explanation
 // because tempo will be determined by ableton link midi clock, the first knob will determine which clock messages are heeded and which are ignored
 // link runs clock at 24 ppqn, or 24 pulses per quarter note / beat
