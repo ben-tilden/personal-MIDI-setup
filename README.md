@@ -4,7 +4,7 @@ This is a personal filtering program written using [Bram Bos' Mozaic](https://ru
 
 Using MIDIFire as a host, MIDI is input into an iPad using a Novation LaunchKey Mini mkII and a Behringer X-Touch Mini
 
-![Screenshot](https://octodex.github.com/images/yaktocat.png)
+![Screenshot](https://github.com/ben-tilden/personalMIDISetup/blob/master/documentation/IMG_0043.PNG)
 
 This MIDI is sent through a MIDIFire Scene (see screenshot - the .mfr file) which filters input to provide desired functionality, and outputs expected notes and CC's to an iConnectMIDI2+. The first iConnectMIDI2+ output port is split into five midi outs using a splitter, which goes to the following hardware:
 * Channels 1-6 - the six channels of the Volca Drum
